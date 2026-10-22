@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QXNet 认证</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232563EB'/><text x='50' y='68' font-size='52' font-weight='bold' text-anchor='middle' fill='white' font-family='sans-serif'>Q</text></svg>">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Zhi+Mang+Xing&family=Ma+Shan+Zheng&family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // Supabase 配置
+  const SUPABASE_URL = 'https://gngcducutevgllbaejec.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_i5npxDKfL83UBEDBBPm57A_WqqYeh-P';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Zhi Mang Xing', 'Ma Shan Zheng', 'Space Grotesk', 'Noto Sans SC', cursive, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: linear-gradient(180deg, #E8F0FE 0%, #F0F5FF 40%, #F5F9FF 100%);
+    min-height: 100vh;
+    color: #1E293B;
+    padding: 20px 16px 240px;
+  }
+  .container {
+    max-width: 420px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* ===== 顶部卡片（独特设计） ===== */
+  .hero-card {
+    position: relative;
+    background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 55%, #06B6D4 100%);
+    border-radius: 28px;
+    padding: 26px 24px 30px;
+    box-shadow: 0 12px 40px rgba(30, 64, 175, 0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+    overflow: hidden;
+  }
+  /* 背景装饰：网络波纹 */
+  .hero-card::before {
+    content: '';
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 180px;
+    height: 180px;
+    background: radial-gradient(circle, rgba(255,255,255,0.18) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .hero-card::after {
+    content: '';
+    position: absolute;
+    bottom: -60px;
+    left: -30px;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(6, 182, 212, 0.25) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .hero-decor {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    opacity: 0.35;
+    pointer-events: none;
+  }
+  /* 波纹扩散动画 */
+  .hero-decor circle {
+    transform-origin: 50px 50px;
+    animation: ripple 2.5s ease-out infinite;
+  }
+  .hero-decor circle:nth-child(2) { animation-delay: 0s; }
+  .hero-decor circle:nth-child(3) { animation-delay: 0.8s; }
+  .hero-decor circle:nth-child(4) { animation-delay: 1.6s; }
+  @keyframes ripple {
+    0%   { transform: scale(0.6); opacity: 0.6; }
+    100% { transform: scale(1.4); opacity: 0; }
+  }
+
+  /* 左侧网络节点拓扑装饰 */
+  .hero-nodes {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    opacity: 0.25;
+    pointer-events: none;
+  }
+  /* 底部信号条装饰 */
+  .hero-signal {
+    position: absolute;
+    bottom: 24px;
+    right: 20px;
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  .hero-signal span {
+    display: block;
+    width: 4px;
+    border-radius: 2px;
+    background: white;
+    animation: signalBounce 1.2s ease-in-out infinite;
+  }
+  .hero-signal span:nth-child(1) { height: 8px; animation-delay: 0s; }
+  .hero-signal span:nth-child(2) { height: 14px; animation-delay: 0.15s; }
+  .hero-signal span:nth-child(3) { height: 20px; animation-delay: 0.3s; }
+  .hero-signal span:nth-child(4) { height: 26px; animation-delay: 0.45s; }
+  @keyframes signalBounce {
+    0%, 100% { opacity: 0.4; transform: scaleY(0.8); }
+    50%      { opacity: 1; transform: scaleY(1.1); }
+  }
+
+  /* ===== 盾牌安全图标（左侧） ===== */
+  .user-icon {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 8px;
+  }
+  .user-icon svg {
+    width: 18px;
+    height: 18px;
+    stroke: #4ADE80;
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* ===== 波形横线（起伏动画） ===== */
+  .hero-wave {
+    position: relative;
+    height: 24px;
+    margin-top: 16px;
+    overflow: hidden;
+    opacity: 0.5;
+  }
+  .hero-wave svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 100%;
+    animation: waveMove 3s linear infinite;
+  }
+  .hero-wave svg:nth-child(2) {
+    animation: waveMove 3s linear infinite reverse;
+    opacity: 0.5;
+  }
+  @keyframes waveMove {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  .hero-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 22px;
+    position: relative;
+    z-index: 1;
+  }
+  .hero-brand {
+    font-size: 18px;
+    color: rgba(255,255,255,0.85);
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    display: flex;
+    align-items: center;
+  }
+  .hero-badge {
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 7px 18px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.3);
+    transition: all 0.3s;
+  }
+  .hero-title {
+    font-size: 30px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.25;
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.15);
+  }
+  .hero-sub {
+    font-size: 15px;
+    color: rgba(255,255,255,0.75);
+    line-height: 1.5;
+    margin-bottom: 18px;
+    position: relative;
+    z-index: 1;
+  }
+  .hero-tip {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: #D1FAE5;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 14px 18px;
+    border-radius: 16px;
+    line-height: 1.4;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .hero-tip-inner {
+    display: inline-block;
+    white-space: nowrap;
+    padding-right: 40px;
+    animation: marquee 12s linear infinite;
+  }
+  @keyframes marquee {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* ===== 表单卡片 ===== */
+  .form-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-radius: 28px;
+    padding: 16px 18px 18px;
+    box-shadow:
+      0 8px 32px rgba(30, 64, 175, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+  }
+  /* 液态玻璃边缘折射 */
+  .form-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 28px;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.1) 40%, rgba(59,130,246,0.2) 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+  .tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .tab-btn {
+    padding: 11px 0;
+    border: none;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    background: rgba(241, 245, 249, 0.8);
+    color: #475569;
+    transition: all 0.25s;
+    font-family: inherit;
+  }
+  .tab-btn.active {
+    background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+  }
+
+  .field {
+    margin-bottom: 16px;
+  }
+  .field-label {
+    font-size: 15px;
+    color: #94A3B8;
+    margin-bottom: 4px;
+    display: block;
+    font-weight: 500;
+  }
+  .field-row {
+    display: flex;
+    align-items: center;
+    border-bottom: 1.5px solid #E2E8F0;
+    padding-bottom: 6px;
+    gap: 12px;
+  }
+  .field-row input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 17px;
+    color: #0F172A;
+    background: transparent;
+    font-family: inherit;
+    min-width: 0;
+    padding: 3px 0;
+  }
+  .field-row input::placeholder {
+    color: #94A3B8;
+  }
+  .field-action {
+    color: #7C3AED;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    user-select: none;
+    background: none;
+    border: none;
+    font-family: inherit;
+    padding: 4px;
+  }
+
+  /* ===== 记住密码 ===== */
+  .remember {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 16px 0 18px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .remember-box {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: #8B5CF6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.25s ease, transform 0.2s ease;
+  }
+  .remember-box svg {
+    width: 13px;
+    height: 13px;
+    stroke: #fff;
+    stroke-width: 3.5;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 1;
+    transform: scale(1);
+    transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .remember-box.unchecked {
+    background: #CBD5E1;
+  }
+  .remember-box.unchecked svg {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  .remember-text {
+    font-size: 16px;
+    color: #334155;
+    font-weight: 500;
+  }
+
+  /* ===== 主按钮 ===== */
+  .submit-btn {
+    width: 100%;
+    padding: 14px 0;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+    color: #fff;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+    transition: transform 0.1s, box-shadow 0.2s;
+    font-family: inherit;
+  }
+  .submit-btn:active {
+    transform: scale(0.98);
+  }
+
+  /* ===== 留言面板 ===== */
+  .message-area {
+    width: 100%;
+    min-height: 120px;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 16px;
+    font-family: inherit;
+    resize: vertical;
+    outline: none;
+    margin-bottom: 20px;
+    color: #0F172A;
+  }
+  .message-area:focus {
+    border-color: #3B82F6;
+  }
+
+  /* ===== 套餐卡片过渡 ===== */
+  .plan-item {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .plan-item:active {
+    transform: scale(0.97);
+  }
+
+  /* 隐藏字段 */
+  .hidden { display: none !important; }
+
+  /* ===== 切换落下动画 ===== */
+  @keyframes dropIn {
+    0%   { opacity: 0; transform: translateY(-18px); }
+    60%  { opacity: 1; transform: translateY(3px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  .drop-anim {
+    animation: dropIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+  /* stagger 延迟：从左上到右下依次落下 */
+  .drop-anim[data-delay="0"]   { animation-delay: 0ms; }
+  .drop-anim[data-delay="1"]   { animation-delay: 70ms; }
+  .drop-anim[data-delay="2"]   { animation-delay: 140ms; }
+  .drop-anim[data-delay="3"]   { animation-delay: 210ms; }
+  .drop-anim[data-delay="4"]   { animation-delay: 280ms; }
+  .drop-anim[data-delay="5"]   { animation-delay: 350ms; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 80px;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(15, 23, 42, 0.9);
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 15px;
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+    z-index: 999;
+    white-space: nowrap;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ===== 隐藏彩蛋按钮 ===== */
+  .egg-btn {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    border: none;
+    cursor: pointer;
+    z-index: 100;
+    padding: 0;
+  }
+  .egg-btn:hover {
+    background: rgba(74, 222, 128, 0.6);
+  }
+
+  /* ===== 游戏弹窗 ===== */
+  .game-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 20px;
+  }
+  .game-modal.show {
+    display: flex;
+  }
+  .game-header {
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 400px;
+  }
+  .game-close {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: #fff;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+  }
+  #gameCanvas {
+    background: #1a1a2e;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    max-width: 100%;
+    aspect-ratio: 4 / 5;
+    width: 400px;
+  }
+  .game-tip {
+    color: rgba(255,255,255,0.6);
+    font-size: 13px;
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ===== 顶部卡片 ===== -->
+  <div class="hero-card">
+    <!-- 装饰：右侧网络波纹（扩散动画） -->
+    <svg class="hero-decor" width="100" height="100" viewBox="0 0 100 100" fill="none">
+      <circle cx="50" cy="50" r="6" fill="white"/>
+      <circle cx="50" cy="50" r="16" stroke="white" stroke-width="1.5"/>
+      <circle cx="50" cy="50" r="28" stroke="white" stroke-width="1.5"/>
+      <circle cx="50" cy="50" r="40" stroke="white" stroke-width="1.5"/>
+    </svg>
+    <!-- 装饰：左侧网络节点拓扑 -->
+    <svg class="hero-nodes" width="80" height="60" viewBox="0 0 80 60" fill="none">
+      <line x1="10" y1="15" x2="35" y2="30" stroke="white" stroke-width="1"/>
+      <line x1="35" y1="30" x2="60" y2="15" stroke="white" stroke-width="1"/>
+      <line x1="35" y1="30" x2="55" y2="48" stroke="white" stroke-width="1"/>
+      <line x1="35" y1="30" x2="18" y2="48" stroke="white" stroke-width="1"/>
+      <circle cx="10" cy="15" r="4" fill="white"/>
+      <circle cx="60" cy="15" r="4" fill="white"/>
+      <circle cx="35" cy="30" r="5" fill="white"/>
+      <circle cx="18" cy="48" r="3" fill="white"/>
+      <circle cx="55" cy="48" r="3" fill="white"/>
+    </svg>
+    <!-- 装饰：底部信号强度条 -->
+    <div class="hero-signal">
+      <span></span><span></span><span></span><span></span>
+    </div>
+
+    <div class="hero-top">
+      <div class="hero-brand">
+        <span class="user-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            <path d="M9 12l2 2 4-4"></path>
+          </svg>
+        </span>
+        QXNET 注册
+      </div>
+      <div class="hero-badge" id="heroBadge">登录</div>
+    </div>
+    <div class="hero-title" id="heroTitle">QXNet 智能弱网控制台</div>
+    <div class="hero-sub">登录后畅享最完美的2.1.5</div>
+    <div class="hero-tip">
+      <span class="hero-tip-inner" id="heroTip">原汁原味的QNET2.1.5版本，实现了原版的地区延迟计算。&nbsp;&nbsp;&nbsp;&nbsp;原汁原味的QNET2.1.5版本，实现了原版的地区延迟计算。</span>
+    </div>
+    <!-- 波形横线：不停起伏 -->
+    <div class="hero-wave">
+      <svg viewBox="0 0 400 24" preserveAspectRatio="none" fill="none">
+        <path d="M0 12 Q 25 2, 50 12 T 100 12 T 150 12 T 200 12 T 250 12 T 300 12 T 350 12 T 400 12" stroke="white" stroke-width="1.5"/>
+      </svg>
+      <svg viewBox="0 0 400 24" preserveAspectRatio="none" fill="none">
+        <path d="M0 12 Q 25 22, 50 12 T 100 12 T 150 12 T 200 12 T 250 12 T 300 12 T 350 12 T 400 12" stroke="white" stroke-width="1.5"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ===== 表单卡片 ===== -->
+  <div class="form-card">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="login">登录</button>
+      <button class="tab-btn" data-tab="register">注册</button>
+      <button class="tab-btn" data-tab="message">购买</button>
+    </div>
+
+    <!-- 登录 / 注册 共用字段 -->
+    <div id="accountFields">
+      <div class="field">
+        <label class="field-label">账号</label>
+        <div class="field-row">
+          <input type="text" id="accountInput" placeholder="ygkdmw@gmail.com" autocomplete="off">
+          <button class="field-action" id="clearBtn">清除</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" id="passwordLabel">密码</label>
+        <div class="field-row">
+          <input type="password" id="passwordInput" placeholder="请输入密码" autocomplete="off">
+          <button class="field-action" id="togglePwdBtn">显示</button>
+        </div>
+      </div>
+
+      <!-- 注册专属：卡密 -->
+      <div class="field hidden" id="cardKeyField">
+        <label class="field-label">卡密 / 授权码</label>
+        <div class="field-row">
+          <input type="password" id="cardKeyInput" placeholder="请输入卡密或授权码" autocomplete="off">
+          <button class="field-action" id="toggleCardKeyBtn">显示</button>
+        </div>
+      </div>
+
+      <div class="remember" id="rememberRow">
+        <div class="remember-box">
+          <svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7"></polyline></svg>
+        </div>
+        <span class="remember-text">记住密码，下次自动填入</span>
+      </div>
+    </div>
+
+    <!-- 购买面板 -->
+    <div id="messagePanel" class="hidden">
+      <div class="field">
+        <label class="field-label">选择套餐</label>
+        <div style="display:flex;flex-direction:column;gap:12px;margin-top:8px;" id="planList">
+          <div class="plan-item selected" data-plan="monthly" style="border:2px solid #3B82F6;border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;background:#EFF6FF;cursor:pointer;">
+            <div>
+              <div style="font-size:17px;font-weight:700;color:#1E40AF;">月度授权</div>
+              <div style="font-size:13px;color:#64748B;margin-top:2px;">30天使用权限</div>
+            </div>
+            <div style="font-size:20px;font-weight:800;color:#2563EB;">¥5</div>
+          </div>
+          <div class="plan-item" data-plan="quarterly" style="border:2px solid #E2E8F0;border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+            <div>
+              <div style="font-size:17px;font-weight:700;color:#0F172A;">季度授权</div>
+              <div style="font-size:13px;color:#64748B;margin-top:2px;">90天使用权限</div>
+            </div>
+            <div style="font-size:20px;font-weight:800;color:#0F172A;">¥10</div>
+          </div>
+          <div class="plan-item" data-plan="yearly" style="border:2px solid #E2E8F0;border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+            <div>
+              <div style="font-size:17px;font-weight:700;color:#0F172A;">永久授权</div>
+              <div style="font-size:13px;color:#64748B;margin-top:2px;">终身使用权限</div>
+            </div>
+            <div style="font-size:20px;font-weight:800;color:#0F172A;">¥15</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="submit-btn" id="submitBtn">进入 QNET</button>
+  </div>
+
+</div>
+
+<div class="toast" id="toastEl"></div>
+
+<!-- 隐藏彩蛋按钮 -->
+<button class="egg-btn" id="eggBtn" title=""></button>
+
+<!-- 小游戏弹窗 -->
+<div class="game-modal" id="gameModal">
+  <div class="game-header">
+    <span>2D 跑酷</span>
+    <button class="game-close" id="gameClose">×</button>
+  </div>
+  <canvas id="gameCanvas" width="400" height="500"></canvas>
+  <div class="game-tip">点击 / 空格跳跃 · 躲避障碍物 · 距离越远分越高</div>
+</div>
+
+<script>
+  // ===== 状态 =====
+  const state = {
+    tab: 'login',
+    pwdVisible: false,
+    cardKeyVisible: false,
+  };
+
+  // ===== DOM =====
+  const $ = (id) => document.getElementById(id);
+  const tabs = document.querySelectorAll('.tab-btn');
+  const heroBadge = $('heroBadge');
+  const heroTitle = $('heroTitle');
+  const heroTip = $('heroTip');
+  const accountFields = $('accountFields');
+  const messagePanel = $('messagePanel');
+  const cardKeyField = $('cardKeyField');
+  const rememberRow = $('rememberRow');
+  const passwordLabel = $('passwordLabel');
+  const submitBtn = $('submitBtn');
+  const toastEl = $('toastEl');
+
+  // ===== Tab 切换 =====
+  const MARQUEE_TEXT = '原汁原味的QNET2.1.5版本，实现了原版的地区延迟计算。';
+  const tabConfig = {
+    login: {
+      badge: '登录',
+      title: 'QXNet 智能弱网控制台',
+      tip: MARQUEE_TEXT,
+      submit: '进入 QNET',
+      showAccount: true,
+      showCardKey: false,
+      showRemember: true,
+    },
+    register: {
+      badge: '注册',
+      title: '创建你的账号',
+      tip: MARQUEE_TEXT,
+      submit: '注册并进入',
+      showAccount: true,
+      showCardKey: true,
+      showRemember: true,
+    },
+    message: {
+      badge: '购买',
+      title: '购买 QXNET 授权',
+      tip: MARQUEE_TEXT,
+      submit: '立即购买',
+      showAccount: false,
+      showCardKey: false,
+      showRemember: false,
+    },
+  };
+
+  function setMarquee(text) {
+    // 复制两份实现无缝滚动
+    heroTip.innerHTML = text + '&nbsp;&nbsp;&nbsp;&nbsp;' + text + '&nbsp;&nbsp;&nbsp;&nbsp;';
+    // 重置动画
+    heroTip.style.animation = 'none';
+    void heroTip.offsetWidth;
+    heroTip.style.animation = '';
+  }
+
+  function switchTab(tab) {
+    state.tab = tab;
+    const cfg = tabConfig[tab];
+
+    tabs.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    heroBadge.textContent = cfg.badge;
+    heroTitle.textContent = cfg.title;
+    setMarquee(cfg.tip);
+    submitBtn.textContent = cfg.submit;
+
+    accountFields.classList.toggle('hidden', !cfg.showAccount);
+    messagePanel.classList.toggle('hidden', cfg.showAccount);
+    cardKeyField.classList.toggle('hidden', !cfg.showCardKey);
+    rememberRow.classList.toggle('hidden', !cfg.showRemember);
+    passwordLabel.textContent = tab === 'register' ? '密码' : '密码';
+
+    playDropAnimation();
+  }
+
+  // ===== 落下动画：从左上到右下依次 stagger =====
+  function playDropAnimation() {
+    // 收集当前可见的可动画元素（从上到下顺序）
+    const animTargets = [];
+    if (!accountFields.classList.contains('hidden')) {
+      accountFields.querySelectorAll('.field').forEach(f => {
+        if (!f.classList.contains('hidden')) animTargets.push(f);
+      });
+      if (!rememberRow.classList.contains('hidden')) animTargets.push(rememberRow);
+    }
+    if (!messagePanel.classList.contains('hidden')) {
+      messagePanel.querySelectorAll('.field').forEach(f => animTargets.push(f));
+    }
+    animTargets.push(submitBtn);
+
+    // 先清掉所有动画类，强制重绘后再加回来
+    animTargets.forEach(el => el.classList.remove('drop-anim'));
+    void document.body.offsetWidth; // 触发重绘
+    animTargets.forEach((el, i) => {
+      el.classList.add('drop-anim');
+      el.setAttribute('data-delay', Math.min(i, 5));
+    });
+  }
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  // ===== 套餐选择 =====
+  const planItems = document.querySelectorAll('.plan-item');
+  const planStyles = {
+    selected: { border: '2px solid #3B82F6', background: '#EFF6FF', titleColor: '#1E40AF', priceColor: '#2563EB' },
+    normal:   { border: '2px solid #E2E8F0', background: 'transparent', titleColor: '#0F172A', priceColor: '#0F172A' },
+  };
+  function selectPlan(el) {
+    planItems.forEach(item => {
+      const isSel = item === el;
+      const s = isSel ? planStyles.selected : planStyles.normal;
+      item.style.border = s.border;
+      item.style.background = s.background;
+      item.style.boxShadow = isSel ? '0 4px 14px rgba(59, 130, 246, 0.15)' : 'none';
+      item.style.transform = isSel ? 'translateY(-2px)' : 'translateY(0)';
+      item.querySelector('div div:first-child').style.color = s.titleColor;
+      item.querySelector('div:last-child').style.color = s.priceColor;
+      item.classList.toggle('selected', isSel);
+    });
+  }
+  planItems.forEach(item => {
+    item.addEventListener('click', () => selectPlan(item));
+  });
+
+  // ===== 清除账号 =====
+  $('clearBtn').addEventListener('click', () => {
+    $('accountInput').value = '';
+    showToast('已清除');
+  });
+
+  // ===== 显示/隐藏密码 =====
+  $('togglePwdBtn').addEventListener('click', () => {
+    state.pwdVisible = !state.pwdVisible;
+    const input = $('passwordInput');
+    input.type = state.pwdVisible ? 'text' : 'password';
+    $('togglePwdBtn').textContent = state.pwdVisible ? '隐藏' : '显示';
+  });
+
+  // ===== 显示/隐藏卡密 =====
+  $('toggleCardKeyBtn').addEventListener('click', () => {
+    state.cardKeyVisible = !state.cardKeyVisible;
+    const input = $('cardKeyInput');
+    input.type = state.cardKeyVisible ? 'text' : 'password';
+    $('toggleCardKeyBtn').textContent = state.cardKeyVisible ? '隐藏' : '显示';
+  });
+
+  // ===== 记住密码切换 =====
+  let remembered = true;
+  const rememberBox = document.querySelector('.remember-box');
+  rememberBox.parentElement.addEventListener('click', () => {
+    remembered = !remembered;
+    rememberBox.classList.toggle('unchecked', !remembered);
+  });
+
+  // ===== 提交 =====
+  submitBtn.addEventListener('click', async () => {
+    if (state.tab === 'login') {
+      const acc = $('accountInput').value.trim();
+      const pwd = $('passwordInput').value.trim();
+      if (!acc) return showToast('请输入账号');
+      if (!pwd) return showToast('请输入密码');
+      showToast('登录中…');
+      const { data, error } = await sb.auth.signInWithPassword({
+        email: acc,
+        password: pwd,
+      });
+      if (error) {
+        showToast(error.message);
+      } else {
+        showToast('登录成功');
+        localStorage.setItem('qxnet_account', acc);
+      }
+    } else if (state.tab === 'register') {
+      const acc = $('accountInput').value.trim();
+      const pwd = $('passwordInput').value.trim();
+      const card = $('cardKeyInput').value.trim();
+      if (!acc) return showToast('请输入账号');
+      if (pwd.length < 8) return showToast('密码需 8 位及以上');
+      if (!card) return showToast('请输入卡密 / 授权码');
+      const validCards = ['QXNET-001', 'QXNET-002', 'QXNET-003', 'QXNET-MONTH-001', 'QXNET-QUARTER-001', 'QXNET-LIFETIME-001'];
+      if (!validCards.includes(card)) {
+        return showToast('卡密无效');
+      }
+      showToast('注册中…请去邮箱验证');
+      const { data, error } = await sb.auth.signUp({
+        email: acc,
+        password: pwd,
+        options: {
+          data: { card_key: card }
+        }
+      });
+      if (error) {
+        showToast(error.message);
+      } else {
+        showToast('注册成功，请去邮箱验证后登录');
+      }
+    } else {
+      window.location.href = 'https://shop.qmmpay.com/shop/TENXQ';
+    }
+  });
+
+  // ===== Toast =====
+  let toastTimer;
+  function showToast(text) {
+    toastEl.textContent = text;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1800);
+  }
+
+  // ===== 2D 跑酷小游戏 =====
+  const eggBtn = document.getElementById('eggBtn');
+  const gameModal = document.getElementById('gameModal');
+  const gameClose = document.getElementById('gameClose');
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+
+  const game = {
+    running: false,
+    score: 0,
+    distance: 0,
+    speed: 5,
+    gravity: 0.6,
+    jumpPower: -13,
+    player: { x: 60, y: 350, w: 35, h: 50, vy: 0, onGround: true },
+    obstacles: [],
+    frameCount: 0,
+    groundY: 400,
+  };
+
+  function resetGame() {
+    game.running = false;
+    game.score = 0;
+    game.distance = 0;
+    game.speed = 5;
+    game.player.y = game.groundY - game.player.h;
+    game.player.vy = 0;
+    game.player.onGround = true;
+    game.obstacles = [];
+    game.frameCount = 0;
+  }
+
+  function jump() {
+    if (game.player.onGround) {
+      game.player.vy = game.jumpPower;
+      game.player.onGround = false;
+    }
+  }
+
+  function spawnObstacle() {
+    // 随机两种高度的仙人掌
+    const tall = Math.random() > 0.5;
+    const w = tall ? 25 : 20;
+    const h = tall ? 55 : 40;
+    game.obstacles.push({
+      x: canvas.width + 20,
+      y: game.groundY - h,
+      w: w,
+      h: h,
+      type: 'cactus',
+    });
+  }
+
+  function drawPlayer() {
+    const p = game.player;
+    // 身体
+    ctx.fillStyle = '#EF4444';
+    ctx.fillRect(p.x, p.y, p.w, p.h);
+    // 头
+    ctx.fillStyle = '#FCD34D';
+    ctx.beginPath();
+    ctx.arc(p.x + p.w / 2, p.y - 12, 14, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawObstacle(o) {
+    if (o.type === 'cactus') {
+      ctx.fillStyle = '#F59E0B';
+      ctx.fillRect(o.x, o.y, o.w, o.h);
+      ctx.fillRect(o.x - 6, o.y + 10, 6, 15);
+      ctx.fillRect(o.x + o.w, o.y + 15, 6, 12);
+    } else if (o.type === 'block') {
+      ctx.fillStyle = '#EF4444';
+      ctx.fillRect(o.x, o.y, o.w, o.h);
+    } else {
+      ctx.fillStyle = '#A855F7';
+      ctx.fillRect(o.x, o.y, o.w, o.h);
+    }
+  }
+
+  function draw() {
+    // 背景
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#1a1a2e');
+    gradient.addColorStop(1, '#16213e');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 星星
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    for (let i = 0; i < 20; i++) {
+      const sx = (i * 73) % canvas.width;
+      const sy = (i * 37) % 200;
+      ctx.fillRect(sx, sy, 2, 2);
+    }
+
+    // 地面
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, game.groundY);
+    ctx.lineTo(canvas.width, game.groundY);
+    ctx.stroke();
+
+    // 地面装饰线
+    ctx.strokeStyle = 'rgba(71, 85, 105, 0.3)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 10; i++) {
+      const lx = ((i * 60 + game.distance * 0.5) % (canvas.width + 60)) - 30;
+      ctx.beginPath();
+      ctx.moveTo(lx, game.groundY + 8);
+      ctx.lineTo(lx + 20, game.groundY + 8);
+      ctx.stroke();
+    }
+
+    // 玩家：小恐龙
+    const p = game.player;
+    // 尾巴
+    ctx.fillStyle = '#22C55E';
+    ctx.fillRect(p.x - 15, p.y + 15, 15, 8);
+    // 身体
+    ctx.fillStyle = '#22C55E';
+    ctx.fillRect(p.x, p.y + 10, p.w, p.h - 10);
+    // 肚子
+    ctx.fillStyle = '#86EFAC';
+    ctx.fillRect(p.x + 5, p.y + 20, p.w - 10, p.h - 25);
+    // 头
+    ctx.fillStyle = '#22C55E';
+    ctx.beginPath();
+    ctx.arc(p.x + p.w / 2, p.y + 5, 16, 0, Math.PI * 2);
+    ctx.fill();
+    // 眼睛
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(p.x + p.w / 2 + 6, p.y + 2, 3, 0, Math.PI * 2);
+    ctx.fill();
+    // 腿
+    ctx.fillStyle = '#16A34A';
+    ctx.fillRect(p.x + 5, p.y + p.h - 5, 8, 8);
+    ctx.fillRect(p.x + p.w - 13, p.y + p.h - 5, 8, 8);
+
+    // 障碍物
+    game.obstacles.forEach(drawObstacle);
+
+    // 分数
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 20px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`得分: ${Math.floor(game.score)}`, 15, 30);
+    ctx.textAlign = 'right';
+    ctx.fillText(`速度: ${game.speed.toFixed(1)}x`, canvas.width - 15, 30);
+  }
+
+  function update() {
+    game.frameCount++;
+
+    // 玩家物理（待机时也站在地面上）
+    game.player.vy += game.gravity;
+    game.player.y += game.player.vy;
+    if (game.player.y + game.player.h >= game.groundY) {
+      game.player.y = game.groundY - game.player.h;
+      game.player.vy = 0;
+      game.player.onGround = true;
+    }
+
+    if (!game.running) {
+      // 待机画面文字
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.font = 'bold 22px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('点击 / 空格开始', canvas.width / 2, canvas.height / 2);
+      return;
+    }
+
+    // 距离和得分
+    game.distance += game.speed;
+    game.score += game.speed * 0.1;
+
+    // 生成障碍物（固定间隔）
+    if (game.frameCount % 70 === 0) {
+      spawnObstacle();
+    }
+
+    // 障碍物移动
+    game.obstacles.forEach(o => {
+      o.x -= game.speed;
+    });
+    game.obstacles = game.obstacles.filter(o => o.x > -50);
+
+    // 碰撞检测
+    const p = game.player;
+    for (const o of game.obstacles) {
+      if (
+        p.x < o.x + o.w &&
+        p.x + p.w > o.x &&
+        p.y < o.y + o.h &&
+        p.y + p.h > o.y
+      ) {
+        game.running = false;
+        alert(`游戏结束！得分: ${Math.floor(game.score)}`);
+        resetGame();
+        break;
+      }
+    }
+  }
+
+  function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+  }
+
+  // 键盘控制
+  document.addEventListener('keydown', e => {
+    if (e.key === ' ' && gameModal.classList.contains('show')) {
+      e.preventDefault();
+      if (!game.running) {
+        game.running = true;
+        resetGame();
+        game.running = true;
+      } else {
+        jump();
+      }
+    }
+  });
+
+  // 触屏/点击控制
+  canvas.addEventListener('click', () => {
+    if (!game.running) {
+      game.running = true;
+      resetGame();
+      game.running = true;
+    } else {
+      jump();
+    }
+  });
+
+  // 打开/关闭游戏
+  eggBtn.addEventListener('click', () => {
+    gameModal.classList.add('show');
+    resetGame();
+  });
+  gameClose.addEventListener('click', () => {
+    gameModal.classList.remove('show');
+    game.running = false;
+  });
+
+  // 启动循环
+  resetGame();
+  gameLoop();
+</script>
+
+</body>
+</html>

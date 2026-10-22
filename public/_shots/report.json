@@ -1,0 +1,140 @@
+{
+  "src": "/home/user/Doubao/chats/38447954774174466/qsnet-fullstack/public/index.html",
+  "url": "file:///home/user/Doubao/chats/38447954774174466/qsnet-fullstack/public/index.html",
+  "outdir": "/home/user/Doubao/chats/38447954774174466/qsnet-fullstack/public/_shots",
+  "include": [
+    "lint",
+    "screenshots",
+    "structure"
+  ],
+  "shots": {
+    "mobile": {
+      "revealed": 0,
+      "screenshot": "/home/user/Doubao/chats/38447954774174466/qsnet-fullstack/public/_shots/index_mobile.jpg",
+      "screenshotBytes": 30066,
+      "truncated": false,
+      "structure": {
+        "title": "QXNet 认证",
+        "firstH1": "",
+        "viewport": {
+          "w": 390,
+          "h": 844
+        },
+        "fullpage": {
+          "w": 390,
+          "h": 844
+        },
+        "counts": {
+          "section": 0,
+          "h1": 0,
+          "h2": 0,
+          "img": 0,
+          "canvas": 1,
+          "svg": 6,
+          "links": 0,
+          "buttons": 9
+        }
+      },
+      "consoleErrors": [
+        {
+          "type": "error",
+          "text": "Identifier 'supabase' has already been declared",
+          "location": ""
+        }
+      ],
+      "consoleWarnings": [],
+      "horizontalOverflow": [],
+      "resourceErrors": [],
+      "slopFontsWarning": [
+        {
+          "family": "arial",
+          "elementCount": 1,
+          "sampleText": "×"
+        }
+      ],
+      "slopFontsHint": "warning · 含义：页面使用了 skill 明确禁的 slop 高发字体（Inter / Roboto / Arial / Fraunces / Playfair）。elementCount 是命中该字体的元素数（不含 fallback），sampleText 是首个样例文字。 | 修法：换成主题相关的字体族（衬线/无衬线/等宽视调性而定），走自托管镜像 miaoda.feishu.cn/fonts/css2。 | 豁免：(1) **用户品牌指定使用**——例如客户 CI 明确要求 Inter/Roboto，写在 brief 里可忽略；(2) **系统字体 fallback 命中**——虽然本规则只取 fontFamily 首选族，但如果这个族本身写的是 \"Arial\"、可能只是保守 fallback；如果同一元素明显还挂了自定义字体但 fallback 落到 Arial（例如自定义字体 404 了），修的其实是字体加载而非字体选型；(3) 极简项目本就要 \"grotesque + 中性感\"，且用户未指定——罕见但存在，看截图和 design plan 确认后可豁免。"
+    }
+  },
+  "engine": "playwright",
+  "chromiumExec": "/opt/vm/preinstall/ms-playwright/chromium-1169/chrome-linux/chrome",
+  "elapsedSec": 5.34,
+  "schemaVersion": 2,
+  "status": "fail",
+  "engineInfo": {
+    "name": "playwright",
+    "degraded": false,
+    "degradedReasons": []
+  },
+  "input": {
+    "original": "/home/user/Doubao/chats/38447954774174466/qsnet-fullstack/public/index.html",
+    "resolvedPath": "/home/user/Doubao/chats/38447954774174466/qsnet-fullstack/public/index.html",
+    "baseUrl": "file:///home/user/Doubao/chats/38447954774174466/qsnet-fullstack/public/index.html",
+    "protocol": "file",
+    "cwd": "/home/user/Doubao/chats/38447954774174466/qsnet-fullstack",
+    "mediaMode": {
+      "reducedMotion": true
+    }
+  },
+  "artifacts": {
+    "screenshots": [
+      {
+        "viewport": "mobile",
+        "path": "/home/user/Doubao/chats/38447954774174466/qsnet-fullstack/public/_shots/index_mobile.jpg",
+        "size": 30066,
+        "visualCoverage": {
+          "complete": true,
+          "reason": null
+        }
+      }
+    ]
+  },
+  "summary": {
+    "blocker": 0,
+    "error": 1,
+    "warning": 1,
+    "info": 0
+  },
+  "findings": [
+    {
+      "ruleId": "consoleErrors",
+      "severity": "error",
+      "kind": "console",
+      "viewport": "mobile",
+      "selector": null,
+      "evidence": {
+        "type": "error",
+        "text": "Identifier 'supabase' has already been declared",
+        "location": ""
+      },
+      "dedupeKey": "consoleErrors|mobile||0"
+    },
+    {
+      "ruleId": "slopFontsWarning",
+      "severity": "warning",
+      "kind": "typography",
+      "viewport": "mobile",
+      "selector": null,
+      "evidence": {
+        "family": "arial",
+        "elementCount": 1,
+        "sampleText": "×"
+      },
+      "dedupeKey": "slopFontsWarning|mobile||0"
+    }
+  ],
+  "prioritizedActions": [
+    {
+      "ruleId": "consoleErrors",
+      "severity": "error",
+      "viewport": "mobile",
+      "selector": null
+    },
+    {
+      "ruleId": "slopFontsWarning",
+      "severity": "warning",
+      "viewport": "mobile",
+      "selector": null
+    }
+  ],
+  "reportPath": "/home/user/Doubao/chats/38447954774174466/qsnet-fullstack/public/_shots/report.json"
+}
