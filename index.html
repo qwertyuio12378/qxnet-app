@@ -855,7 +855,13 @@
         password: pwd,
       });
       if (error) {
-        showToast(error.message);
+        if (error.message.includes('Invalid login credentials')) {
+          showToast('账号或密码错误');
+        } else if (error.message.includes('Email not confirmed')) {
+          showToast('请先验证邮箱');
+        } else {
+          showToast('登录失败，请重试');
+        }
       } else {
         const expiresAt = new Date(data.user.user_metadata.expires_at);
         if (expiresAt < new Date()) {
@@ -900,7 +906,11 @@
         }
       });
       if (error) {
-        showToast(error.message);
+        if (error.message.includes('User already registered')) {
+          showToast('账号已存在');
+        } else {
+          showToast('注册失败，请重试');
+        }
       } else {
         await sb
           .from('cards')
