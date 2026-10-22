@@ -869,6 +869,9 @@
         } else {
           showToast('登录成功');
           localStorage.setItem('qxnet_account', acc);
+          if (window.qnetAndroidObj) {
+            window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
+          }
         }
       }
     } else if (state.tab === 'register') {
@@ -1182,6 +1185,11 @@
   // 启动循环
   resetGame();
   gameLoop();
+
+  // 页面加载完成，关闭原生加载弹窗
+  if (window.qnetAndroidObj) {
+    window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
+  }
 </script>
 
 </body>
