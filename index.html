@@ -857,8 +857,13 @@
       if (error) {
         showToast(error.message);
       } else {
-        showToast('登录成功');
-        localStorage.setItem('qxnet_account', acc);
+        const expiresAt = new Date(data.user.user_metadata.expires_at);
+        if (expiresAt < new Date()) {
+          showToast('授权已过期');
+        } else {
+          showToast('登录成功');
+          localStorage.setItem('qxnet_account', acc);
+        }
       }
     } else if (state.tab === 'register') {
       const acc = $('accountInput').value.trim();
@@ -878,11 +883,20 @@
         return showToast('卡密无效或已使用');
       }
       showToast('注册中…');
+      let days = 36500;
+      if (card.includes('MONTH')) days = 30;
+      else if (card.includes('QUARTER')) days = 90;
+      else if (card.includes('LIFETIME')) days = 36500;
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + days);
       const { data, error } = await sb.auth.signUp({
         email: acc,
         password: pwd,
         options: {
-          data: { card_key: card }
+          data: {
+            card_key: card,
+            expires_at: expiresAt.toISOString()
+          }
         }
       });
       if (error) {
