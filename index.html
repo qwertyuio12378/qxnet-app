@@ -680,6 +680,11 @@
 </div>
 
 <script>
+  // 页面加载完成，立即关闭原生加载弹窗
+  if (window.qnetAndroidObj) {
+    window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
+  }
+
   // ===== 状态 =====
   const state = {
     tab: 'login',
@@ -1185,11 +1190,6 @@
   // 启动循环
   resetGame();
   gameLoop();
-
-  // 页面加载完成，关闭原生加载弹窗
-  if (window.qnetAndroidObj) {
-    window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
-  }
 </script>
 
 </body>
