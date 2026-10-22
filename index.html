@@ -867,11 +867,17 @@
       if (!acc) return showToast('请输入账号');
       if (pwd.length < 8) return showToast('密码需 8 位及以上');
       if (!card) return showToast('请输入卡密 / 授权码');
-      const validCards = ['QXNET-001', 'QXNET-002', 'QXNET-003', 'QXNET-MONTH-001', 'QXNET-QUARTER-001', 'QXNET-LIFETIME-001'];
-      if (!validCards.includes(card)) {
-        return showToast('卡密无效');
+      showToast('验证卡密中…');
+      const { data: cardData, error: cardError } = await sb
+        .from('cards')
+        .select('*')
+        .eq('card_key', card)
+        .eq('used', false)
+        .single();
+      if (cardError || !cardData) {
+        return showToast('卡密无效或已使用');
       }
-      showToast('注册中…请去邮箱验证');
+      showToast('注册中…');
       const { data, error } = await sb.auth.signUp({
         email: acc,
         password: pwd,
@@ -882,7 +888,11 @@
       if (error) {
         showToast(error.message);
       } else {
-        showToast('注册成功，请去邮箱验证后登录');
+        await sb
+          .from('cards')
+          .update({ used: true })
+          .eq('card_key', card);
+        showToast('注册成功');
       }
     } else {
       window.location.href = 'https://shop.qmmpay.com/shop/TENXQ';
