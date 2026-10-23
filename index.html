@@ -803,9 +803,9 @@
       }
       showToast('注册中…');
       let days = 36500;
-      if (card.includes('MONTH')) days = 30;
-      else if (card.includes('QUARTER')) days = 90;
-      else if (card.includes('LIFETIME')) days = 36500;
+      if (cardData.type === 'month') days = 30;
+      else if (cardData.type === 'quarter') days = 90;
+      else if (cardData.type === 'lifetime') days = 36500;
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + days);
       let email = acc;
