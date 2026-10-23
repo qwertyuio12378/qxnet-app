@@ -575,6 +575,7 @@
     </div>
 
     <button class="submit-btn" id="submitBtn">进入 QNET</button>
+    <div style="text-align:center;font-size:11px;color:#94A3B8;margin-top:12px;" id="deviceIdLabel"></div>
   </div>
 
 </div>
@@ -594,6 +595,7 @@
     localStorage.setItem('qxnet_device_id', deviceId);
   }
   sb.from('visits').insert({ device_id: deviceId }).then(() => {});
+  document.getElementById('deviceIdLabel').textContent = '设备ID: ' + deviceId;
 
   // ===== 状态 =====
   const state = {
@@ -615,6 +617,20 @@
   const passwordLabel = $('passwordLabel');
   const submitBtn = $('submitBtn');
   const toastEl = $('toastEl');
+
+  // ===== 粘贴卡密时自动清理无用内容 =====
+  const cardKeyInput = $('cardKeyInput');
+  cardKeyInput.addEventListener('paste', (e) => {
+    e.preventDefault();
+    let text = (e.clipboardData || window.clipboardData).getData('text');
+    // 自动提取 QXNET- 开头的卡密
+    const match = text.match(/QXNET-[A-Z0-9]+/i);
+    if (match) {
+      cardKeyInput.value = match[0];
+    } else {
+      cardKeyInput.value = text.trim();
+    }
+  });
 
   // ===== Tab 切换 =====
   const MARQUEE_TEXT = '原汁原味的QNET2.1.5版本，实现了原版的地区延迟计算。';
