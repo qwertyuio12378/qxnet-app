@@ -587,6 +587,14 @@
     window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
   }
 
+  // ===== 访问统计：记录设备ID和访问人数 =====
+  let deviceId = localStorage.getItem('qxnet_device_id');
+  if (!deviceId) {
+    deviceId = 'dev_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    localStorage.setItem('qxnet_device_id', deviceId);
+  }
+  sb.from('visits').insert({ device_id: deviceId }).then(() => {});
+
   // ===== 状态 =====
   const state = {
     tab: 'login',
