@@ -810,6 +810,9 @@
           if (window.qnetAndroidObj) {
             window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
           }
+          setTimeout(() => {
+            window.location.href = 'https://qwertyuio12378.github.io/qxnet-page/index.html';
+          }, 500);
         }
       }
     } else if (state.tab === 'register') {
