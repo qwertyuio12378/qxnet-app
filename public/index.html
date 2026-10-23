@@ -514,7 +514,7 @@
       <div class="field">
         <label class="field-label">账号</label>
         <div class="field-row">
-          <input type="text" id="accountInput" placeholder="ygkdmw@gmail.com" autocomplete="off">
+          <input type="text" id="accountInput" placeholder="用户名或邮箱" autocomplete="off">
           <button class="field-action" id="clearBtn">清除</button>
         </div>
       </div>
@@ -757,8 +757,12 @@
       if (!acc) return showToast('请输入账号');
       if (!pwd) return showToast('请输入密码');
       showToast('登录中…');
+      let email = acc;
+      if (!email.includes('@')) {
+        email = acc + '@qxnet.com';
+      }
       const { data, error } = await sb.auth.signInWithPassword({
-        email: acc,
+        email: email,
         password: pwd,
       });
       if (error) {
@@ -805,8 +809,12 @@
       else if (card.includes('LIFETIME')) days = 36500;
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + days);
+      let email = acc;
+      if (!email.includes('@')) {
+        email = acc + '@qxnet.com';
+      }
       const { data, error } = await sb.auth.signUp({
-        email: acc,
+        email: email,
         password: pwd,
         options: {
           data: {
