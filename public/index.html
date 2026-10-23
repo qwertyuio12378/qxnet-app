@@ -656,7 +656,6 @@
     tabs.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
     heroBadge.textContent = cfg.badge;
     heroTitle.textContent = cfg.title;
-    setMarquee(cfg.tip);
     submitBtn.textContent = cfg.submit;
 
     accountFields.classList.toggle('hidden', !cfg.showAccount);
