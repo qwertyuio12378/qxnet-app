@@ -630,6 +630,10 @@
     } else {
       cardKeyInput.value = text.trim();
     }
+    // 光标移到最后面
+    setTimeout(() => {
+      cardKeyInput.setSelectionRange(cardKeyInput.value.length, cardKeyInput.value.length);
+    }, 0);
   });
 
   // ===== Tab 切换 =====
