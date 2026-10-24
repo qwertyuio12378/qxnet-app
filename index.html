@@ -441,6 +441,46 @@
     opacity: 1;
     transform: translateX(-50%) translateY(0);
   }
+
+  /* ===== 加载弹窗 ===== */
+  .loading-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .loading-modal.show {
+    display: flex;
+  }
+  .loading-box {
+    background: #fff;
+    border-radius: 16px;
+    padding: 30px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+  }
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #E2E8F0;
+    border-top-color: #3B82F6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  .loading-text {
+    font-size: 15px;
+    color: #64748B;
+  }
 </style>
 </head>
 <body>
@@ -581,6 +621,14 @@
 </div>
 
 <div class="toast" id="toastEl"></div>
+
+<!-- 加载弹窗 -->
+<div class="loading-modal" id="loadingModal">
+  <div class="loading-box">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">加载中…</div>
+  </div>
+</div>
 
 <script>
   // 页面加载完成，立即关闭原生加载弹窗
@@ -785,6 +833,16 @@
     if (savedPwd) $('passwordInput').value = savedPwd;
   }
 
+  // ===== 加载弹窗 =====
+  const loadingModal = $('loadingModal');
+  function showLoading(text = '加载中…') {
+    loadingModal.querySelector('.loading-text').textContent = text;
+    loadingModal.classList.add('show');
+  }
+  function hideLoading() {
+    loadingModal.classList.remove('show');
+  }
+
   // ===== 提交 =====
   submitBtn.addEventListener('click', async () => {
     if (state.tab === 'login') {
@@ -792,7 +850,7 @@
       const pwd = $('passwordInput').value.trim();
       if (!acc) return showToast('请输入账号');
       if (!pwd) return showToast('请输入密码');
-      showToast('登录中…');
+      showLoading('登录中…');
       let email = acc;
       if (!email.includes('@')) {
         email = acc + '@qxnet.com';
@@ -802,6 +860,7 @@
         password: pwd,
       });
       if (error) {
+        hideLoading();
         if (error.message.includes('Invalid login credentials')) {
           showToast('账号或密码错误');
         } else if (error.message.includes('Email not confirmed')) {
@@ -812,8 +871,10 @@
       } else {
         const expiresAt = new Date(data.user.user_metadata.expires_at);
         if (expiresAt < new Date()) {
+          hideLoading();
           showToast('授权已过期');
         } else {
+          hideLoading();
           showToast('登录成功');
           localStorage.setItem('qxnet_account', acc);
           // 记住密码
@@ -838,7 +899,7 @@
       if (!acc) return showToast('请输入账号');
       if (pwd.length < 8) return showToast('密码需 8 位及以上');
       if (!card) return showToast('请输入卡密 / 授权码');
-      showToast('验证卡密中…');
+      showLoading('验证卡密中…');
       const { data: cardData, error: cardError } = await sb
         .from('cards')
         .select('*')
@@ -846,9 +907,10 @@
         .eq('used', false)
         .single();
       if (cardError || !cardData) {
+        hideLoading();
         return showToast('卡密无效或已使用');
       }
-      showToast('注册中…');
+      showLoading('注册中…');
       let days = 36500;
       if (cardData.type === 'month') days = 30;
       else if (cardData.type === 'quarter') days = 90;
@@ -870,6 +932,7 @@
         }
       });
       if (error) {
+        hideLoading();
         if (error.message.includes('User already registered')) {
           showToast('账号已存在');
         } else {
@@ -880,6 +943,7 @@
           .from('cards')
           .update({ used: true })
           .eq('card_key', card);
+        hideLoading();
         showToast('注册成功');
       }
     } else {
