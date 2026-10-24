@@ -912,7 +912,8 @@
       }
       showLoading('注册中…');
       let days = 36500;
-      if (cardData.type === 'week') days = 7;
+      if (cardData.type === 'day') days = 1;
+      else if (cardData.type === 'week') days = 7;
       else if (cardData.type === 'month') days = 30;
       else if (cardData.type === 'quarter') days = 90;
       else if (cardData.type === 'lifetime') days = 36500;
