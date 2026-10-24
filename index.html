@@ -585,7 +585,7 @@
 <script>
   // 页面加载完成，立即关闭原生加载弹窗
   if (window.qnetAndroidObj) {
-    window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
+    window.qnetAndroidObj.callAndroidApi(JSON.stringify({api: 'close_loading'}));
   }
 
   // ===== 访问统计：记录设备ID和访问人数 =====
@@ -808,7 +808,7 @@
           showToast('登录成功');
           localStorage.setItem('qxnet_account', acc);
           if (window.qnetAndroidObj) {
-            window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
+            window.qnetAndroidObj.callAndroidApi(JSON.stringify({api: 'close_loading'}));
           }
           setTimeout(() => {
             window.location.href = 'https://qwertyuio12378.github.io/qxnet-page/index.html';
