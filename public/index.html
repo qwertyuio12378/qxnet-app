@@ -769,12 +769,21 @@
   });
 
   // ===== 记住密码切换 =====
-  let remembered = true;
+  let remembered = localStorage.getItem('qxnet_remember') === '1';
   const rememberBox = document.querySelector('.remember-box');
+  rememberBox.classList.toggle('unchecked', !remembered);
   rememberBox.parentElement.addEventListener('click', () => {
     remembered = !remembered;
     rememberBox.classList.toggle('unchecked', !remembered);
   });
+
+  // 页面加载时自动填充记住的账号密码
+  if (remembered) {
+    const savedAcc = localStorage.getItem('qxnet_saved_account');
+    const savedPwd = localStorage.getItem('qxnet_saved_password');
+    if (savedAcc) $('accountInput').value = savedAcc;
+    if (savedPwd) $('passwordInput').value = savedPwd;
+  }
 
   // ===== 提交 =====
   submitBtn.addEventListener('click', async () => {
@@ -807,6 +816,16 @@
         } else {
           showToast('登录成功');
           localStorage.setItem('qxnet_account', acc);
+          // 记住密码
+          if (remembered) {
+            localStorage.setItem('qxnet_remember', '1');
+            localStorage.setItem('qxnet_saved_account', acc);
+            localStorage.setItem('qxnet_saved_password', pwd);
+          } else {
+            localStorage.removeItem('qxnet_remember');
+            localStorage.removeItem('qxnet_saved_account');
+            localStorage.removeItem('qxnet_saved_password');
+          }
           if (window.qnetAndroidObj) {
             window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
           }
