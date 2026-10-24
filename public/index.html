@@ -769,7 +769,7 @@
   });
 
   // ===== 记住密码切换 =====
-  let remembered = localStorage.getItem('qxnet_remember') === '1';
+  let remembered = localStorage.getItem('qxnet_remember') !== '0';
   const rememberBox = document.querySelector('.remember-box');
   rememberBox.classList.toggle('unchecked', !remembered);
   rememberBox.parentElement.addEventListener('click', () => {

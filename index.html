@@ -585,7 +585,7 @@
 <script>
   // 页面加载完成，立即关闭原生加载弹窗
   if (window.qnetAndroidObj) {
-    window.qnetAndroidObj.callAndroidApi(JSON.stringify({api: 'close_loading'}));
+    window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
   }
 
   // ===== 访问统计：记录设备ID和访问人数 =====
@@ -769,7 +769,7 @@
   });
 
   // ===== 记住密码切换 =====
-  let remembered = localStorage.getItem('qxnet_remember') === '1';
+  let remembered = localStorage.getItem('qxnet_remember') !== '0';
   const rememberBox = document.querySelector('.remember-box');
   rememberBox.classList.toggle('unchecked', !remembered);
   rememberBox.parentElement.addEventListener('click', () => {
@@ -827,11 +827,8 @@
             localStorage.removeItem('qxnet_saved_password');
           }
           if (window.qnetAndroidObj) {
-            window.qnetAndroidObj.callAndroidApi(JSON.stringify({api: 'close_loading'}));
+            window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
           }
-          setTimeout(() => {
-            window.location.href = 'https://qwertyuio12378.github.io/qxnet-page/index.html';
-          }, 500);
         }
       }
     } else if (state.tab === 'register') {
