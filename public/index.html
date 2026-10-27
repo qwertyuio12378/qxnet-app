@@ -551,19 +551,37 @@
 
     <!-- 登录 / 注册 共用字段 -->
     <div id="accountFields">
-      <div class="field">
-        <label class="field-label">邮箱</label>
-        <div class="field-row">
-          <input type="text" id="accountInput" placeholder="请输入邮箱" autocomplete="off">
-          <button class="field-action" id="clearBtn">清除</button>
+      <!-- 登录方式切换（仅登录页显示） -->
+      <div class="field hidden" id="loginTypeField">
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button type="button" id="pwdLoginBtn" style="flex:1;padding:8px;border-radius:8px;border:1px solid #E2E8F0;background:#fff;cursor:pointer;font-size:14px;">密码登录</button>
+          <button type="button" id="otpLoginBtn" style="flex:1;padding:8px;border-radius:8px;border:1px solid #3B82F6;background:#EFF6FF;color:#3B82F6;cursor:pointer;font-size:14px;font-weight:600;">验证码登录</button>
         </div>
       </div>
 
       <div class="field">
-        <label class="field-label" id="passwordLabel">验证码</label>
+        <label class="field-label" id="accountLabel">账号</label>
         <div class="field-row">
-          <input type="text" id="passwordInput" placeholder="请输入6位验证码" maxlength="6" autocomplete="off">
-          <button class="field-action" id="togglePwdBtn" style="white-space:nowrap;">获取验证码</button>
+          <input type="text" id="accountInput" placeholder="用户名或邮箱" autocomplete="off">
+          <button class="field-action" id="clearBtn">清除</button>
+        </div>
+      </div>
+
+      <!-- 密码输入框（密码登录/注册时显示） -->
+      <div class="field" id="passwordField">
+        <label class="field-label" id="passwordLabel">密码</label>
+        <div class="field-row">
+          <input type="password" id="passwordInput" placeholder="请输入密码" autocomplete="off">
+          <button class="field-action" id="togglePwdBtn">显示</button>
+        </div>
+      </div>
+
+      <!-- 验证码输入框（验证码登录时显示） -->
+      <div class="field hidden" id="otpField">
+        <label class="field-label">验证码</label>
+        <div class="field-row">
+          <input type="text" id="otpInput" placeholder="请输入6位验证码" maxlength="6" autocomplete="off">
+          <button class="field-action" id="getOtpBtn" style="white-space:nowrap;">获取验证码</button>
         </div>
       </div>
 
@@ -730,8 +748,29 @@
     accountFields.classList.toggle('hidden', !cfg.showAccount);
     messagePanel.classList.toggle('hidden', cfg.showAccount);
     cardKeyField.classList.toggle('hidden', !cfg.showCardKey);
-    rememberRow.classList.toggle('hidden', !cfg.showRemember);
-    passwordLabel.textContent = tab === 'register' ? '密码' : '密码';
+
+    // 控制登录方式切换和输入框显示
+    if (tab === 'login') {
+      $('loginTypeField').classList.remove('hidden');
+      // 根据当前登录方式显示对应的输入框
+      if (state.loginType === 'pwd') {
+        $('passwordField').classList.remove('hidden');
+        $('otpField').classList.add('hidden');
+        $('accountLabel').textContent = '账号';
+        $('accountInput').placeholder = '用户名或邮箱';
+      } else {
+        $('passwordField').classList.add('hidden');
+        $('otpField').classList.remove('hidden');
+        $('accountLabel').textContent = '邮箱';
+        $('accountInput').placeholder = '请输入邮箱';
+      }
+    } else if (tab === 'register') {
+      $('loginTypeField').classList.add('hidden');
+      $('passwordField').classList.remove('hidden');
+      $('otpField').classList.add('hidden');
+      $('accountLabel').textContent = '邮箱';
+      $('accountInput').placeholder = '请输入邮箱';
+    }
 
     playDropAnimation();
   }
@@ -793,9 +832,42 @@
     showToast('已清除');
   });
 
+  // ===== 登录方式切换 =====
+  state.loginType = 'otp'; // 默认验证码登录
+  const pwdLoginBtn = $('pwdLoginBtn');
+  const otpLoginBtn = $('otpLoginBtn');
+
+  pwdLoginBtn.addEventListener('click', () => {
+    state.loginType = 'pwd';
+    pwdLoginBtn.style.background = '#EFF6FF';
+    pwdLoginBtn.style.color = '#3B82F6';
+    pwdLoginBtn.style.fontWeight = '600';
+    otpLoginBtn.style.background = '#fff';
+    otpLoginBtn.style.color = '#0F172A';
+    otpLoginBtn.style.fontWeight = '400';
+    $('passwordField').classList.remove('hidden');
+    $('otpField').classList.add('hidden');
+    $('accountLabel').textContent = '账号';
+    $('accountInput').placeholder = '用户名或邮箱';
+  });
+
+  otpLoginBtn.addEventListener('click', () => {
+    state.loginType = 'otp';
+    otpLoginBtn.style.background = '#EFF6FF';
+    otpLoginBtn.style.color = '#3B82F6';
+    otpLoginBtn.style.fontWeight = '600';
+    pwdLoginBtn.style.background = '#fff';
+    pwdLoginBtn.style.color = '#0F172A';
+    pwdLoginBtn.style.fontWeight = '400';
+    $('passwordField').classList.add('hidden');
+    $('otpField').classList.remove('hidden');
+    $('accountLabel').textContent = '邮箱';
+    $('accountInput').placeholder = '请输入邮箱';
+  });
+
   // ===== 获取验证码 =====
   let cooldown = 0;
-  $('togglePwdBtn').addEventListener('click', async () => {
+  $('getOtpBtn').addEventListener('click', async () => {
     if (cooldown > 0) return;
     const email = $('accountInput').value.trim();
     if (!email || !email.includes('@')) return showToast('请输入正确的邮箱');
@@ -807,7 +879,7 @@
     } else {
       showToast('验证码已发送');
       cooldown = 60;
-      const btn = $('togglePwdBtn');
+      const btn = $('getOtpBtn');
       btn.textContent = `${cooldown}秒后重发`;
       const timer = setInterval(() => {
         cooldown--;
@@ -819,6 +891,14 @@
         }
       }, 1000);
     }
+  });
+
+  // ===== 显示/隐藏密码 =====
+  $('togglePwdBtn').addEventListener('click', () => {
+    state.pwdVisible = !state.pwdVisible;
+    const input = $('passwordInput');
+    input.type = state.pwdVisible ? 'text' : 'password';
+    $('togglePwdBtn').textContent = state.pwdVisible ? '隐藏' : '显示';
   });
 
   // ===== 显示/隐藏卡密 =====
@@ -841,36 +921,74 @@
 
   // ===== 提交 =====
   submitBtn.addEventListener('click', async () => {
-    const email = $('accountInput').value.trim();
-    const token = $('passwordInput').value.trim();
-    if (!email || !email.includes('@')) return showToast('请输入正确的邮箱');
-    if (!token || token.length !== 6) return showToast('请输入6位验证码');
+    const acc = $('accountInput').value.trim();
 
     if (state.tab === 'login') {
-      showLoading('登录中…');
-      const { data, error } = await sb.auth.verifyOtp({
-        email: email,
-        token: token,
-        type: 'email',
-      });
-      if (error) {
-        hideLoading();
-        showToast('验证码错误或已过期');
-      } else {
-        const expiresAt = data.user.user_metadata?.expires_at ? new Date(data.user.user_metadata.expires_at) : null;
-        if (expiresAt && expiresAt < new Date()) {
+      if (!acc) return showToast('请输入账号');
+
+      if (state.loginType === 'pwd') {
+        // 密码登录
+        const pwd = $('passwordInput').value.trim();
+        if (!pwd) return showToast('请输入密码');
+        showLoading('登录中…');
+        let email = acc;
+        if (!email.includes('@')) email = acc + '@qxnet.com';
+        const { data, error } = await sb.auth.signInWithPassword({
+          email: email,
+          password: pwd,
+        });
+        if (error) {
           hideLoading();
-          showToast('授权已过期');
+          if (error.message.includes('Invalid login credentials')) showToast('账号或密码错误');
+          else if (error.message.includes('Email not confirmed')) showToast('请先验证邮箱');
+          else showToast('登录失败，请重试');
         } else {
+          const expiresAt = data.user.user_metadata?.expires_at ? new Date(data.user.user_metadata.expires_at) : null;
+          if (expiresAt && expiresAt < new Date()) {
+            hideLoading();
+            showToast('授权已过期');
+          } else {
+            hideLoading();
+            showToast('登录成功');
+            if (window.qnetAndroidObj) {
+              window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
+            }
+          }
+        }
+      } else {
+        // 验证码登录
+        const token = $('otpInput').value.trim();
+        if (!acc.includes('@')) return showToast('验证码登录请输入邮箱');
+        if (!token || token.length !== 6) return showToast('请输入6位验证码');
+        showLoading('登录中…');
+        const { data, error } = await sb.auth.verifyOtp({
+          email: acc,
+          token: token,
+          type: 'email',
+        });
+        if (error) {
           hideLoading();
-          showToast('登录成功');
-          if (window.qnetAndroidObj) {
-            window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
+          showToast('验证码错误或已过期');
+        } else {
+          const expiresAt = data.user.user_metadata?.expires_at ? new Date(data.user.user_metadata.expires_at) : null;
+          if (expiresAt && expiresAt < new Date()) {
+            hideLoading();
+            showToast('授权已过期');
+          } else {
+            hideLoading();
+            showToast('登录成功');
+            if (window.qnetAndroidObj) {
+              window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
+            }
           }
         }
       }
     } else if (state.tab === 'register') {
+      // 注册：邮箱 + 密码 + 卡密
+      const pwd = $('passwordInput').value.trim();
       const card = $('cardKeyInput').value.trim();
+      if (!acc || !acc.includes('@')) return showToast('请输入正确的邮箱');
+      if (pwd.length < 8) return showToast('密码需 8 位及以上');
       if (!card) return showToast('请输入卡密 / 授权码');
       showLoading('验证卡密中…');
       const { data: cardData, error: cardError } = await sb
@@ -892,12 +1010,10 @@
       else if (cardData.type === 'lifetime') days = 36500;
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + days);
-      const { data, error } = await sb.auth.verifyOtp({
-        email: email,
-        token: token,
-        type: 'email',
+      const { data, error } = await sb.auth.signUp({
+        email: acc,
+        password: pwd,
         options: {
-          shouldCreateUser: true,
           data: {
             card_key: card,
             expires_at: expiresAt.toISOString()
@@ -906,11 +1022,8 @@
       });
       if (error) {
         hideLoading();
-        if (error.message.includes('User already registered')) {
-          showToast('该邮箱已注册');
-        } else {
-          showToast('注册失败，请重试');
-        }
+        if (error.message.includes('User already registered')) showToast('该邮箱已注册');
+        else showToast('注册失败，请重试');
       } else {
         await sb
           .from('cards')
