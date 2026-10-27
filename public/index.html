@@ -803,6 +803,9 @@
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 
+  // 初始化显示登录页
+  switchTab('login');
+
   // ===== 套餐选择 =====
   const planItems = document.querySelectorAll('.plan-item');
   const planStyles = {
