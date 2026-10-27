@@ -840,7 +840,8 @@
   const pwdLoginBtn = $('pwdLoginBtn');
   const otpLoginBtn = $('otpLoginBtn');
 
-  pwdLoginBtn.addEventListener('click', () => {
+  pwdLoginBtn.addEventListener('click', (e) => {
+    e.preventDefault();
     state.loginType = 'pwd';
     pwdLoginBtn.style.background = '#EFF6FF';
     pwdLoginBtn.style.color = '#3B82F6';
@@ -854,7 +855,8 @@
     $('accountInput').placeholder = '用户名或邮箱';
   });
 
-  otpLoginBtn.addEventListener('click', () => {
+  otpLoginBtn.addEventListener('click', (e) => {
+    e.preventDefault();
     state.loginType = 'otp';
     otpLoginBtn.style.background = '#EFF6FF';
     otpLoginBtn.style.color = '#3B82F6';
