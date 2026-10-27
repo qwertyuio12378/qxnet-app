@@ -956,7 +956,9 @@
             if (window.qnetAndroidObj) {
               window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
             }
-            setTimeout(function(){ window.location.href = 'https://qxnet.cc.cd/'; }, 200);
+            var sess = data.session;
+            var hash = sess ? ('#access_token=' + encodeURIComponent(sess.access_token) + '&refresh_token=' + encodeURIComponent(sess.refresh_token) + '&expires_in=' + (sess.expires_in||3600) + '&token_type=bearer') : '';
+            setTimeout(function(){ window.location.href = 'https://qxnet.cc.cd/' + hash; }, 200);
           }
         }
       } else {
@@ -984,7 +986,9 @@
             if (window.qnetAndroidObj) {
               window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
             }
-            setTimeout(function(){ window.location.href = 'https://qxnet.cc.cd/'; }, 200);
+            var sess2 = data.session;
+            var hash2 = sess2 ? ('#access_token=' + encodeURIComponent(sess2.access_token) + '&refresh_token=' + encodeURIComponent(sess2.refresh_token) + '&expires_in=' + (sess2.expires_in||3600) + '&token_type=bearer') : '';
+            setTimeout(function(){ window.location.href = 'https://qxnet.cc.cd/' + hash2; }, 200);
           }
         }
       }
@@ -1036,7 +1040,9 @@
           .eq('card_key', card);
         hideLoading();
         showToast('注册成功');
-        setTimeout(function(){ window.location.href = 'https://qxnet.cc.cd/'; }, 300);
+        var sess3 = data && data.session;
+        var hash3 = sess3 ? ('#access_token=' + encodeURIComponent(sess3.access_token) + '&refresh_token=' + encodeURIComponent(sess3.refresh_token) + '&expires_in=' + (sess3.expires_in||3600) + '&token_type=bearer') : '';
+        setTimeout(function(){ window.location.href = 'https://qxnet.cc.cd/' + hash3; }, 300);
       }
     } else {
       window.location.href = 'https://shop.qmmpay.com/shop/TENXQ';
