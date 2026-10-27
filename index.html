@@ -552,18 +552,18 @@
     <!-- 登录 / 注册 共用字段 -->
     <div id="accountFields">
       <div class="field">
-        <label class="field-label">账号</label>
+        <label class="field-label">邮箱</label>
         <div class="field-row">
-          <input type="text" id="accountInput" placeholder="用户名或邮箱" autocomplete="off">
+          <input type="text" id="accountInput" placeholder="请输入邮箱" autocomplete="off">
           <button class="field-action" id="clearBtn">清除</button>
         </div>
       </div>
 
       <div class="field">
-        <label class="field-label" id="passwordLabel">密码</label>
+        <label class="field-label" id="passwordLabel">验证码</label>
         <div class="field-row">
-          <input type="password" id="passwordInput" placeholder="请输入密码" autocomplete="off">
-          <button class="field-action" id="togglePwdBtn">显示</button>
+          <input type="text" id="passwordInput" placeholder="请输入6位验证码" maxlength="6" autocomplete="off">
+          <button class="field-action" id="togglePwdBtn" style="white-space:nowrap;">获取验证码</button>
         </div>
       </div>
 
@@ -574,13 +574,6 @@
           <input type="password" id="cardKeyInput" placeholder="请输入卡密或授权码" autocomplete="off">
           <button class="field-action" id="toggleCardKeyBtn">显示</button>
         </div>
-      </div>
-
-      <div class="remember" id="rememberRow">
-        <div class="remember-box">
-          <svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7"></polyline></svg>
-        </div>
-        <span class="remember-text">记住密码，下次自动填入</span>
       </div>
     </div>
 
@@ -800,12 +793,32 @@
     showToast('已清除');
   });
 
-  // ===== 显示/隐藏密码 =====
-  $('togglePwdBtn').addEventListener('click', () => {
-    state.pwdVisible = !state.pwdVisible;
-    const input = $('passwordInput');
-    input.type = state.pwdVisible ? 'text' : 'password';
-    $('togglePwdBtn').textContent = state.pwdVisible ? '隐藏' : '显示';
+  // ===== 获取验证码 =====
+  let cooldown = 0;
+  $('togglePwdBtn').addEventListener('click', async () => {
+    if (cooldown > 0) return;
+    const email = $('accountInput').value.trim();
+    if (!email || !email.includes('@')) return showToast('请输入正确的邮箱');
+    showLoading('发送验证码中…');
+    const { error } = await sb.auth.signInWithOtp({ email });
+    hideLoading();
+    if (error) {
+      showToast('发送失败，请重试');
+    } else {
+      showToast('验证码已发送');
+      cooldown = 60;
+      const btn = $('togglePwdBtn');
+      btn.textContent = `${cooldown}秒后重发`;
+      const timer = setInterval(() => {
+        cooldown--;
+        if (cooldown <= 0) {
+          btn.textContent = '获取验证码';
+          clearInterval(timer);
+        } else {
+          btn.textContent = `${cooldown}秒后重发`;
+        }
+      }, 1000);
+    }
   });
 
   // ===== 显示/隐藏卡密 =====
@@ -815,23 +828,6 @@
     input.type = state.cardKeyVisible ? 'text' : 'password';
     $('toggleCardKeyBtn').textContent = state.cardKeyVisible ? '隐藏' : '显示';
   });
-
-  // ===== 记住密码切换 =====
-  let remembered = localStorage.getItem('qxnet_remember') !== '0';
-  const rememberBox = document.querySelector('.remember-box');
-  rememberBox.classList.toggle('unchecked', !remembered);
-  rememberBox.parentElement.addEventListener('click', () => {
-    remembered = !remembered;
-    rememberBox.classList.toggle('unchecked', !remembered);
-  });
-
-  // 页面加载时自动填充记住的账号密码
-  if (remembered) {
-    const savedAcc = localStorage.getItem('qxnet_saved_account');
-    const savedPwd = localStorage.getItem('qxnet_saved_password');
-    if (savedAcc) $('accountInput').value = savedAcc;
-    if (savedPwd) $('passwordInput').value = savedPwd;
-  }
 
   // ===== 加载弹窗 =====
   const loadingModal = $('loadingModal');
@@ -845,48 +841,29 @@
 
   // ===== 提交 =====
   submitBtn.addEventListener('click', async () => {
+    const email = $('accountInput').value.trim();
+    const token = $('passwordInput').value.trim();
+    if (!email || !email.includes('@')) return showToast('请输入正确的邮箱');
+    if (!token || token.length !== 6) return showToast('请输入6位验证码');
+
     if (state.tab === 'login') {
-      const acc = $('accountInput').value.trim();
-      const pwd = $('passwordInput').value.trim();
-      if (!acc) return showToast('请输入账号');
-      if (!pwd) return showToast('请输入密码');
       showLoading('登录中…');
-      let email = acc;
-      if (!email.includes('@')) {
-        email = acc + '@qxnet.com';
-      }
-      const { data, error } = await sb.auth.signInWithPassword({
+      const { data, error } = await sb.auth.verifyOtp({
         email: email,
-        password: pwd,
+        token: token,
+        type: 'email',
       });
       if (error) {
         hideLoading();
-        if (error.message.includes('Invalid login credentials')) {
-          showToast('账号或密码错误');
-        } else if (error.message.includes('Email not confirmed')) {
-          showToast('请先验证邮箱');
-        } else {
-          showToast('登录失败，请重试');
-        }
+        showToast('验证码错误或已过期');
       } else {
-        const expiresAt = new Date(data.user.user_metadata.expires_at);
-        if (expiresAt < new Date()) {
+        const expiresAt = data.user.user_metadata?.expires_at ? new Date(data.user.user_metadata.expires_at) : null;
+        if (expiresAt && expiresAt < new Date()) {
           hideLoading();
           showToast('授权已过期');
         } else {
           hideLoading();
           showToast('登录成功');
-          localStorage.setItem('qxnet_account', acc);
-          // 记住密码
-          if (remembered) {
-            localStorage.setItem('qxnet_remember', '1');
-            localStorage.setItem('qxnet_saved_account', acc);
-            localStorage.setItem('qxnet_saved_password', pwd);
-          } else {
-            localStorage.removeItem('qxnet_remember');
-            localStorage.removeItem('qxnet_saved_account');
-            localStorage.removeItem('qxnet_saved_password');
-          }
           if (window.qnetAndroidObj) {
             window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
           }
@@ -894,11 +871,7 @@
         }
       }
     } else if (state.tab === 'register') {
-      const acc = $('accountInput').value.trim();
-      const pwd = $('passwordInput').value.trim();
       const card = $('cardKeyInput').value.trim();
-      if (!acc) return showToast('请输入账号');
-      if (pwd.length < 8) return showToast('密码需 8 位及以上');
       if (!card) return showToast('请输入卡密 / 授权码');
       showLoading('验证卡密中…');
       const { data: cardData, error: cardError } = await sb
@@ -920,14 +893,12 @@
       else if (cardData.type === 'lifetime') days = 36500;
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + days);
-      let email = acc;
-      if (!email.includes('@')) {
-        email = acc + '@qxnet.com';
-      }
-      const { data, error } = await sb.auth.signUp({
+      const { data, error } = await sb.auth.verifyOtp({
         email: email,
-        password: pwd,
+        token: token,
+        type: 'email',
         options: {
+          shouldCreateUser: true,
           data: {
             card_key: card,
             expires_at: expiresAt.toISOString()
@@ -937,7 +908,7 @@
       if (error) {
         hideLoading();
         if (error.message.includes('User already registered')) {
-          showToast('账号已存在');
+          showToast('该邮箱已注册');
         } else {
           showToast('注册失败，请重试');
         }
