@@ -892,7 +892,7 @@
         } else {
           btn.textContent = `${cooldown}秒后重发`;
         }
-      }, 1000);
+      }, 300);
     }
   });
 
@@ -956,7 +956,7 @@
             if (window.qnetAndroidObj) {
               window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
             }
-            setTimeout(function(){ window.location.href = 'https://qxnet.cc.cd/'; }, 800);
+            setTimeout(function(){ window.location.href = 'https://qxnet.cc.cd/'; }, 200);
           }
         }
       } else {
@@ -984,7 +984,7 @@
             if (window.qnetAndroidObj) {
               window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
             }
-            setTimeout(function(){ window.location.href = 'https://qxnet.cc.cd/'; }, 800);
+            setTimeout(function(){ window.location.href = 'https://qxnet.cc.cd/'; }, 200);
           }
         }
       }
@@ -1036,7 +1036,7 @@
           .eq('card_key', card);
         hideLoading();
         showToast('注册成功');
-        setTimeout(function(){ window.location.href = 'https://qxnet.cc.cd/'; }, 1000);
+        setTimeout(function(){ window.location.href = 'https://qxnet.cc.cd/'; }, 300);
       }
     } else {
       window.location.href = 'https://shop.qmmpay.com/shop/TENXQ';
