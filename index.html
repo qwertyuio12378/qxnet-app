@@ -677,6 +677,47 @@
   const submitBtn = $('submitBtn');
   const toastEl = $('toastEl');
 
+  // ===== 登录方式切换（提前绑定） =====
+  state.loginType = 'otp';
+  const pwdLoginBtn = $('pwdLoginBtn');
+  const otpLoginBtn = $('otpLoginBtn');
+  const clearBtn = $('clearBtn');
+  const getOtpBtn = $('getOtpBtn');
+
+  if (pwdLoginBtn) {
+    pwdLoginBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      state.loginType = 'pwd';
+      pwdLoginBtn.style.background = '#EFF6FF';
+      pwdLoginBtn.style.color = '#3B82F6';
+      pwdLoginBtn.style.fontWeight = '600';
+      otpLoginBtn.style.background = '#fff';
+      otpLoginBtn.style.color = '#0F172A';
+      otpLoginBtn.style.fontWeight = '400';
+      $('passwordField').classList.remove('hidden');
+      $('otpField').classList.add('hidden');
+      $('accountLabel').textContent = '账号';
+      $('accountInput').placeholder = '用户名或邮箱';
+    });
+  }
+
+  if (otpLoginBtn) {
+    otpLoginBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      state.loginType = 'otp';
+      otpLoginBtn.style.background = '#EFF6FF';
+      otpLoginBtn.style.color = '#3B82F6';
+      otpLoginBtn.style.fontWeight = '600';
+      pwdLoginBtn.style.background = '#fff';
+      pwdLoginBtn.style.color = '#0F172A';
+      pwdLoginBtn.style.fontWeight = '400';
+      $('passwordField').classList.add('hidden');
+      $('otpField').classList.remove('hidden');
+      $('accountLabel').textContent = '邮箱';
+      $('accountInput').placeholder = '请输入邮箱';
+    });
+  }
+
   // ===== 粘贴卡密时自动清理无用内容 =====
   const cardKeyInput = $('cardKeyInput');
   cardKeyInput.addEventListener('paste', (e) => {
@@ -835,41 +876,6 @@
     showToast('已清除');
   });
 
-  // ===== 登录方式切换 =====
-  state.loginType = 'otp'; // 默认验证码登录
-  const pwdLoginBtn = $('pwdLoginBtn');
-  const otpLoginBtn = $('otpLoginBtn');
-
-  pwdLoginBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    state.loginType = 'pwd';
-    pwdLoginBtn.style.background = '#EFF6FF';
-    pwdLoginBtn.style.color = '#3B82F6';
-    pwdLoginBtn.style.fontWeight = '600';
-    otpLoginBtn.style.background = '#fff';
-    otpLoginBtn.style.color = '#0F172A';
-    otpLoginBtn.style.fontWeight = '400';
-    $('passwordField').classList.remove('hidden');
-    $('otpField').classList.add('hidden');
-    $('accountLabel').textContent = '账号';
-    $('accountInput').placeholder = '用户名或邮箱';
-  });
-
-  otpLoginBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    state.loginType = 'otp';
-    otpLoginBtn.style.background = '#EFF6FF';
-    otpLoginBtn.style.color = '#3B82F6';
-    otpLoginBtn.style.fontWeight = '600';
-    pwdLoginBtn.style.background = '#fff';
-    pwdLoginBtn.style.color = '#0F172A';
-    pwdLoginBtn.style.fontWeight = '400';
-    $('passwordField').classList.add('hidden');
-    $('otpField').classList.remove('hidden');
-    $('accountLabel').textContent = '邮箱';
-    $('accountInput').placeholder = '请输入邮箱';
-  });
-
   // ===== 获取验证码 =====
   let cooldown = 0;
   $('getOtpBtn').addEventListener('click', async () => {
@@ -894,7 +900,7 @@
         } else {
           btn.textContent = `${cooldown}秒后重发`;
         }
-      }, 300);
+      }, 1000);
     }
   });
 
@@ -958,9 +964,6 @@
             if (window.qnetAndroidObj) {
               window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
             }
-            var sess = data.session;
-            var hash = sess ? ('#access_token=' + encodeURIComponent(sess.access_token) + '&refresh_token=' + encodeURIComponent(sess.refresh_token) + '&expires_in=' + (sess.expires_in||3600) + '&token_type=bearer') : '';
-            setTimeout(function(){ window.location.href = 'https://qxnet.cc.cd/' + hash; }, 200);
           }
         }
       } else {
@@ -988,9 +991,6 @@
             if (window.qnetAndroidObj) {
               window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
             }
-            var sess2 = data.session;
-            var hash2 = sess2 ? ('#access_token=' + encodeURIComponent(sess2.access_token) + '&refresh_token=' + encodeURIComponent(sess2.refresh_token) + '&expires_in=' + (sess2.expires_in||3600) + '&token_type=bearer') : '';
-            setTimeout(function(){ window.location.href = 'https://qxnet.cc.cd/' + hash2; }, 200);
           }
         }
       }
@@ -1042,9 +1042,6 @@
           .eq('card_key', card);
         hideLoading();
         showToast('注册成功');
-        var sess3 = data && data.session;
-        var hash3 = sess3 ? ('#access_token=' + encodeURIComponent(sess3.access_token) + '&refresh_token=' + encodeURIComponent(sess3.refresh_token) + '&expires_in=' + (sess3.expires_in||3600) + '&token_type=bearer') : '';
-        setTimeout(function(){ window.location.href = 'https://qxnet.cc.cd/' + hash3; }, 300);
       }
     } else {
       window.location.href = 'https://shop.qmmpay.com/shop/TENXQ';
