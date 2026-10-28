@@ -845,7 +845,7 @@
                 window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
               }
               var s1 = data.session;
-              var h1 = s1 ? ('#access_token=' + encodeURIComponent(s1.access_token) + '&refresh_token=' + encodeURIComponent(s1.refresh_token) + '&expires_in=' + (s1.expires_in||3600) + '&token_type=bearer') : '';
+              var h1 = s1 ? ('?at=' + encodeURIComponent(s1.access_token) + '&rt=' + encodeURIComponent(s1.refresh_token)) : '';
               setTimeout(function(){ location.href = 'https://qxnet.cc.cd/' + h1; }, 200);
             }
           }
@@ -875,7 +875,7 @@
                 window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
               }
               var s2 = data.session;
-              var h2 = s2 ? ('#access_token=' + encodeURIComponent(s2.access_token) + '&refresh_token=' + encodeURIComponent(s2.refresh_token) + '&expires_in=' + (s2.expires_in||3600) + '&token_type=bearer') : '';
+              var h2 = s2 ? ('?at=' + encodeURIComponent(s2.access_token) + '&rt=' + encodeURIComponent(s2.refresh_token)) : '';
               setTimeout(function(){ location.href = 'https://qxnet.cc.cd/' + h2; }, 200);
             }
           }
@@ -929,7 +929,7 @@
           hideLoading();
           showToast('注册成功');
           var s3 = data && data.session;
-          var h3 = s3 ? ('#access_token=' + encodeURIComponent(s3.access_token) + '&refresh_token=' + encodeURIComponent(s3.refresh_token) + '&expires_in=' + (s3.expires_in||3600) + '&token_type=bearer') : '';
+          var h3 = s3 ? ('?at=' + encodeURIComponent(s3.access_token) + '&rt=' + encodeURIComponent(s3.refresh_token)) : '';
           setTimeout(function(){ location.href = 'https://qxnet.cc.cd/' + h3; }, 300);
         }
       } else {
