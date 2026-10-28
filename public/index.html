@@ -676,13 +676,37 @@
   const passwordLabel = $('passwordLabel');
   const submitBtn = $('submitBtn');
   const toastEl = $('toastEl');
-
-  // ===== 登录方式切换（提前绑定） =====
-  state.loginType = 'otp';
   const pwdLoginBtn = $('pwdLoginBtn');
   const otpLoginBtn = $('otpLoginBtn');
   const clearBtn = $('clearBtn');
   const getOtpBtn = $('getOtpBtn');
+  const togglePwdBtn = $('togglePwdBtn');
+  const toggleCardKeyBtn = $('toggleCardKeyBtn');
+
+  // ===== Toast（提前定义） =====
+  let toastTimer;
+  function showToast(text) {
+    if (!toastEl) return;
+    toastEl.textContent = text;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2000);
+  }
+
+  // ===== Loading 弹窗（提前定义） =====
+  const loadingModal = $('loadingModal');
+  function showLoading(text = '加载中…') {
+    if (!loadingModal) return;
+    loadingModal.querySelector('.loading-text').textContent = text;
+    loadingModal.classList.add('show');
+  }
+  function hideLoading() {
+    if (!loadingModal) return;
+    loadingModal.classList.remove('show');
+  }
+
+  // ===== 登录方式切换（提前绑定） =====
+  state.loginType = 'otp';
 
   if (pwdLoginBtn) {
     pwdLoginBtn.addEventListener('click', (e) => {
@@ -718,7 +742,7 @@
     });
   }
 
-  // ===== 清除按钮（提前绑定） =====
+  // ===== 清除按钮 =====
   if (clearBtn) {
     clearBtn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -727,25 +751,7 @@
     });
   }
 
-  // ===== Loading 弹窗（提前定义） =====
-  let loadingEl;
-  function showLoading(text = '加载中…') {
-    loadingEl = loadingEl || document.getElementById('loadingEl');
-    if (!loadingEl) {
-      loadingEl = document.createElement('div');
-      loadingEl.id = 'loadingEl';
-      loadingEl.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
-      loadingEl.innerHTML = '<div style="background:#fff;padding:20px;border-radius:12px;">' + text + '</div>';
-      document.body.appendChild(loadingEl);
-    }
-    loadingEl.style.display = 'flex';
-    loadingEl.querySelector('div').textContent = text;
-  }
-  function hideLoading() {
-    if (loadingEl) loadingEl.style.display = 'none';
-  }
-
-  // ===== 获取验证码按钮（提前绑定） =====
+  // ===== 获取验证码按钮 =====
   let cooldown = 0;
   if (getOtpBtn) {
     getOtpBtn.addEventListener('click', async (e) => {
@@ -773,6 +779,29 @@
           }
         }, 1000);
       }
+    });
+  }
+
+  // ===== 显示/隐藏密码 =====
+  if (togglePwdBtn) {
+    togglePwdBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      state.pwdVisible = !state.pwdVisible;
+      const input = $('passwordInput');
+      input.type = state.pwdVisible ? 'text' : 'password';
+      togglePwdBtn.textContent = state.pwdVisible ? '隐藏' : '显示';
+    });
+  }
+
+  // ===== 显示/隐藏卡密 =====
+  const toggleCardKeyBtn = $('toggleCardKeyBtn');
+  if (toggleCardKeyBtn) {
+    toggleCardKeyBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      state.cardKeyVisible = !state.cardKeyVisible;
+      const input = $('cardKeyInput');
+      input.type = state.cardKeyVisible ? 'text' : 'password';
+      toggleCardKeyBtn.textContent = state.cardKeyVisible ? '隐藏' : '显示';
     });
   }
 
@@ -928,32 +957,6 @@
     item.addEventListener('click', () => selectPlan(item));
   });
 
-  // ===== 显示/隐藏密码 =====
-  $('togglePwdBtn').addEventListener('click', () => {
-    state.pwdVisible = !state.pwdVisible;
-    const input = $('passwordInput');
-    input.type = state.pwdVisible ? 'text' : 'password';
-    $('togglePwdBtn').textContent = state.pwdVisible ? '隐藏' : '显示';
-  });
-
-  // ===== 显示/隐藏卡密 =====
-  $('toggleCardKeyBtn').addEventListener('click', () => {
-    state.cardKeyVisible = !state.cardKeyVisible;
-    const input = $('cardKeyInput');
-    input.type = state.cardKeyVisible ? 'text' : 'password';
-    $('toggleCardKeyBtn').textContent = state.cardKeyVisible ? '隐藏' : '显示';
-  });
-
-  // ===== 加载弹窗 =====
-  const loadingModal = $('loadingModal');
-  function showLoading(text = '加载中…') {
-    loadingModal.querySelector('.loading-text').textContent = text;
-    loadingModal.classList.add('show');
-  }
-  function hideLoading() {
-    loadingModal.classList.remove('show');
-  }
-
   // ===== 提交 =====
   submitBtn.addEventListener('click', async () => {
     const acc = $('accountInput').value.trim();
@@ -1071,15 +1074,6 @@
       window.location.href = 'https://shop.qmmpay.com/shop/TENXQ';
     }
   });
-
-  // ===== Toast =====
-  let toastTimer;
-  function showToast(text) {
-    toastEl.textContent = text;
-    toastEl.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1800);
-  }
 </script>
 
 </body>
