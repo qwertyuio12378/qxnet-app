@@ -804,6 +804,127 @@
     });
   }
 
+  // ===== 提交按钮（提前绑定） =====
+  if (submitBtn) {
+    submitBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const acc = $('accountInput').value.trim();
+
+      if (state.tab === 'login') {
+        if (!acc) return showToast('请输入账号');
+
+        if (state.loginType === 'pwd') {
+          // 密码登录
+          const pwd = $('passwordInput').value.trim();
+          if (!pwd) return showToast('请输入密码');
+          showLoading('登录中…');
+          let email = acc;
+          if (!email.includes('@')) email = acc + '@qxnet.com';
+          const { data, error } = await sb.auth.signInWithPassword({
+            email: email,
+            password: pwd,
+          });
+          if (error) {
+            hideLoading();
+            if (error.message.includes('Invalid login credentials')) showToast('账号或密码错误');
+            else if (error.message.includes('Email not confirmed')) showToast('请先验证邮箱');
+            else showToast('登录失败，请重试');
+          } else {
+            const expiresAt = data.user.user_metadata?.expires_at ? new Date(data.user.user_metadata.expires_at) : null;
+            if (expiresAt && expiresAt < new Date()) {
+              hideLoading();
+              showToast('授权已过期');
+            } else {
+              hideLoading();
+              showToast('登录成功');
+              if (window.qnetAndroidObj) {
+                window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
+              }
+            }
+          }
+        } else {
+          // 验证码登录
+          const token = $('otpInput').value.trim();
+          if (!acc.includes('@')) return showToast('验证码登录请输入邮箱');
+          if (!token || token.length !== 6) return showToast('请输入6位验证码');
+          showLoading('登录中…');
+          const { data, error } = await sb.auth.verifyOtp({
+            email: acc,
+            token: token,
+            type: 'email',
+          });
+          if (error) {
+            hideLoading();
+            showToast('验证码错误或已过期');
+          } else {
+            const expiresAt = data.user.user_metadata?.expires_at ? new Date(data.user.user_metadata.expires_at) : null;
+            if (expiresAt && expiresAt < new Date()) {
+              hideLoading();
+              showToast('授权已过期');
+            } else {
+              hideLoading();
+              showToast('登录成功');
+              if (window.qnetAndroidObj) {
+                window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
+              }
+            }
+          }
+        }
+      } else if (state.tab === 'register') {
+        // 注册：邮箱 + 密码 + 卡密
+        const pwd = $('passwordInput').value.trim();
+        const card = $('cardKeyInput').value.trim();
+        if (!acc || !acc.includes('@')) return showToast('请输入正确的邮箱');
+        if (pwd.length < 8) return showToast('密码需 8 位及以上');
+        if (!card) return showToast('请输入卡密 / 授权码');
+        showLoading('验证卡密中…');
+        const { data: cardData, error: cardError } = await sb
+          .from('cards')
+          .select('*')
+          .eq('card_key', card)
+          .eq('used', false)
+          .single();
+        if (cardError || !cardData) {
+          hideLoading();
+          return showToast('卡密无效或已使用');
+        }
+        showLoading('注册中…');
+        let days = 36500;
+        if (cardData.type === 'day') days = 1;
+        else if (cardData.type === 'week') days = 7;
+        else if (cardData.type === 'month') days = 30;
+        else if (cardData.type === 'quarter') days = 90;
+        else if (cardData.type === 'lifetime') days = 36500;
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + days);
+        const { data, error } = await sb.auth.signUp({
+          email: acc,
+          password: pwd,
+          options: {
+            data: {
+              card_key: card,
+              expires_at: expiresAt.toISOString()
+            }
+          }
+        });
+        if (error) {
+          hideLoading();
+          if (error.message.includes('User already registered')) showToast('该邮箱已注册');
+          else showToast('注册失败，请重试');
+        } else {
+          await sb
+            .from('cards')
+            .update({ used: true })
+            .eq('card_key', card);
+          hideLoading();
+          showToast('注册成功');
+        }
+      } else {
+        window.location.href = 'https://shop.qmmpay.com/shop/TENXQ';
+      }
+    });
+  }
+
   // ===== 粘贴卡密时自动清理无用内容 =====
   const cardKeyInput = $('cardKeyInput');
   cardKeyInput.addEventListener('paste', (e) => {
@@ -957,122 +1078,7 @@
   });
 
   // ===== 提交 =====
-  submitBtn.addEventListener('click', async () => {
-    const acc = $('accountInput').value.trim();
 
-    if (state.tab === 'login') {
-      if (!acc) return showToast('请输入账号');
-
-      if (state.loginType === 'pwd') {
-        // 密码登录
-        const pwd = $('passwordInput').value.trim();
-        if (!pwd) return showToast('请输入密码');
-        showLoading('登录中…');
-        let email = acc;
-        if (!email.includes('@')) email = acc + '@qxnet.com';
-        const { data, error } = await sb.auth.signInWithPassword({
-          email: email,
-          password: pwd,
-        });
-        if (error) {
-          hideLoading();
-          if (error.message.includes('Invalid login credentials')) showToast('账号或密码错误');
-          else if (error.message.includes('Email not confirmed')) showToast('请先验证邮箱');
-          else showToast('登录失败，请重试');
-        } else {
-          const expiresAt = data.user.user_metadata?.expires_at ? new Date(data.user.user_metadata.expires_at) : null;
-          if (expiresAt && expiresAt < new Date()) {
-            hideLoading();
-            showToast('授权已过期');
-          } else {
-            hideLoading();
-            showToast('登录成功');
-            if (window.qnetAndroidObj) {
-              window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
-            }
-          }
-        }
-      } else {
-        // 验证码登录
-        const token = $('otpInput').value.trim();
-        if (!acc.includes('@')) return showToast('验证码登录请输入邮箱');
-        if (!token || token.length !== 6) return showToast('请输入6位验证码');
-        showLoading('登录中…');
-        const { data, error } = await sb.auth.verifyOtp({
-          email: acc,
-          token: token,
-          type: 'email',
-        });
-        if (error) {
-          hideLoading();
-          showToast('验证码错误或已过期');
-        } else {
-          const expiresAt = data.user.user_metadata?.expires_at ? new Date(data.user.user_metadata.expires_at) : null;
-          if (expiresAt && expiresAt < new Date()) {
-            hideLoading();
-            showToast('授权已过期');
-          } else {
-            hideLoading();
-            showToast('登录成功');
-            if (window.qnetAndroidObj) {
-              window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
-            }
-          }
-        }
-      }
-    } else if (state.tab === 'register') {
-      // 注册：邮箱 + 密码 + 卡密
-      const pwd = $('passwordInput').value.trim();
-      const card = $('cardKeyInput').value.trim();
-      if (!acc || !acc.includes('@')) return showToast('请输入正确的邮箱');
-      if (pwd.length < 8) return showToast('密码需 8 位及以上');
-      if (!card) return showToast('请输入卡密 / 授权码');
-      showLoading('验证卡密中…');
-      const { data: cardData, error: cardError } = await sb
-        .from('cards')
-        .select('*')
-        .eq('card_key', card)
-        .eq('used', false)
-        .single();
-      if (cardError || !cardData) {
-        hideLoading();
-        return showToast('卡密无效或已使用');
-      }
-      showLoading('注册中…');
-      let days = 36500;
-      if (cardData.type === 'day') days = 1;
-      else if (cardData.type === 'week') days = 7;
-      else if (cardData.type === 'month') days = 30;
-      else if (cardData.type === 'quarter') days = 90;
-      else if (cardData.type === 'lifetime') days = 36500;
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + days);
-      const { data, error } = await sb.auth.signUp({
-        email: acc,
-        password: pwd,
-        options: {
-          data: {
-            card_key: card,
-            expires_at: expiresAt.toISOString()
-          }
-        }
-      });
-      if (error) {
-        hideLoading();
-        if (error.message.includes('User already registered')) showToast('该邮箱已注册');
-        else showToast('注册失败，请重试');
-      } else {
-        await sb
-          .from('cards')
-          .update({ used: true })
-          .eq('card_key', card);
-        hideLoading();
-        showToast('注册成功');
-      }
-    } else {
-      window.location.href = 'https://shop.qmmpay.com/shop/TENXQ';
-    }
-  });
 </script>
 
 </body>
