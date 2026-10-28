@@ -718,6 +718,64 @@
     });
   }
 
+  // ===== 清除按钮（提前绑定） =====
+  if (clearBtn) {
+    clearBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      $('accountInput').value = '';
+      showToast('已清除');
+    });
+  }
+
+  // ===== Loading 弹窗（提前定义） =====
+  let loadingEl;
+  function showLoading(text = '加载中…') {
+    loadingEl = loadingEl || document.getElementById('loadingEl');
+    if (!loadingEl) {
+      loadingEl = document.createElement('div');
+      loadingEl.id = 'loadingEl';
+      loadingEl.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
+      loadingEl.innerHTML = '<div style="background:#fff;padding:20px;border-radius:12px;">' + text + '</div>';
+      document.body.appendChild(loadingEl);
+    }
+    loadingEl.style.display = 'flex';
+    loadingEl.querySelector('div').textContent = text;
+  }
+  function hideLoading() {
+    if (loadingEl) loadingEl.style.display = 'none';
+  }
+
+  // ===== 获取验证码按钮（提前绑定） =====
+  let cooldown = 0;
+  if (getOtpBtn) {
+    getOtpBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      if (cooldown > 0) return;
+      const email = $('accountInput').value.trim();
+      if (!email || !email.includes('@')) return showToast('请输入正确的邮箱');
+      showLoading('发送验证码中…');
+      const { error } = await sb.auth.signInWithOtp({ email });
+      hideLoading();
+      if (error) {
+        showToast('发送失败，请重试');
+      } else {
+        showToast('验证码已发送');
+        cooldown = 60;
+        const btn = $('getOtpBtn');
+        btn.textContent = `${cooldown}秒后重发`;
+        const timer = setInterval(() => {
+          cooldown--;
+          if (cooldown <= 0) {
+            btn.textContent = '获取验证码';
+            clearInterval(timer);
+          } else {
+            btn.textContent = `${cooldown}秒后重发`;
+          }
+        }, 1000);
+      }
+    });
+  }
+
   // ===== 粘贴卡密时自动清理无用内容 =====
   const cardKeyInput = $('cardKeyInput');
   cardKeyInput.addEventListener('paste', (e) => {
@@ -868,40 +926,6 @@
   }
   planItems.forEach(item => {
     item.addEventListener('click', () => selectPlan(item));
-  });
-
-  // ===== 清除账号 =====
-  $('clearBtn').addEventListener('click', () => {
-    $('accountInput').value = '';
-    showToast('已清除');
-  });
-
-  // ===== 获取验证码 =====
-  let cooldown = 0;
-  $('getOtpBtn').addEventListener('click', async () => {
-    if (cooldown > 0) return;
-    const email = $('accountInput').value.trim();
-    if (!email || !email.includes('@')) return showToast('请输入正确的邮箱');
-    showLoading('发送验证码中…');
-    const { error } = await sb.auth.signInWithOtp({ email });
-    hideLoading();
-    if (error) {
-      showToast('发送失败，请重试');
-    } else {
-      showToast('验证码已发送');
-      cooldown = 60;
-      const btn = $('getOtpBtn');
-      btn.textContent = `${cooldown}秒后重发`;
-      const timer = setInterval(() => {
-        cooldown--;
-        if (cooldown <= 0) {
-          btn.textContent = '获取验证码';
-          clearInterval(timer);
-        } else {
-          btn.textContent = `${cooldown}秒后重发`;
-        }
-      }, 1000);
-    }
   });
 
   // ===== 显示/隐藏密码 =====
