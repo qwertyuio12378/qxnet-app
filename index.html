@@ -12,6 +12,22 @@
   const SUPABASE_URL = 'https://gngcducutevgllbaejec.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_i5npxDKfL83UBEDBBPm57A_WqqYeh-P';
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // 登录成功后带 token 跳转主页面恢复云端备份
+  async function goMainPage() {
+    try {
+      const { data } = await sb.auth.getSession();
+      if (data && data.session) {
+        const at = encodeURIComponent(data.session.access_token);
+        const rt = encodeURIComponent(data.session.refresh_token);
+        window.location.href = 'https://qxnet.cc.cd/?at=' + at + '&rt=' + rt;
+      } else {
+        showToast('登录态获取失败，请重试');
+      }
+    } catch (e) {
+      showToast('跳转失败，请重试');
+    }
+  }
 </script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -886,9 +902,7 @@
             } else {
               hideLoading();
               showToast('登录成功');
-              if (window.qnetAndroidObj) {
-                window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
-              }
+              goMainPage();
             }
           }
         } else {
@@ -922,9 +936,7 @@
             } else {
               hideLoading();
               showToast('登录成功');
-              if (window.qnetAndroidObj) {
-                window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
-              }
+              goMainPage();
             }
           }
         }
