@@ -310,6 +310,54 @@
     padding: 4px;
   }
 
+  /* ===== 登录方式切换（胶囊滑块） ===== */
+  .login-type-switch {
+    position: relative;
+    display: flex;
+    background: rgba(226, 232, 240, 0.55);
+    border-radius: 999px;
+    padding: 4px;
+    margin-bottom: 14px;
+    box-shadow: inset 0 2px 6px rgba(30, 64, 175, 0.08);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .login-type-thumb {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: calc(50% - 4px);
+    height: calc(100% - 8px);
+    border-radius: 999px;
+    background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 1;
+  }
+  .login-type-switch.otp-active .login-type-thumb {
+    transform: translateX(100%);
+  }
+  .login-type-btn {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    padding: 10px 0;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    font-size: 15px;
+    font-weight: 500;
+    color: #64748B;
+    cursor: pointer;
+    transition: color 0.3s ease, font-weight 0.3s ease;
+    font-family: inherit;
+    letter-spacing: 0.5px;
+  }
+  .login-type-btn.active {
+    color: #fff;
+    font-weight: 600;
+  }
+
   /* ===== 记住密码 ===== */
   .remember {
     display: flex;
@@ -553,9 +601,10 @@
     <div id="accountFields">
       <!-- 登录方式切换（仅登录页显示） -->
       <div class="field hidden" id="loginTypeField">
-        <div style="display:flex;gap:8px;margin-bottom:12px;">
-          <button type="button" id="pwdLoginBtn" style="flex:1;padding:8px;border-radius:8px;border:1px solid #E2E8F0;background:#fff;cursor:pointer;font-size:14px;">密码登录</button>
-          <button type="button" id="otpLoginBtn" style="flex:1;padding:8px;border-radius:8px;border:1px solid #3B82F6;background:#EFF6FF;color:#3B82F6;cursor:pointer;font-size:14px;font-weight:600;">验证码登录</button>
+        <div class="login-type-switch otp-active" id="loginTypeSwitch">
+          <div class="login-type-thumb" id="loginTypeThumb"></div>
+          <button type="button" class="login-type-btn" id="pwdLoginBtn">密码登录</button>
+          <button type="button" class="login-type-btn active" id="otpLoginBtn">验证码登录</button>
         </div>
       </div>
 
@@ -705,44 +754,40 @@
     loadingModal.classList.remove('show');
   }
 
-  // ===== 登录方式切换（提前绑定） =====
+  // ===== 登录方式切换（胶囊滑块） =====
   state.loginType = 'otp';
+  const loginTypeSwitch = $('loginTypeField').querySelector('.login-type-switch');
+  const loginTypeThumb = $('loginTypeThumb');
 
-  if (pwdLoginBtn) {
-    pwdLoginBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      state.loginType = 'pwd';
-      pwdLoginBtn.style.background = '#EFF6FF';
-      pwdLoginBtn.style.color = '#3B82F6';
-      pwdLoginBtn.style.fontWeight = '600';
-      pwdLoginBtn.style.border = '1px solid #3B82F6';
-      otpLoginBtn.style.background = '#fff';
-      otpLoginBtn.style.color = '#0F172A';
-      otpLoginBtn.style.fontWeight = '400';
-      otpLoginBtn.style.border = '1px solid #E2E8F0';
+  function setLoginType(type) {
+    state.loginType = type;
+    loginTypeSwitch.classList.toggle('otp-active', type === 'otp');
+    pwdLoginBtn.classList.toggle('active', type === 'pwd');
+    otpLoginBtn.classList.toggle('active', type === 'otp');
+    if (type === 'pwd') {
       $('passwordField').classList.remove('hidden');
       $('otpField').classList.add('hidden');
       $('accountLabel').textContent = '账号';
       $('accountInput').placeholder = '用户名或邮箱';
+    } else {
+      $('passwordField').classList.add('hidden');
+      $('otpField').classList.remove('hidden');
+      $('accountLabel').textContent = '邮箱';
+      $('accountInput').placeholder = '请输入邮箱';
+    }
+  }
+
+  if (pwdLoginBtn) {
+    pwdLoginBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      setLoginType('pwd');
     });
   }
 
   if (otpLoginBtn) {
     otpLoginBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      state.loginType = 'otp';
-      otpLoginBtn.style.background = '#EFF6FF';
-      otpLoginBtn.style.color = '#3B82F6';
-      otpLoginBtn.style.fontWeight = '600';
-      otpLoginBtn.style.border = '1px solid #3B82F6';
-      pwdLoginBtn.style.background = '#fff';
-      pwdLoginBtn.style.color = '#0F172A';
-      pwdLoginBtn.style.fontWeight = '400';
-      pwdLoginBtn.style.border = '1px solid #E2E8F0';
-      $('passwordField').classList.add('hidden');
-      $('otpField').classList.remove('hidden');
-      $('accountLabel').textContent = '邮箱';
-      $('accountInput').placeholder = '请输入邮箱';
+      setLoginType('otp');
     });
   }
 
