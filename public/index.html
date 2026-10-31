@@ -861,6 +861,15 @@
             hideLoading();
             showToast('验证码错误或已过期');
           } else {
+            // 检查是否是已注册账号（有 card_key 说明是通过注册流程创建的）
+            const cardKey = data.user.user_metadata?.card_key;
+            if (!cardKey) {
+              // 自动注册的新账号，退出登录
+              await sb.auth.signOut();
+              hideLoading();
+              showToast('账号不存在，请先注册');
+              return;
+            }
             const expiresAt = data.user.user_metadata?.expires_at ? new Date(data.user.user_metadata.expires_at) : null;
             if (expiresAt && expiresAt < new Date()) {
               hideLoading();
