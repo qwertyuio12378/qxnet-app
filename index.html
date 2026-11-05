@@ -11,32 +11,29 @@
   // Supabase 配置（SDK 加载失败时容错，避免整页脚本中断）
   const SUPABASE_URL = 'https://gngcducutevgllbaejec.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_i5npxDKfL83UBEDBBPm57A_WqqYeh-P';
-<<<<<<< HEAD
-  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  // 登录成功后带 token 跳转主页面恢复云端备份
-  async function goMainPage() {
-    try {
-      const { data } = await sb.auth.getSession();
-      if (data && data.session) {
-        const at = encodeURIComponent(data.session.access_token);
-        const rt = encodeURIComponent(data.session.refresh_token);
-        window.location.href = 'https://qxnet.cc.cd/?at=' + at + '&rt=' + rt;
-      } else {
-        showToast('登录态获取失败，请重试');
-      }
-    } catch (e) {
-      showToast('跳转失败，请重试');
-    }
-  }
-=======
   let sb = null;
   try {
     if (window.supabase) {
       sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
   } catch (e) { sb = null; }
->>>>>>> 8b40bd3 (更新登录页：云端下发主站地址、邮箱后缀联想、人机验证背景淡化、注释简化)
+
+  // 登录成功后带 token 跳转主页面恢复云端备份（地址走云端下发/本地加密，源码无明文）
+  async function goMainPage() {
+    try {
+      if (!sb) { window.location.href = getSiteUrl(); return; }
+      const { data } = await sb.auth.getSession();
+      if (data && data.session) {
+        const at = encodeURIComponent(data.session.access_token);
+        const rt = encodeURIComponent(data.session.refresh_token);
+        window.location.href = getSiteUrl() + '?at=' + at + '&rt=' + rt;
+      } else {
+        window.location.href = getSiteUrl();
+      }
+    } catch (e) {
+      window.location.href = getSiteUrl();
+    }
+  }
 </script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -1209,7 +1206,7 @@
           setTimeout(() => area.classList.remove('show'), 400);
           // 签名展示完成后跳转到主站
           setTimeout(() => {
-            window.location.href = getSiteUrl();
+            goMainPage();
           }, 900);
         }, 2000);
       }
@@ -1782,12 +1779,7 @@
               showToast('授权已过期');
             } else {
               hideLoading();
-<<<<<<< HEAD
-              showToast('登录成功');
-              goMainPage();
-=======
               showLoginSuccess();
->>>>>>> 8b40bd3 (更新登录页：云端下发主站地址、邮箱后缀联想、人机验证背景淡化、注释简化)
             }
           }
         } else {
@@ -1824,12 +1816,7 @@
               showToast('授权已过期');
             } else {
               hideLoading();
-<<<<<<< HEAD
-              showToast('登录成功');
-              goMainPage();
-=======
               showLoginSuccess();
->>>>>>> 8b40bd3 (更新登录页：云端下发主站地址、邮箱后缀联想、人机验证背景淡化、注释简化)
             }
           }
         }
@@ -1889,7 +1876,7 @@
           showToast('注册成功');
           // 注册成功 1.6 秒后跳转到主站
           setTimeout(() => {
-            window.location.href = getSiteUrl();
+            goMainPage();
           }, 1600);
         }
       } else {
