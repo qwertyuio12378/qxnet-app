@@ -5,12 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>QXNet 认证</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232563EB'/><text x='50' y='68' font-size='52' font-weight='bold' text-anchor='middle' fill='white' font-family='sans-serif'>Q</text></svg>">
-<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Zhi+Mang+Xing&family=Ma+Shan+Zheng&family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Zhi+Mang+Xing&family=Ma+Shan+Zheng&family=Dancing+Script:wght@500;700&family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // Supabase 配置
+  // Supabase 配置（SDK 加载失败时容错，避免整页脚本中断）
   const SUPABASE_URL = 'https://gngcducutevgllbaejec.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_i5npxDKfL83UBEDBBPm57A_WqqYeh-P';
+<<<<<<< HEAD
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   // 登录成功后带 token 跳转主页面恢复云端备份
@@ -28,13 +29,21 @@
       showToast('跳转失败，请重试');
     }
   }
+=======
+  let sb = null;
+  try {
+    if (window.supabase) {
+      sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+  } catch (e) { sb = null; }
+>>>>>>> 8b40bd3 (更新登录页：云端下发主站地址、邮箱后缀联想、人机验证背景淡化、注释简化)
 </script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; }
   body {
     font-family: 'Noto Sans SC', -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
-    background: linear-gradient(180deg, #E8F0FE 0%, #F0F5FF 40%, #F5F9FF 100%);
+    background: #F8FAFC;
     min-height: 100vh;
     color: #1E293B;
     padding: 20px 16px 240px;
@@ -47,37 +56,24 @@
     gap: 20px;
   }
 
-  /* ===== 顶部卡片（独特设计） ===== */
+  /* 顶部卡片（朴素原生） */
   .hero-card {
     position: relative;
-    background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 55%, #06B6D4 100%);
-    border-radius: 28px;
-    padding: 26px 24px 30px;
-    box-shadow: 0 12px 40px rgba(30, 64, 175, 0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 24px 22px 26px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 20px rgba(15, 23, 42, 0.05);
     overflow: hidden;
   }
-  /* 背景装饰：网络波纹 */
-  .hero-card::before {
-    content: '';
-    position: absolute;
-    top: -40px;
-    right: -40px;
-    width: 180px;
-    height: 180px;
-    background: radial-gradient(circle, rgba(255,255,255,0.18) 0%, transparent 70%);
-    border-radius: 50%;
-    pointer-events: none;
-  }
-  .hero-card::after {
-    content: '';
-    position: absolute;
-    bottom: -60px;
-    left: -30px;
-    width: 200px;
-    height: 200px;
-    background: radial-gradient(circle, rgba(6, 182, 212, 0.25) 0%, transparent 70%);
-    border-radius: 50%;
-    pointer-events: none;
+  /* 隐藏原装饰：网络波纹 / 节点 / 信号条 / 波形 */
+  .hero-card::before,
+  .hero-card::after,
+  .hero-decor,
+  .hero-nodes,
+  .hero-signal,
+  .hero-wave {
+    display: none;
   }
   .hero-decor {
     position: absolute;
@@ -123,7 +119,7 @@
   .hero-signal span:nth-child(3) { height: 20px; }
   .hero-signal span:nth-child(4) { height: 26px; }
 
-  /* ===== 盾牌安全图标（左侧） ===== */
+  /* 盾牌安全图标（左侧） */
   .user-icon {
     display: inline-flex;
     align-items: center;
@@ -132,88 +128,65 @@
   .user-icon svg {
     width: 18px;
     height: 18px;
-    stroke: #4ADE80;
+    stroke: #2563EB;
     stroke-width: 2;
     fill: none;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
 
-  /* ===== 波形横线（起伏动画） ===== */
-  .hero-wave {
-    position: relative;
-    height: 24px;
-    margin-top: 16px;
-    overflow: hidden;
-    opacity: 0.5;
-  }
-  .hero-wave svg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 200%;
-    height: 100%;
-  }
-  .hero-wave svg:nth-child(2) {
-    opacity: 0.5;
-  }
   .hero-top {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 22px;
-    position: relative;
-    z-index: 1;
-  }
-  .hero-brand {
-    font-size: 18px;
-    color: rgba(255,255,255,0.85);
-    font-weight: 600;
-    letter-spacing: 0.8px;
-    display: flex;
-    align-items: center;
-  }
-  .hero-badge {
-    background: rgba(255,255,255,0.2);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    color: #fff;
-    font-size: 15px;
-    font-weight: 600;
-    padding: 7px 18px;
-    border-radius: 20px;
-    border: 1px solid rgba(255,255,255,0.3);
-    transition: all 0.3s;
-  }
-  .hero-title {
-    font-size: 30px;
-    font-weight: 800;
-    color: #fff;
-    line-height: 1.25;
-    margin-bottom: 12px;
-    letter-spacing: -0.5px;
-    position: relative;
-    z-index: 1;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.15);
-  }
-  .hero-sub {
-    font-size: 15px;
-    color: rgba(255,255,255,0.75);
-    line-height: 1.5;
     margin-bottom: 18px;
     position: relative;
     z-index: 1;
   }
-  .hero-tip {
-    background: rgba(255,255,255,0.15);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.25);
-    color: #D1FAE5;
-    font-size: 16px;
+  .hero-brand {
+    font-size: 17px;
+    color: #1E3A8A;
     font-weight: 600;
-    padding: 14px 18px;
-    border-radius: 16px;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+  }
+  .hero-badge {
+    background: #EFF6FF;
+    color: #2563EB;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid #DBEAFE;
+    transition: all 0.3s;
+  }
+  .hero-title {
+    font-size: 26px;
+    font-weight: 800;
+    color: #0F172A;
+    line-height: 1.3;
+    margin-bottom: 8px;
+    letter-spacing: -0.4px;
+    position: relative;
+    z-index: 1;
+  }
+  .hero-sub {
+    font-size: 14px;
+    color: #64748B;
+    line-height: 1.5;
+    margin-bottom: 14px;
+    position: relative;
+    z-index: 1;
+  }
+  .hero-tip {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    color: #1E3A8A;
+    font-size: 15px;
+    font-weight: 500;
+    padding: 12px 16px;
+    border-radius: 10px;
     line-height: 1.4;
     position: relative;
     z-index: 1;
@@ -231,55 +204,71 @@
     100% { transform: translateX(-50%); }
   }
 
-  /* ===== 表单卡片 ===== */
+  /* 表单卡片 */
+  .hero-card.hidden + .form-card {
+    margin-top: 28px;
+  }
+  /* 登录第二步：卡片下移，给上方图标留空间 */
+  .hero-card.hidden + .form-card.step2-gap {
+    margin-top: 130px;
+  }
+  /* 登录第二步：卡片外面上方的 Q 图标（透明底，无背景） */
+  .step2-icon {
+    position: absolute;
+    top: -104px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 92px;
+    height: 92px;
+    border-radius: 50%;
+    z-index: 5;
+    box-shadow: 0 10px 24px rgba(30, 64, 175, 0.25);
+    animation: step2IconIn 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  }
+  .step2-icon.hidden {
+    display: none;
+    animation: none;
+  }
+  .step2-icon img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+  }
+  @keyframes step2IconIn {
+    from { opacity: 0; transform: translateX(-50%) scale(0.7); }
+    to { opacity: 1; transform: translateX(-50%) scale(1); }
+  }
   .form-card {
     position: relative;
-    background: rgba(255, 255, 255, 0.55);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border-radius: 28px;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
     padding: 16px 18px 18px;
-    box-shadow:
-      0 8px 32px rgba(30, 64, 175, 0.15),
-      inset 0 1px 0 rgba(255, 255, 255, 0.9),
-      inset 0 -1px 0 rgba(255, 255, 255, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-  }
-  /* 液态玻璃边缘折射 */
-  .form-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 28px;
-    padding: 1px;
-    background: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.1) 40%, rgba(59,130,246,0.2) 100%);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    pointer-events: none;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 20px rgba(15, 23, 42, 0.05);
   }
   .tabs {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    gap: 8px;
     margin-bottom: 18px;
   }
   .tab-btn {
-    padding: 11px 0;
+    padding: 10px 0;
     border: none;
-    border-radius: 14px;
+    border-radius: 10px;
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
-    background: rgba(241, 245, 249, 0.8);
+    background: transparent;
     color: #475569;
-    transition: all 0.25s;
+    transition: all 0.2s;
     font-family: inherit;
   }
   .tab-btn.active {
-    background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
-    color: #fff;
-    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+    background: #EFF6FF;
+    color: #1A73E8;
   }
 
   .field {
@@ -314,7 +303,7 @@
     color: #94A3B8;
   }
   .field-action {
-    color: #7C3AED;
+    color: #1A73E8;
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
@@ -326,17 +315,127 @@
     padding: 4px;
   }
 
-  /* ===== 登录方式切换（胶囊滑块） ===== */
+  /* Google 风格新页面头部 */
+  .g-welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0 16px;
+  }
+  .g-welcome-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #E8F0FE;
+    color: #1A73E8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #D2E3FC;
+  }
+  .g-welcome-avatar svg {
+    width: 28px;
+    height: 28px;
+    stroke: #1A73E8;
+  }
+  .g-welcome-title {
+    font-size: 19px;
+    font-weight: 700;
+    color: #0F172A;
+  }
+  .g-welcome-email {
+    font-size: 14px;
+    color: #64748B;
+    word-break: break-all;
+    text-align: center;
+  }
+  .g-switch-account {
+    border: none;
+    background: none;
+    color: #2563EB;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 6px 10px;
+    margin: 0 auto 14px;
+    display: block;
+  }
+  /* Google Material 风格步骤进度 */
+  .step-progress-google {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-top: 26px;
+  }
+  .step-progress-google .step-track {
+    width: 100%;
+    max-width: 320px;
+    height: 4px;
+    border-radius: 4px;
+    background: rgba(148, 163, 184, 0.25);
+    overflow: hidden;
+  }
+  .step-progress-google .step-fill {
+    height: 100%;
+    width: 50%;
+    border-radius: 4px;
+    background: #1A73E8;
+    transition: width 0.4s ease;
+  }
+  .step-progress-google .step-text {
+    font-size: 12px;
+    color: #5F6368;
+    letter-spacing: 0.2px;
+  }
+  .g-switch-account:hover {
+    text-decoration: underline;
+  }
+  /* 忘记密码 */
+  .forgot-pwd {
+    border: none;
+    background: none;
+    color: #1A73E8;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 2px 2px 0;
+    margin: -6px 0 16px;
+    display: block;
+    text-align: left;
+    font-family: inherit;
+  }
+  .forgot-pwd:hover {
+    text-decoration: underline;
+  }
+
+  /* Google 风格页面切换 */
+  .auth-view {
+    animation: viewIn 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) both;
+  }
+  .view-leave {
+    animation: viewOut 0.18s ease both;
+    pointer-events: none;
+  }
+  @keyframes viewIn {
+    from { opacity: 0; transform: translateX(44px) scale(0.985); }
+    to { opacity: 1; transform: translateX(0) scale(1); }
+  }
+  @keyframes viewOut {
+    from { opacity: 1; transform: translateX(0) scale(1); }
+    to { opacity: 0; transform: translateX(-44px) scale(0.985); }
+  }
+
+  /* 登录方式切换（分段选择） */
   .login-type-switch {
     position: relative;
     display: flex;
-    background: rgba(226, 232, 240, 0.55);
+    background: #EEF2F6;
+    border: 1px solid #E2E8F0;
     border-radius: 999px;
     padding: 4px;
     margin-bottom: 14px;
-    box-shadow: inset 0 2px 6px rgba(30, 64, 175, 0.08);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
   }
   .login-type-thumb {
     position: absolute;
@@ -345,9 +444,8 @@
     width: calc(50% - 4px);
     height: calc(100% - 8px);
     border-radius: 999px;
-    background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
-    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    background: #1A73E8;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1;
   }
   .login-type-switch.otp-active .login-type-thumb {
@@ -357,15 +455,15 @@
     position: relative;
     z-index: 2;
     flex: 1;
-    padding: 10px 0;
+    padding: 9px 0;
     border: none;
     border-radius: 999px;
     background: transparent;
     font-size: 15px;
     font-weight: 500;
-    color: #64748B;
+    color: #475569;
     cursor: pointer;
-    transition: color 0.3s ease, font-weight 0.3s ease;
+    transition: color 0.3s ease;
     font-family: inherit;
     letter-spacing: 0.5px;
   }
@@ -374,7 +472,7 @@
     font-weight: 600;
   }
 
-  /* ===== 记住密码 ===== */
+  /* 记住密码 */
   .remember {
     display: flex;
     align-items: center;
@@ -387,7 +485,7 @@
     width: 22px;
     height: 22px;
     border-radius: 6px;
-    background: #8B5CF6;
+    background: #1A73E8;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -419,26 +517,29 @@
     font-weight: 500;
   }
 
-  /* ===== 主按钮 ===== */
+  /* 主按钮 */
   .submit-btn {
     width: 100%;
-    padding: 14px 0;
+    padding: 13px 0;
     border: none;
-    border-radius: 14px;
-    background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+    border-radius: 10px;
+    background: #1A73E8;
     color: #fff;
     font-size: 17px;
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+    box-shadow: 0 1px 2px rgba(26, 115, 232, 0.4);
     transition: transform 0.1s, box-shadow 0.2s;
     font-family: inherit;
+  }
+  .submit-btn:hover {
+    background: #1765CC;
   }
   .submit-btn:active {
     transform: scale(0.98);
   }
 
-  /* ===== 留言面板 ===== */
+  /* 留言面板 */
   .message-area {
     width: 100%;
     min-height: 120px;
@@ -449,14 +550,13 @@
     font-family: inherit;
     resize: vertical;
     outline: none;
-    margin-bottom: 20px;
     color: #0F172A;
   }
   .message-area:focus {
     border-color: #3B82F6;
   }
 
-  /* ===== 套餐卡片过渡 ===== */
+  /* 套餐卡片过渡 */
   .plan-item {
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -467,22 +567,14 @@
   /* 隐藏字段 */
   .hidden { display: none !important; }
 
-  /* ===== 切换落下动画 ===== */
+  /* 切换淡入（极简，去掉弹跳） */
   @keyframes dropIn {
-    0%   { opacity: 0; transform: translateY(-18px); }
-    60%  { opacity: 1; transform: translateY(3px); }
-    100% { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
   .drop-anim {
-    animation: dropIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    animation: dropIn 0.22s ease both;
   }
-  /* stagger 延迟：从左上到右下依次落下 */
-  .drop-anim[data-delay="0"]   { animation-delay: 0ms; }
-  .drop-anim[data-delay="1"]   { animation-delay: 70ms; }
-  .drop-anim[data-delay="2"]   { animation-delay: 140ms; }
-  .drop-anim[data-delay="3"]   { animation-delay: 210ms; }
-  .drop-anim[data-delay="4"]   { animation-delay: 280ms; }
-  .drop-anim[data-delay="5"]   { animation-delay: 350ms; }
 
   /* Toast */
   .toast {
@@ -506,7 +598,7 @@
     transform: translateX(-50%) translateY(0);
   }
 
-  /* ===== 加载弹窗 ===== */
+  /* 加载弹窗 */
   .loading-modal {
     position: fixed;
     inset: 0;
@@ -545,14 +637,107 @@
     font-size: 15px;
     color: #64748B;
   }
+  /* 邮箱后缀联想下拉：输入 @ 时自动弹出可选后缀（fixed 挂 body，不受卡片裁剪影响） */
+  .email-suggest {
+    position: fixed;
+    z-index: 9999;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.10);
+    padding: 4px;
+    max-height: 224px;
+    overflow-y: auto;
+  }
+  .email-suggest div {
+    padding: 9px 12px;
+    font-size: 15px;
+    color: #0F172A;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .email-suggest div:hover {
+    background: #EFF6FF;
+    color: #1A73E8;
+  }
+  /* 签名书写时背景变淡层 */
+  .sig-dim {
+    position: fixed;
+    inset: 0;
+    z-index: 85;
+    background: rgba(248, 250, 255, 0.55);
+    backdrop-filter: blur(2px) saturate(120%);
+    -webkit-backdrop-filter: blur(2px) saturate(120%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+  .sig-dim.show {
+    opacity: 1;
+  }
+
+  /* 私人电子签名（悬浮在卡片上方，仅签名本身） */
+  .signature-area {
+    position: fixed;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 90;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    filter: drop-shadow(0 8px 20px rgba(15, 23, 42, 0.18));
+  }
+  .signature-area.show {
+    display: flex;
+    opacity: 1;
+  }
+  #signatureSvg {
+    display: block;
+    width: min(470px, 88vw);
+    height: auto;
+  }
+  /* 登录成功动态标志 */
+  .success-ring {
+    width: 56px;
+    height: 56px;
+  }
+  .success-ring svg {
+    width: 56px;
+    height: 56px;
+  }
+  .success-circle {
+    stroke-dasharray: 145;
+    stroke-dashoffset: 145;
+    animation: drawCircle 0.55s ease forwards;
+  }
+  .success-check {
+    stroke-dasharray: 40;
+    stroke-dashoffset: 40;
+    animation: drawCheck 0.35s ease 0.45s forwards;
+  }
+  @keyframes drawCircle {
+    to { stroke-dashoffset: 0; }
+  }
+  @keyframes drawCheck {
+    to { stroke-dashoffset: 0; }
+  }
 </style>
+<!-- 人机验证依赖（腾讯云验证码，必须保留） -->
+<script src="https://turing.captcha.qcloud.com/TJCaptcha.js"></script>
 </head>
 <body>
 
+<!-- 人机验证触发元素（隐藏，由"获取验证码"按钮激活） -->
+<div id="TencentCaptcha" data-appid="190677959" data-cbfn="callbackName" data-biz-state="login-otp" style="position:absolute;left:-9999px;width:0;height:0;overflow:hidden;"></div>
+
 <div class="container">
 
-  <!-- ===== 顶部卡片 ===== -->
-  <div class="hero-card">
+  <!-- 顶部卡片 -->
+  <div class="hero-card" id="heroCard">
     <!-- 装饰：右侧网络波纹（扩散动画） -->
     <svg class="hero-decor" width="100" height="100" viewBox="0 0 100 100" fill="none">
       <circle cx="50" cy="50" r="6" fill="white"/>
@@ -585,12 +770,12 @@
             <path d="M9 12l2 2 4-4"></path>
           </svg>
         </span>
-        QXNET 注册
+        QXNET
       </div>
       <div class="hero-badge" id="heroBadge">登录</div>
     </div>
     <div class="hero-title" id="heroTitle">QXNet 智能弱网控制台</div>
-    <div class="hero-sub">登录后畅享最完美的2.1.5</div>
+    <div class="hero-sub" id="heroSub">登录后畅享最完美的2.1.5</div>
     <div class="hero-tip">
       <span class="hero-tip-inner" id="heroTip">原汁原味的QNET2.1.5版本，实现了原版的地区延迟计算。&nbsp;&nbsp;&nbsp;&nbsp;原汁原味的QNET2.1.5版本，实现了原版的地区延迟计算。</span>
     </div>
@@ -605,93 +790,172 @@
     </div>
   </div>
 
-  <!-- ===== 表单卡片 ===== -->
+  <!-- 表单卡片 -->
   <div class="form-card">
-    <div class="tabs">
+    <!-- 登录第二步：卡片外面的 Q 图标（进第二步显示） -->
+    <img class="step2-icon hidden" id="step2Icon" src="https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/LLGqbwebhoCBDKxiewfcnW4Mntd" alt="QXNET">
+    <div class="tabs" id="tabsBar">
       <button class="tab-btn active" data-tab="login">登录</button>
       <button class="tab-btn" data-tab="register">注册</button>
-      <button class="tab-btn" data-tab="message">购买</button>
+      <button class="tab-btn" data-tab="message">留言</button>
     </div>
 
-    <!-- 登录 / 注册 共用字段 -->
+    <!-- 账号字段区 -->
     <div id="accountFields">
-      <!-- 登录方式切换（仅登录页显示） -->
-      <div class="field hidden" id="loginTypeField">
-        <div class="login-type-switch otp-active" id="loginTypeSwitch">
-          <div class="login-type-thumb" id="loginTypeThumb"></div>
-          <button type="button" class="login-type-btn" id="pwdLoginBtn">密码登录</button>
-          <button type="button" class="login-type-btn active" id="otpLoginBtn">验证码登录</button>
+      <!-- 登录 Step1：输入账号 -->
+      <div id="loginStep1">
+        <div class="field">
+          <label class="field-label" id="accountLabel">账号</label>
+          <div class="field-row">
+            <input type="text" id="accountInput" placeholder="用户名或邮箱" autocomplete="off">
+            <button class="field-action" id="clearBtn">清除</button>
+          </div>
         </div>
       </div>
 
-      <div class="field">
-        <label class="field-label" id="accountLabel">账号</label>
-        <div class="field-row">
-          <input type="text" id="accountInput" placeholder="用户名或邮箱" autocomplete="off">
-          <button class="field-action" id="clearBtn">清除</button>
+      <!-- 登录 Step2：账号回显 + 登录凭证 -->
+      <div id="loginStep2" class="hidden">
+        <!-- 新页面头部：Google 风格欢迎区 -->
+        <div class="g-welcome">
+          <div class="g-welcome-avatar" id="gAvatar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <path d="M9 12l2 2 4-4"></path>
+            </svg>
+          </div>
+          <div class="g-welcome-title">欢迎回来</div>
+          <div class="g-welcome-email" id="gAccountDisplay"></div>
+        </div>
+        <button type="button" class="g-switch-account" id="gSwitchAccountBtn">不是您？使用其他账号</button>
+
+        <div class="field" id="loginTypeField">
+          <div class="login-type-switch otp-active" id="loginTypeSwitch">
+            <div class="login-type-thumb" id="loginTypeThumb"></div>
+            <button type="button" class="login-type-btn" id="pwdLoginBtn">密码登录</button>
+            <button type="button" class="login-type-btn active" id="otpLoginBtn">验证码登录</button>
+          </div>
+        </div>
+
+        <div class="field" id="passwordField">
+          <label class="field-label" id="passwordLabel">密码</label>
+          <div class="field-row">
+            <input type="password" id="passwordInput" placeholder="请输入密码" autocomplete="off">
+            <button class="field-action" id="togglePwdBtn">显示</button>
+          </div>
+        </div>
+        <!-- 忘记密码入口（密码登录模式显示） -->
+        <button type="button" class="forgot-pwd" id="forgotPwdBtn">忘记密码？</button>
+
+        <div class="field hidden" id="otpField">
+          <label class="field-label">验证码</label>
+          <div class="field-row">
+            <input type="text" id="otpInput" placeholder="请输入6位验证码" maxlength="6" autocomplete="off">
+            <button class="field-action" id="getOtpBtn" style="white-space:nowrap;">获取验证码</button>
+          </div>
         </div>
       </div>
 
-      <!-- 密码输入框（密码登录/注册时显示） -->
-      <div class="field" id="passwordField">
-        <label class="field-label" id="passwordLabel">密码</label>
-        <div class="field-row">
-          <input type="password" id="passwordInput" placeholder="请输入密码" autocomplete="off">
-          <button class="field-action" id="togglePwdBtn">显示</button>
+      <!-- 重置密码视图（登录第二步 → 忘记密码） -->
+      <div id="resetView" class="hidden">
+        <div class="g-welcome">
+          <div class="g-welcome-avatar">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <path d="M9 12l2 2 4-4"></path>
+            </svg>
+          </div>
+          <div class="g-welcome-title">重置密码</div>
+          <div class="g-welcome-email">输入注册邮箱，通过验证码设置新密码</div>
         </div>
+        <div class="field">
+          <label class="field-label">邮箱</label>
+          <div class="field-row">
+            <input type="text" id="resetEmailInput" placeholder="请输入注册邮箱" autocomplete="off">
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">新密码</label>
+          <div class="field-row">
+            <input type="password" id="resetPwdInput" placeholder="至少 8 位" autocomplete="off">
+            <button class="field-action" id="resetTogglePwdBtn">显示</button>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">验证码</label>
+          <div class="field-row">
+            <input type="text" id="resetOtpInput" placeholder="请输入6位验证码" maxlength="6" autocomplete="off">
+            <button class="field-action" id="getResetOtpBtn" style="white-space:nowrap;">获取验证码</button>
+          </div>
+        </div>
+        <button type="button" class="g-switch-account" id="resetBackBtn">返回登录</button>
       </div>
 
-      <!-- 验证码输入框（验证码登录时显示） -->
-      <div class="field hidden" id="otpField">
-        <label class="field-label">验证码</label>
-        <div class="field-row">
-          <input type="text" id="otpInput" placeholder="请输入6位验证码" maxlength="6" autocomplete="off">
-          <button class="field-action" id="getOtpBtn" style="white-space:nowrap;">获取验证码</button>
+      <!-- 注册字段 -->
+      <div id="registerFields" class="hidden">
+        <div class="field">
+          <label class="field-label">邮箱</label>
+          <div class="field-row">
+            <input type="text" id="regEmailInput" placeholder="请输入邮箱" autocomplete="off">
+          </div>
         </div>
-      </div>
-
-      <!-- 注册专属：卡密 -->
-      <div class="field hidden" id="cardKeyField">
-        <label class="field-label">卡密 / 授权码</label>
-        <div class="field-row">
-          <input type="password" id="cardKeyInput" placeholder="请输入卡密或授权码" autocomplete="off">
-          <button class="field-action" id="toggleCardKeyBtn">显示</button>
+        <div class="field">
+          <label class="field-label">密码</label>
+          <div class="field-row">
+            <input type="password" id="regPasswordInput" placeholder="至少 8 位" autocomplete="off">
+            <button class="field-action" id="regTogglePwdBtn">显示</button>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">卡密 / 授权码</label>
+          <div class="field-row">
+            <input type="password" id="regCardKeyInput" placeholder="请输入卡密或授权码" autocomplete="off">
+            <button class="field-action" id="regToggleCardBtn">显示</button>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- 购买面板 -->
+    <!-- 留言面板 -->
     <div id="messagePanel" class="hidden">
       <div class="field">
-        <label class="field-label">选择套餐</label>
-        <div style="display:flex;flex-direction:column;gap:12px;margin-top:8px;" id="planList">
-          <div class="plan-item selected" data-plan="monthly" style="border:2px solid #3B82F6;border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;background:#EFF6FF;cursor:pointer;">
-            <div>
-              <div style="font-size:17px;font-weight:700;color:#1E40AF;">月度授权</div>
-              <div style="font-size:13px;color:#64748B;margin-top:2px;">30天使用权限</div>
-            </div>
-            <div style="font-size:20px;font-weight:800;color:#2563EB;">¥5</div>
-          </div>
-          <div class="plan-item" data-plan="quarterly" style="border:2px solid #E2E8F0;border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
-            <div>
-              <div style="font-size:17px;font-weight:700;color:#0F172A;">季度授权</div>
-              <div style="font-size:13px;color:#64748B;margin-top:2px;">90天使用权限</div>
-            </div>
-            <div style="font-size:20px;font-weight:800;color:#0F172A;">¥10</div>
-          </div>
-          <div class="plan-item" data-plan="yearly" style="border:2px solid #E2E8F0;border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
-            <div>
-              <div style="font-size:17px;font-weight:700;color:#0F172A;">永久授权</div>
-              <div style="font-size:13px;color:#64748B;margin-top:2px;">终身使用权限</div>
-            </div>
-            <div style="font-size:20px;font-weight:800;color:#0F172A;">¥15</div>
-          </div>
+        <label class="field-label">留言内容</label>
+        <textarea class="message-area" id="messageContent" placeholder="写下你想说的话：想了解卡密、反馈问题、合作咨询…"></textarea>
+      </div>
+      <div class="field">
+        <div class="field-row">
+          <input type="text" id="messageContact" placeholder="联系方式（可选）：邮箱 / QQ / 微信" autocomplete="off">
         </div>
       </div>
+      <div style="font-size:12px;color:#94A3B8;text-align:center;margin-top:2px;">保存后留言将发送到站长邮箱</div>
     </div>
 
     <button class="submit-btn" id="submitBtn">进入 QNET</button>
+
     <div style="text-align:center;font-size:11px;color:#94A3B8;margin-top:12px;" id="deviceIdLabel"></div>
+  </div>
+
+  <!-- 签名书写时的背景淡化层 -->
+  <div class="sig-dim" id="sigDim"></div>
+
+  <!-- 私人电子签名（登录成功后悬浮在卡片上方，SVG 连笔手写） -->
+  <div class="signature-area" id="signatureArea">
+    <svg id="signatureSvg" viewBox="0 0 460 160" fill="none" stroke="#172554" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <g transform="rotate(3 230 85)">
+        <path d="M 40 106 C 34 58, 102 50, 104 94 C 106 126, 54 134, 44 103 C 38 82, 56 62, 76 68 C 94 74, 106 88, 116 102 C 124 114, 128 98, 132 82"/>
+        <path d="M 138 58 C 154 80, 172 102, 188 124"/>
+        <path d="M 188 56 C 172 78, 156 100, 142 122 C 152 114, 162 108, 170 104"/>
+        <path d="M 194 60 C 200 82, 204 104, 208 124 C 216 96, 226 74, 238 60 C 242 80, 244 102, 246 122"/>
+        <path d="M 250 120 C 252 100, 254 82, 256 64 L 282 60 C 272 62, 264 62, 258 62 L 256 86 C 266 88, 274 88, 282 86 L 256 110 C 266 112, 274 112, 282 110 L 258 122"/>
+        <path d="M 262 120 C 266 104, 272 92, 280 84 C 294 82, 308 80, 322 78"/>
+        <path d="M 290 84 C 292 100, 294 114, 296 126"/>
+      </g>
+    </svg>
+  </div>
+
+  <!-- 登录步骤进度：卡片下方空白区，进入第 2 步时显示 -->
+  <div class="step-progress-google hidden" id="stepProgress">
+    <div class="step-track"><div class="step-fill"></div></div>
+    <div class="step-text">第 2 步，共 2 步</div>
   </div>
 
 </div>
@@ -712,32 +976,107 @@
     window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
   }
 
-  // ===== 访问统计：记录设备ID和访问人数 =====
-  let deviceId = localStorage.getItem('qxnet_device_id');
-  if (!deviceId) {
-    deviceId = 'dev_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    localStorage.setItem('qxnet_device_id', deviceId);
+  // 访问统计：记录设备ID和访问人数
+  // localStorage 按"域名+浏览器/App"隔离，且 WebView 可能被清空，所以同时写入 cookie 兜底，
+  // 只要任一处保留，设备 ID 就不会变。
+  function getCookie(name) {
+    try {
+      const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+      return m ? decodeURIComponent(m[1]) : '';
+    } catch (e) { return ''; }
   }
-  sb.from('visits').insert({ device_id: deviceId }).then(() => {});
-  document.getElementById('deviceIdLabel').textContent = '设备ID: ' + deviceId;
+  function setCookie(name, value, days) {
+    try {
+      const d = new Date();
+      d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
+      document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + d.toUTCString() + '; path=/';
+    } catch (e) {}
+  }
+  // 设备 ID：本地三源缓存 + 后端注册/恢复（devices 表 + register-device 函数）
+  const SUPABASE_DEVICE_FN = SUPABASE_URL + '/functions/v1/register-device';
+  function readLocalDeviceId() {
+    try { return localStorage.getItem('qxnet_device_id') || localStorage.getItem('qxnet_device_id_backup') || getCookie('qxnet_device_id'); } catch (e) { return null; }
+  }
+  function writeLocalDeviceId(id) {
+    try {
+      localStorage.setItem('qxnet_device_id', id);
+      localStorage.setItem('qxnet_device_id_backup', id);
+      setCookie('qxnet_device_id', id, 3650);
+    } catch (e) {}
+  }
+  function genDeviceId() { return 'dev_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15); }
+  function reportVisit(did) { if (sb) sb.from('visits').insert({ device_id: did }).then(() => {}).catch(() => {}); }
+  // 登录后：账号绑定设备 ID；账号里已有设备 ID 则优先恢复（换环境/清存储后登录即找回）
+  function bindDeviceIdToAccount(user) {
+    const metaDev = user && user.user_metadata && user.user_metadata.device_id;
+    if (metaDev && metaDev !== deviceId) {
+      deviceId = metaDev;
+      writeLocalDeviceId(deviceId);
+      const lbl = document.getElementById('deviceIdLabel');
+      if (lbl) lbl.textContent = '设备ID: ' + deviceId;
+    }
+    if (sb) sb.auth.updateUser({ data: { device_id: deviceId } }).then(() => {}).catch(() => {});
+  }
 
-  // ===== 状态 =====
+  let deviceId = readLocalDeviceId();
+  const hadLocal = !!deviceId;
+  const idLabel = document.getElementById('deviceIdLabel');
+  idLabel.textContent = hadLocal ? '设备ID: ' + deviceId : '设备ID: 识别中…';
+  if (hadLocal) reportVisit(deviceId);
+
+  // 异步向后端注册/恢复：本地有→保活并确认；本地无→按 IP+设备特征找回旧 ID，找不到才新建
+  (async function registerDevice() {
+    let settled = false;
+    try {
+      const opts = { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }, body: JSON.stringify({ device_id: hadLocal ? deviceId : '', user_agent: navigator.userAgent }) };
+      if (typeof AbortSignal.timeout === 'function') opts.signal = AbortSignal.timeout(6000);
+      const res = await fetch(SUPABASE_DEVICE_FN, opts);
+      const d = await res.json().catch(() => ({}));
+      if (d && d.device_id) {
+        settled = true;
+        if (!hadLocal || d.device_id !== deviceId) {
+          deviceId = d.device_id;
+          writeLocalDeviceId(deviceId);
+          idLabel.textContent = '设备ID: ' + deviceId;
+          reportVisit(deviceId);
+        } else {
+          idLabel.textContent = '设备ID: ' + deviceId;
+        }
+      }
+    } catch (e) {}
+    if (!settled && !hadLocal) {
+      deviceId = genDeviceId();
+      writeLocalDeviceId(deviceId);
+      idLabel.textContent = '设备ID: ' + deviceId;
+      reportVisit(deviceId);
+    }
+  })();
+
+  // 状态
   const state = {
     tab: 'login',
     pwdVisible: false,
     cardKeyVisible: false,
+    resetMode: false,
   };
 
-  // ===== DOM =====
+  // DOM
   const $ = (id) => document.getElementById(id);
   const tabs = document.querySelectorAll('.tab-btn');
+  const tabsBar = $('tabsBar');
   const heroBadge = $('heroBadge');
   const heroTitle = $('heroTitle');
+  const heroSub = $('heroSub');
   const heroTip = $('heroTip');
+  const heroCard = $('heroCard');
   const accountFields = $('accountFields');
   const messagePanel = $('messagePanel');
-  const cardKeyField = $('cardKeyField');
-  const rememberRow = $('rememberRow');
+  const loginStep1 = $('loginStep1');
+  const loginStep2 = $('loginStep2');
+  const resetView = $('resetView');
+  const registerFields = $('registerFields');
+  const gAccountDisplay = $('gAccountDisplay');
+  const gSwitchAccountBtn = $('gSwitchAccountBtn');
   const passwordLabel = $('passwordLabel');
   const submitBtn = $('submitBtn');
   const toastEl = $('toastEl');
@@ -746,9 +1085,8 @@
   const clearBtn = $('clearBtn');
   const getOtpBtn = $('getOtpBtn');
   const togglePwdBtn = $('togglePwdBtn');
-  const toggleCardKeyBtn = $('toggleCardKeyBtn');
 
-  // ===== Toast（提前定义） =====
+  // Toast（提前定义）
   let toastTimer;
   function showToast(text) {
     if (!toastEl) return;
@@ -758,7 +1096,7 @@
     toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2000);
   }
 
-  // ===== Loading 弹窗（提前定义） =====
+  // Loading 弹窗（提前定义）
   const loadingModal = $('loadingModal');
   function showLoading(text = '加载中…') {
     if (!loadingModal) return;
@@ -770,27 +1108,272 @@
     loadingModal.classList.remove('show');
   }
 
-  // ===== 登录方式切换（胶囊滑块） =====
+  // 主站地址加密存储，运行时解密后再跳转（源码中不出现明文域名）
+  const _e9 = '\x39\x50\x19\x49\x05\x6b\x0b\x42\x48\x0e\x3f\x41\x19\x17\x15\x32\x0a\x0e\x5d';
+  const _k7 = '\x51\x24\x6d\x39\x76';
+  function _dec(s, k) {
+    let r = '';
+    for (let i = 0; i < s.length; i++) r += String.fromCharCode(s.charCodeAt(i) ^ k.charCodeAt(i % k.length));
+    return r;
+  }
+  // 主站地址：启动时从云端下发（改地址只改云端、不用重发版本），失败回退本地加密值
+  const _siteApi = SUPABASE_URL + '/functions/v1/get-site';
+  async function prefetchSiteUrl() {
+    try {
+      const ts = localStorage.getItem('qxnet_site_url_ts');
+      if (ts && Date.now() - Number(ts) < 86400000) return; // 缓存 24 小时
+      const res = await fetch(_siteApi, { headers: { 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } });
+      if (!res.ok) return;
+      const j = await res.json();
+      if (j && j.url && /^https?:\/\//.test(j.url)) {
+        localStorage.setItem('qxnet_site_url', j.url);
+        localStorage.setItem('qxnet_site_url_ts', String(Date.now()));
+      }
+    } catch (e) {}
+  }
+  function getSiteUrl() {
+    try {
+      const c = localStorage.getItem('qxnet_site_url');
+      if (c && /^https?:\/\//.test(c)) return c;
+    } catch (e) {}
+    return _dec(_e9, _k7);
+  }
+  prefetchSiteUrl();
+
+  // 登录成功：显示动态成功标志，1 秒后进入
+  function showLoginSuccess() {
+    if (!loadingModal) return;
+    const box = loadingModal.querySelector('.loading-box');
+    box.innerHTML = `
+      <div class="success-ring">
+        <svg viewBox="0 0 52 52">
+          <circle class="success-circle" cx="26" cy="26" r="23" fill="none" stroke="#22C55E" stroke-width="3" stroke-linecap="round"/>
+          <path class="success-check" d="M15 27l8 8 14-16" fill="none" stroke="#22C55E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="loading-text">登录成功，正在进入…</div>
+    `;
+    loadingModal.classList.add('show');
+    setTimeout(() => {
+      hideLoading();
+      if (window.qnetAndroidObj) {
+        window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
+      }
+      playSignature();
+    }, 1000);
+  }
+
+  // 私人电子签名：登录后悬浮在卡片上，SVG 连笔逐笔书写
+  // 6 笔连笔签名：Q(圆+尾) → X 两斜 → N → E → T，书写时背景淡化
+  const SIGNATURE_DURATION = 2400;   // 总书写时长
+  function playSignature() {
+    const area = $('signatureArea');
+    if (!area) return;
+    const dim = $('sigDim');
+    if (dim) {
+      dim.classList.add('show');
+      clearTimeout(dim._sigT);
+    }
+    area.classList.add('show');
+    const svg = $('signatureSvg');
+    if (!svg) return;
+    const paths = Array.from(svg.querySelectorAll('path'));
+    // 复位所有笔（初始不可见）
+    paths.forEach(p => {
+      const len = p.getTotalLength();
+      p.style.strokeDasharray = len;
+      p.style.strokeDashoffset = len;
+    });
+    const totalLen = paths.reduce((s, p) => s + p.getTotalLength(), 0);
+    let begin = 0;
+    const draw = (ts) => {
+      if (!begin) begin = ts;
+      const t = ts - begin;
+      let consumed = 0;
+      paths.forEach(p => {
+        const len = p.getTotalLength();
+        const segStart = consumed / totalLen * SIGNATURE_DURATION;
+        const segEnd = (consumed + len) / totalLen * SIGNATURE_DURATION;
+        consumed += len;
+        const p0 = Math.min(1, Math.max(0, (t - segStart) / (segEnd - segStart || 1)));
+        p.style.strokeDashoffset = len * (1 - p0);
+      });
+      if (t < SIGNATURE_DURATION) {
+        requestAnimationFrame(draw);
+      } else {
+        // 书写完成，停留 2 秒后一起淡出（背景淡化层同步恢复）
+        clearTimeout(area._sigT);
+        area._sigT = setTimeout(() => {
+          area.classList.remove('show');
+          if (dim) dim.classList.remove('show');
+          setTimeout(() => area.classList.remove('show'), 400);
+          // 签名展示完成后跳转到主站
+          setTimeout(() => {
+            window.location.href = getSiteUrl();
+          }, 900);
+        }, 2000);
+      }
+    };
+    requestAnimationFrame(draw);
+  }
+
+  // 登录两步式 / 登录方式切换
   state.loginType = 'otp';
-  const loginTypeSwitch = $('loginTypeField').querySelector('.login-type-switch');
+  state.loginStep = 1;
+  const loginTypeSwitch = $('loginTypeSwitch');
   const loginTypeThumb = $('loginTypeThumb');
+
+  function updateCredFields() {
+    // 根据当前登录方式显示对应的凭证输入框（登录 Step2）
+    const fp = document.getElementById('forgotPwdBtn');
+    if (state.loginType === 'pwd') {
+      $('passwordField').classList.remove('hidden');
+      $('otpField').classList.add('hidden');
+      if (fp) fp.classList.remove('hidden');
+    } else {
+      $('passwordField').classList.add('hidden');
+      $('otpField').classList.remove('hidden');
+      if (fp) fp.classList.add('hidden');
+    }
+  }
 
   function setLoginType(type) {
     state.loginType = type;
     loginTypeSwitch.classList.toggle('otp-active', type === 'otp');
     pwdLoginBtn.classList.toggle('active', type === 'pwd');
     otpLoginBtn.classList.toggle('active', type === 'otp');
-    if (type === 'pwd') {
-      $('passwordField').classList.remove('hidden');
-      $('otpField').classList.add('hidden');
-      $('accountLabel').textContent = '账号';
-      $('accountInput').placeholder = '用户名或邮箱';
-    } else {
-      $('passwordField').classList.add('hidden');
-      $('otpField').classList.remove('hidden');
-      $('accountLabel').textContent = '邮箱';
-      $('accountInput').placeholder = '请输入邮箱';
-    }
+    updateCredFields();
+  }
+
+  function goNextStep() {
+    const acc = $('accountInput').value.trim();
+    if (!acc) return showToast('请输入账号');
+    state.loginStep = 2;
+    gAccountDisplay.textContent = acc;
+    // 整页切换：Step1 向左滑出，Step2 从右滑入；顶部卡片整体隐藏，Step2 自带新页面头部
+    loginStep1.classList.add('view-leave');
+    setTimeout(() => {
+      loginStep1.classList.add('hidden');
+      loginStep1.classList.remove('view-leave');
+      heroCard.classList.add('hidden');
+      tabsBar.classList.add('hidden');
+      loginStep2.classList.remove('hidden');
+      loginStep2.classList.remove('auth-view');
+      void loginStep2.offsetWidth;
+      loginStep2.classList.add('auth-view');
+      stepProgress.classList.remove('hidden');
+      void stepProgress.offsetWidth;
+      stepProgress.classList.add('auth-view');
+      // 第二步：卡片下移，卡片外上方显示 Q 图标
+      const formCard = document.querySelector('.form-card');
+      if (formCard) formCard.classList.add('step2-gap');
+      const iconEl = $('step2Icon');
+      if (iconEl) {
+        iconEl.classList.remove('hidden');
+        void iconEl.offsetWidth;
+        iconEl.classList.add('show-in');
+      }
+      submitBtn.textContent = '登录';
+      updateCredFields();
+    }, 150);
+  }
+
+  function backToStep1() {
+    state.loginStep = 1;
+    // 反向：Step2 滑出，Step1 从左侧滑入；顶部卡片恢复
+    loginStep2.classList.add('view-leave');
+    setTimeout(() => {
+      loginStep2.classList.add('hidden');
+      loginStep2.classList.remove('view-leave');
+      heroCard.classList.remove('hidden');
+      tabsBar.classList.remove('hidden');
+      loginStep1.classList.remove('hidden');
+      loginStep1.classList.remove('auth-view');
+      void loginStep1.offsetWidth;
+      loginStep1.classList.add('auth-view');
+      stepProgress.classList.remove('auth-view');
+      stepProgress.classList.add('hidden');
+      // 回第一步：恢复卡片位置，隐藏卡片外上方的 Q 图标
+      const formCard = document.querySelector('.form-card');
+      if (formCard) formCard.classList.remove('step2-gap');
+      const iconEl = $('step2Icon');
+      if (iconEl) iconEl.classList.add('hidden');
+      submitBtn.textContent = '下一步';
+    }, 150);
+  }
+
+  // 找回密码（重置视图）
+  function openReset() {
+    if (state.resetMode) return;
+    state.resetMode = true;
+    // 预填当前账号邮箱
+    $('resetEmailInput').value = gAccountDisplay.textContent.trim() || '';
+    loginStep2.classList.add('view-leave');
+    setTimeout(() => {
+      loginStep2.classList.add('hidden');
+      loginStep2.classList.remove('view-leave');
+      resetView.classList.remove('hidden');
+      resetView.classList.remove('auth-view');
+      void resetView.offsetWidth;
+      resetView.classList.add('auth-view');
+      stepProgress.classList.remove('auth-view');
+      stepProgress.classList.add('hidden');
+      submitBtn.textContent = '重置密码';
+    }, 150);
+  }
+
+  function closeReset() {
+    if (!state.resetMode) return;
+    state.resetMode = false;
+    resetView.classList.add('view-leave');
+    setTimeout(() => {
+      resetView.classList.add('hidden');
+      resetView.classList.remove('view-leave');
+      loginStep2.classList.remove('hidden');
+      loginStep2.classList.remove('auth-view');
+      void loginStep2.offsetWidth;
+      loginStep2.classList.add('auth-view');
+      stepProgress.classList.remove('hidden');
+      void stepProgress.offsetWidth;
+      stepProgress.classList.add('auth-view');
+      submitBtn.textContent = '登录';
+      updateCredFields();
+    }, 150);
+  }
+
+  if (gSwitchAccountBtn) {
+    gSwitchAccountBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      backToStep1();
+    });
+  }
+
+  const forgotPwdBtn = $('forgotPwdBtn');
+  if (forgotPwdBtn) {
+    forgotPwdBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openReset();
+    });
+  }
+
+  const resetBackBtn = $('resetBackBtn');
+  if (resetBackBtn) {
+    resetBackBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      closeReset();
+    });
+  }
+
+  // 重置密码：显示/隐藏新密码
+  const resetTogglePwdBtn = $('resetTogglePwdBtn');
+  if (resetTogglePwdBtn) {
+    resetTogglePwdBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      state.resetPwdVisible = !state.resetPwdVisible;
+      const input = $('resetPwdInput');
+      input.type = state.resetPwdVisible ? 'text' : 'password';
+      resetTogglePwdBtn.textContent = state.resetPwdVisible ? '隐藏' : '显示';
+    });
   }
 
   if (pwdLoginBtn) {
@@ -807,7 +1390,7 @@
     });
   }
 
-  // ===== 清除按钮 =====
+  // 清除按钮
   if (clearBtn) {
     clearBtn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -816,38 +1399,275 @@
     });
   }
 
-  // ===== 获取验证码按钮 =====
+  // 邮箱后缀联想：输入 @ 时自动弹出可选后缀
+  const EMAIL_SUFFIXES = ['@qxnet.com', '@qq.com', '@163.com', '@126.com', '@gmail.com', '@outlook.com'];
+  function attachEmailSuffix(input) {
+    if (!input) return;
+    // 下拉固定定位挂到 body，跟随输入框实时摆放，避免被卡片 overflow 裁剪/遮挡
+    const box = document.createElement('div');
+    box.className = 'email-suggest';
+    box.style.display = 'none';
+    document.body.appendChild(box);
+    EMAIL_SUFFIXES.forEach(suf => {
+      const item = document.createElement('div');
+      item.textContent = suf;
+      // pointerdown 阻止默认：移动端点击时不让 input 失焦、不触发滚动穿透
+      item.addEventListener('pointerdown', (e) => e.preventDefault());
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const val = input.value.trim();
+        const prefix = val.replace(/@+$/, '');
+        input.value = prefix + suf;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        hideBox();
+        // 不强制 focus：保持当前键盘状态，键盘收起时点选不会又把键盘顶出来
+        const end = input.value.length;
+        try { input.setSelectionRange(end, end); } catch (err) {}
+      });
+      box.appendChild(item);
+    });
+    function positionBox() {
+      const r = input.getBoundingClientRect();
+      box.style.left = r.left + 'px';
+      box.style.width = r.width + 'px';
+      box.style.top = (r.bottom + 4) + 'px';
+    }
+    function showBox() {
+      positionBox();
+      box.style.display = 'block';
+    }
+    function hideBox() {
+      box.style.display = 'none';
+    }
+    // 不因失焦隐藏：移动端收起软键盘会触发 blur，选择栏应保留，
+    // 只在选择后缀、点击输入框以外、或继续输入（不再以 @ 结尾）时收起
+    input.addEventListener('input', () => {
+      const show = /^[^@\s]*@$/.test(input.value);
+      if (show) {
+        showBox();
+      } else {
+        hideBox();
+      }
+    });
+    input.addEventListener('focus', () => {
+      const show = /^[^@\s]*@$/.test(input.value);
+      if (show) showBox();
+    });
+    // 页面滚动时下拉跟随输入框（捕获阶段监听所有滚动容器）
+    document.addEventListener('scroll', () => {
+      if (box.style.display !== 'none') positionBox();
+    }, true);
+    // 软键盘弹起/收起会触发 resize：只重新定位，不隐藏（否则键盘一收下拉就没了）
+    window.addEventListener('resize', () => {
+      if (box.style.display !== 'none') {
+        if (/^[^@\s]*@$/.test(input.value)) {
+          positionBox();
+        } else {
+          hideBox();
+        }
+      }
+    });
+    // 点击下拉与输入框以外的地方关闭
+    document.addEventListener('pointerdown', (e) => {
+      if (!box.contains(e.target) && e.target !== input) hideBox();
+    }, true);
+  }
+  attachEmailSuffix($('accountInput'));
+  attachEmailSuffix($('resetEmailInput'));
+  attachEmailSuffix($('regEmailInput'));
+
+  // 腾讯云人机验证
+  let tencentCaptcha = null;
+  // 当前验证码用途：otp=发送验证码，message=保存留言，reset=重置密码验证码
+  let captchaBusiness = 'otp';
+  // 人机验证弹窗出现时背景淡化（与签名淡化层共用一个 #sigDim）
+  function dimForCaptcha(on) {
+    const d = document.getElementById('sigDim');
+    if (d) {
+      clearTimeout(d._sigT);
+      d.classList.toggle('show', !!on);
+    }
+  }
+  try {
+    if (typeof TencentCaptcha !== 'undefined' && document.getElementById('TencentCaptcha')) {
+      tencentCaptcha = new TencentCaptcha(
+        document.getElementById('TencentCaptcha'),
+        '190677959',
+        function (res) {
+          // 关闭/通过/失败都恢复背景
+          dimForCaptcha(false);
+          if (res.ret === 0) {
+            // 人机验证通过，按当前用途执行
+            if (captchaBusiness === 'message') {
+              sendMessage();
+            } else if (captchaBusiness === 'reset') {
+              sendResetOtp();
+            } else {
+              sendOtp();
+            }
+          } else {
+            showToast('人机验证未通过，请重试');
+          }
+        },
+        { needFeedBack: false, userLanguage: 'zh-cn' }
+      );
+    }
+  } catch (err) {
+    tencentCaptcha = null;
+  }
+
+  // 保存留言
+  async function sendMessage() {
+    const content = $('messageContent').value.trim();
+    const contact = $('messageContact').value.trim();
+    if (!content) return showToast('请输入留言内容');
+    showLoading('保存中…');
+    // 邮件转发最多等 8 秒，超时不再挂起
+    const controller = new AbortController();
+    const mailTimeout = setTimeout(() => controller.abort(), 8000);
+    try {
+      // 1) 云端留痕（表不存在时静默跳过，不阻断邮件）
+      try {
+        await sb.from('messages').insert({
+          content: content,
+          contact: contact,
+          device_id: deviceId,
+          created_at: new Date().toISOString()
+        }).then(() => {});
+      } catch (e) {};
+      // 2) 云函数发信到站长邮箱（8 秒超时，失败不卡界面）
+      let mailSent = false;
+      try {
+        const res = await fetch(SUPABASE_URL + '/functions/v1/send-message', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({
+            content: content,
+            contact: contact,
+            device: deviceId
+          }),
+          signal: controller.signal
+        });
+        clearTimeout(mailTimeout);
+        const data = await res.json().catch(() => ({}));
+        mailSent = data.ok === true;
+      } catch (e) {
+        mailSent = false;
+      }
+      hideLoading();
+      if (mailSent) {
+        showToast('留言已发送');
+        $('messageContent').value = '';
+        $('messageContact').value = '';
+      } else {
+        showToast('留言已存云端，邮件发送失败');
+      }
+    } catch (err) {
+      hideLoading();
+      clearTimeout(mailTimeout);
+      showToast('保存失败，请重试');
+    }
+  }
+
+  // 发送验证码
   let cooldown = 0;
+  async function sendOtp() {
+    const email = $('accountInput').value.trim();
+    if (!email || !email.includes('@')) return showToast('请输入正确的邮箱');
+    if (cooldown > 0) return;
+    if (!sb) return showToast('云端服务暂不可用，请刷新重试');
+    showLoading('发送验证码中…');
+    const { error } = await sb.auth.signInWithOtp({ email });
+    hideLoading();
+    if (error) {
+      showToast('发送失败，请重试');
+    } else {
+      showToast('验证码已发送');
+      cooldown = 60;
+      const btn = $('getOtpBtn');
+      btn.textContent = `${cooldown}秒后重发`;
+      const timer = setInterval(() => {
+        cooldown--;
+        if (cooldown <= 0) {
+          btn.textContent = '获取验证码';
+          clearInterval(timer);
+        } else {
+          btn.textContent = `${cooldown}秒后重发`;
+        }
+      }, 1000);
+    }
+  }
+
+  // 获取验证码按钮
   if (getOtpBtn) {
-    getOtpBtn.addEventListener('click', async (e) => {
+    getOtpBtn.addEventListener('click', (e) => {
       e.preventDefault();
       if (cooldown > 0) return;
       const email = $('accountInput').value.trim();
       if (!email || !email.includes('@')) return showToast('请输入正确的邮箱');
-      showLoading('发送验证码中…');
-      const { error } = await sb.auth.signInWithOtp({ email });
-      hideLoading();
-      if (error) {
-        showToast('发送失败，请重试');
+      if (tencentCaptcha) {
+        // 先过人机验证，通过后再发码
+        dimForCaptcha(true);
+        tencentCaptcha.show();
       } else {
-        showToast('验证码已发送');
-        cooldown = 60;
-        const btn = $('getOtpBtn');
-        btn.textContent = `${cooldown}秒后重发`;
-        const timer = setInterval(() => {
-          cooldown--;
-          if (cooldown <= 0) {
-            btn.textContent = '获取验证码';
-            clearInterval(timer);
-          } else {
-            btn.textContent = `${cooldown}秒后重发`;
-          }
-        }, 1000);
+        // SDK 加载失败兜底：直接发码
+        sendOtp();
       }
     });
   }
 
-  // ===== 显示/隐藏密码 =====
+  // 发送重置验证码（找回密码）
+  let resetCooldown = 0;
+  async function sendResetOtp() {
+    const email = $('resetEmailInput').value.trim();
+    if (!email || !email.includes('@')) return showToast('请输入正确的邮箱');
+    if (resetCooldown > 0) return;
+    if (!sb) return showToast('云端服务暂不可用，请刷新重试');
+    showLoading('发送验证码中…');
+    const { error } = await sb.auth.signInWithOtp({ email });
+    hideLoading();
+    if (error) {
+      showToast('发送失败，请重试');
+    } else {
+      showToast('验证码已发送');
+      resetCooldown = 60;
+      const btn = $('getResetOtpBtn');
+      btn.textContent = `${resetCooldown}秒后重发`;
+      const timer = setInterval(() => {
+        resetCooldown--;
+        if (resetCooldown <= 0) {
+          btn.textContent = '获取验证码';
+          clearInterval(timer);
+        } else {
+          btn.textContent = `${resetCooldown}秒后重发`;
+        }
+      }, 1000);
+    }
+  }
+
+  // 重置验证码按钮
+  const getResetOtpBtn = $('getResetOtpBtn');
+  if (getResetOtpBtn) {
+    getResetOtpBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (resetCooldown > 0) return;
+      const email = $('resetEmailInput').value.trim();
+      if (!email || !email.includes('@')) return showToast('请输入正确的邮箱');
+      if (tencentCaptcha) {
+        captchaBusiness = 'reset';
+        dimForCaptcha(true);
+        tencentCaptcha.show();
+      } else {
+        sendResetOtp();
+      }
+    });
+  }
+
+  // 显示/隐藏密码（登录 Step2）
   if (togglePwdBtn) {
     togglePwdBtn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -858,30 +1678,88 @@
     });
   }
 
-  // ===== 显示/隐藏卡密 =====
-  if (toggleCardKeyBtn) {
-    toggleCardKeyBtn.addEventListener('click', (e) => {
+  // 注册：显示/隐藏密码、卡密
+  const regTogglePwdBtn = $('regTogglePwdBtn');
+  const regToggleCardBtn = $('regToggleCardBtn');
+  if (regTogglePwdBtn) {
+    regTogglePwdBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      state.cardKeyVisible = !state.cardKeyVisible;
-      const input = $('cardKeyInput');
-      input.type = state.cardKeyVisible ? 'text' : 'password';
-      toggleCardKeyBtn.textContent = state.cardKeyVisible ? '隐藏' : '显示';
+      state.regPwdVisible = !state.regPwdVisible;
+      const input = $('regPasswordInput');
+      input.type = state.regPwdVisible ? 'text' : 'password';
+      regTogglePwdBtn.textContent = state.regPwdVisible ? '隐藏' : '显示';
+    });
+  }
+  if (regToggleCardBtn) {
+    regToggleCardBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      state.regCardVisible = !state.regCardVisible;
+      const input = $('regCardKeyInput');
+      input.type = state.regCardVisible ? 'text' : 'password';
+      regToggleCardBtn.textContent = state.regCardVisible ? '隐藏' : '显示';
     });
   }
 
-  // ===== 提交按钮（提前绑定） =====
+  // 提交按钮（提前绑定）
   if (submitBtn) {
     submitBtn.addEventListener('click', async (e) => {
       e.preventDefault();
-      const acc = $('accountInput').value.trim();
 
       if (state.tab === 'login') {
-        if (!acc) return showToast('请输入账号');
+        // 找回密码：重置视图提交
+        if (state.resetMode) {
+          const email = $('resetEmailInput').value.trim();
+          const pwd = $('resetPwdInput').value.trim();
+          const token = $('resetOtpInput').value.trim();
+          if (!email || !email.includes('@')) return showToast('请输入正确的邮箱');
+          if (pwd.length < 8) return showToast('新密码需 8 位及以上');
+          if (!token || token.length !== 6) return showToast('请输入6位验证码');
+          if (!sb) return showToast('云端服务暂不可用，请刷新重试');
+          showLoading('验证中…');
+          const { data, error } = await sb.auth.verifyOtp({
+            email: email,
+            token: token,
+            type: 'email',
+          });
+          if (error) {
+            hideLoading();
+            return showToast('验证码错误或已过期');
+          }
+          // 只允许已注册账号重置（注册时写入 card_key）
+          const cardKey = data.user.user_metadata?.card_key;
+          if (!cardKey) {
+            await sb.auth.signOut();
+            hideLoading();
+            return showToast('该邮箱未注册');
+          }
+          const { error: updErr } = await sb.auth.updateUser({ password: pwd });
+          if (updErr) {
+            hideLoading();
+            return showToast('重置失败，请重试');
+          }
+          hideLoading();
+          showToast('密码已重置，请用新密码登录');
+          // 回到登录第二步，切到密码模式并预填新密码
+          saveLogin(email, pwd);
+          $('passwordInput').value = pwd;
+          setLoginType('pwd');
+          closeReset();
+          return;
+        }
+
+        // 第一步：先输账号，点「下一步」进入凭证页
+        if (state.loginStep === 1) {
+          return goNextStep();
+        }
+
+        // 第二步：输入密码或验证码登录
+        const acc = gAccountDisplay.textContent.trim();
 
         if (state.loginType === 'pwd') {
           // 密码登录
           const pwd = $('passwordInput').value.trim();
           if (!pwd) return showToast('请输入密码');
+          if (!sb) { hideLoading(); return showToast('云端服务暂不可用，请刷新重试'); }
           showLoading('登录中…');
           let email = acc;
           if (!email.includes('@')) email = acc + '@qxnet.com';
@@ -895,14 +1773,21 @@
             else if (error.message.includes('Email not confirmed')) showToast('请先验证邮箱');
             else showToast('登录失败，请重试');
           } else {
+            // 登录成功：自动记录账号密码，下次进入自动填写
+            saveLogin(acc, pwd);
+            bindDeviceIdToAccount(data.user);
             const expiresAt = data.user.user_metadata?.expires_at ? new Date(data.user.user_metadata.expires_at) : null;
             if (expiresAt && expiresAt < new Date()) {
               hideLoading();
               showToast('授权已过期');
             } else {
               hideLoading();
+<<<<<<< HEAD
               showToast('登录成功');
               goMainPage();
+=======
+              showLoginSuccess();
+>>>>>>> 8b40bd3 (更新登录页：云端下发主站地址、邮箱后缀联想、人机验证背景淡化、注释简化)
             }
           }
         } else {
@@ -910,6 +1795,7 @@
           const token = $('otpInput').value.trim();
           if (!acc.includes('@')) return showToast('验证码登录请输入邮箱');
           if (!token || token.length !== 6) return showToast('请输入6位验证码');
+          if (!sb) { hideLoading(); return showToast('云端服务暂不可用，请刷新重试'); }
           showLoading('登录中…');
           const { data, error } = await sb.auth.verifyOtp({
             email: acc,
@@ -929,24 +1815,33 @@
               showToast('账号不存在，请先注册');
               return;
             }
+            // 验证码登录成功：记录账号（无密码），下次自动填账号
+            saveLogin(acc, '');
+            bindDeviceIdToAccount(data.user);
             const expiresAt = data.user.user_metadata?.expires_at ? new Date(data.user.user_metadata.expires_at) : null;
             if (expiresAt && expiresAt < new Date()) {
               hideLoading();
               showToast('授权已过期');
             } else {
               hideLoading();
+<<<<<<< HEAD
               showToast('登录成功');
               goMainPage();
+=======
+              showLoginSuccess();
+>>>>>>> 8b40bd3 (更新登录页：云端下发主站地址、邮箱后缀联想、人机验证背景淡化、注释简化)
             }
           }
         }
       } else if (state.tab === 'register') {
         // 注册：邮箱 + 密码 + 卡密
-        const pwd = $('passwordInput').value.trim();
-        const card = $('cardKeyInput').value.trim();
+        const acc = $('regEmailInput').value.trim();
+        const pwd = $('regPasswordInput').value.trim();
+        const card = $('regCardKeyInput').value.trim();
         if (!acc || !acc.includes('@')) return showToast('请输入正确的邮箱');
         if (pwd.length < 8) return showToast('密码需 8 位及以上');
         if (!card) return showToast('请输入卡密 / 授权码');
+        if (!sb) { hideLoading(); return showToast('云端服务暂不可用，请刷新重试'); }
         showLoading('验证卡密中…');
         const { data: cardData, error: cardError } = await sb
           .from('cards')
@@ -973,7 +1868,8 @@
           options: {
             data: {
               card_key: card,
-              expires_at: expiresAt.toISOString()
+              expires_at: expiresAt.toISOString(),
+              device_id: deviceId
             }
           }
         });
@@ -987,33 +1883,49 @@
             .update({ used: true })
             .eq('card_key', card);
           hideLoading();
+          // 注册成功：自动保存账号密码，下次进入自动填写
+          saveLogin(acc, pwd);
+          if (data && data.user) bindDeviceIdToAccount(data.user);
           showToast('注册成功');
+          // 注册成功 1.6 秒后跳转到主站
+          setTimeout(() => {
+            window.location.href = getSiteUrl();
+          }, 1600);
         }
       } else {
-        window.location.href = 'https://shop.qmmpay.com/shop/TENXQ';
+        // 留言：先过人机验证，通过后发送
+        const content = $('messageContent').value.trim();
+        if (!content) return showToast('请输入留言内容');
+        if (tencentCaptcha) {
+          captchaBusiness = 'message';
+          dimForCaptcha(true);
+          tencentCaptcha.show();
+        } else {
+          sendMessage();
+        }
       }
     });
   }
 
-  // ===== 粘贴卡密时自动清理无用内容 =====
-  const cardKeyInput = $('cardKeyInput');
-  cardKeyInput.addEventListener('paste', (e) => {
+  // 粘贴卡密时自动清理无用内容
+  const regCardKeyInput = $('regCardKeyInput');
+  regCardKeyInput.addEventListener('paste', (e) => {
     e.preventDefault();
     let text = (e.clipboardData || window.clipboardData).getData('text');
     // 自动提取 QXNET- 开头的卡密
     const match = text.match(/QXNET-[A-Z0-9]+/i);
     if (match) {
-      cardKeyInput.value = match[0];
+      regCardKeyInput.value = match[0];
     } else {
-      cardKeyInput.value = text.trim();
+      regCardKeyInput.value = text.trim();
     }
     // 光标移到最后面
     setTimeout(() => {
-      cardKeyInput.setSelectionRange(cardKeyInput.value.length, cardKeyInput.value.length);
+      regCardKeyInput.setSelectionRange(regCardKeyInput.value.length, regCardKeyInput.value.length);
     }, 0);
   });
 
-  // ===== Tab 切换 =====
+  // Tab 切换
   const MARQUEE_TEXT = '原汁原味的QNET2.1.5版本，实现了原版的地区延迟计算。';
   const tabConfig = {
     login: {
@@ -1035,10 +1947,10 @@
       showRemember: true,
     },
     message: {
-      badge: '购买',
-      title: '购买 QXNET 授权',
+      badge: '留言',
+      title: '留言给我们',
       tip: MARQUEE_TEXT,
-      submit: '立即购买',
+      submit: '保存留言',
       showAccount: false,
       showCardKey: false,
       showRemember: false,
@@ -1065,35 +1977,42 @@
 
     accountFields.classList.toggle('hidden', !cfg.showAccount);
     messagePanel.classList.toggle('hidden', cfg.showAccount);
-    cardKeyField.classList.toggle('hidden', !cfg.showCardKey);
 
-    // 控制登录方式切换和输入框显示
+    // 登录：两步式界面；注册：注册字段
     if (tab === 'login') {
-      $('loginTypeField').classList.remove('hidden');
-      // 根据当前登录方式显示对应的输入框
-      if (state.loginType === 'pwd') {
-        $('passwordField').classList.remove('hidden');
-        $('otpField').classList.add('hidden');
-        $('accountLabel').textContent = '账号';
-        $('accountInput').placeholder = '用户名或邮箱';
+      registerFields.classList.add('hidden');
+      if (state.loginStep === 2) {
+        loginStep1.classList.add('hidden');
+        loginStep2.classList.remove('hidden');
+        heroCard.classList.add('hidden');
+        tabsBar.classList.add('hidden');
+        submitBtn.textContent = '登录';
+        updateCredFields();
       } else {
-        $('passwordField').classList.add('hidden');
-        $('otpField').classList.remove('hidden');
-        $('accountLabel').textContent = '邮箱';
-        $('accountInput').placeholder = '请输入邮箱';
+        heroCard.classList.remove('hidden');
+        tabsBar.classList.remove('hidden');
+        loginStep1.classList.remove('hidden');
+        loginStep2.classList.add('hidden');
+        heroSub.textContent = '登录后畅享最完美的2.1.5';
+        submitBtn.textContent = '下一步';
       }
     } else if (tab === 'register') {
-      $('loginTypeField').classList.add('hidden');
-      $('passwordField').classList.remove('hidden');
-      $('otpField').classList.add('hidden');
-      $('accountLabel').textContent = '邮箱';
-      $('accountInput').placeholder = '请输入邮箱';
+      heroCard.classList.remove('hidden');
+      tabsBar.classList.remove('hidden');
+      loginStep1.classList.add('hidden');
+      loginStep2.classList.add('hidden');
+      registerFields.classList.remove('hidden');
+      heroSub.textContent = '登录后畅享最完美的2.1.5';
+    } else {
+      heroCard.classList.remove('hidden');
+      tabsBar.classList.remove('hidden');
+      heroSub.textContent = '登录后畅享最完美的2.1.5';
     }
 
     playDropAnimation();
   }
 
-  // ===== 落下动画：从左上到右下依次 stagger =====
+  // 落下动画：从左上到右下依次 stagger
   function playDropAnimation() {
     // 收集当前可见的可动画元素（从上到下顺序）
     const animTargets = [];
@@ -1101,7 +2020,6 @@
       accountFields.querySelectorAll('.field').forEach(f => {
         if (!f.classList.contains('hidden')) animTargets.push(f);
       });
-      if (!rememberRow.classList.contains('hidden')) animTargets.push(rememberRow);
     }
     if (!messagePanel.classList.contains('hidden')) {
       messagePanel.querySelectorAll('.field').forEach(f => animTargets.push(f));
@@ -1124,31 +2042,75 @@
   // 初始化显示登录页
   switchTab('login');
 
-  // ===== 套餐选择 =====
-  const planItems = document.querySelectorAll('.plan-item');
-  const planStyles = {
-    selected: { border: '2px solid #3B82F6', background: '#EFF6FF', titleColor: '#1E40AF', priceColor: '#2563EB' },
-    normal:   { border: '2px solid #E2E8F0', background: 'transparent', titleColor: '#0F172A', priceColor: '#0F172A' },
-  };
-  function selectPlan(el) {
-    planItems.forEach(item => {
-      const isSel = item === el;
-      const s = isSel ? planStyles.selected : planStyles.normal;
-      item.style.border = s.border;
-      item.style.background = s.background;
-      item.style.boxShadow = isSel ? '0 4px 14px rgba(59, 130, 246, 0.15)' : 'none';
-      item.style.transform = isSel ? 'translateY(-2px)' : 'translateY(0)';
-      item.querySelector('div div:first-child').style.color = s.titleColor;
-      item.querySelector('div:last-child').style.color = s.priceColor;
-      item.classList.toggle('selected', isSel);
-    });
+  // 自动记录账号密码 + 下次进入自动填写
+  function saveLogin(account, password) {
+    try {
+      // 未提供新密码时保留旧密码：验证码登录只更新账号，不把已保存的密码弄丢
+      let finalPwd = password || '';
+      if (!finalPwd) {
+        const old = loadSavedLogin();
+        if (old && old.password) finalPwd = old.password;
+      }
+      const data = { account: account || '', password: finalPwd, saved_at: Date.now() };
+      const str = JSON.stringify(data);
+      // 三处冗余写入：localStorage 主键 + 备份键 + cookie，避免任一存储被清/损坏后读取失败
+      try { localStorage.setItem('qxnet_saved_login', str); } catch (e) {}
+      try { localStorage.setItem('qxnet_login_backup', str); } catch (e) {}
+      try {
+        document.cookie = 'qxnet_saved_login=' + encodeURIComponent(str) + '; max-age=315360000; path=/';
+      } catch (e2) {}
+    } catch (e) {}
   }
-  planItems.forEach(item => {
-    item.addEventListener('click', () => selectPlan(item));
-  });
+  function loadSavedLogin() {
+    try {
+      const sources = [];
+      try {
+        const s1 = localStorage.getItem('qxnet_saved_login');
+        if (s1) sources.push(s1);
+      } catch (e) {}
+      try {
+        const m = document.cookie.match(/qxnet_saved_login=([^;]+)/);
+        if (m) sources.push(decodeURIComponent(m[1]));
+      } catch (e) {}
+      try {
+        const s2 = localStorage.getItem('qxnet_login_backup');
+        if (s2) sources.push(s2);
+      } catch (e) {}
+      // 多源取最新且合法的记录
+      let best = null;
+      for (const s of sources) {
+        try {
+          const d = JSON.parse(s);
+          if (d && d.account) {
+            if (!best || (d.saved_at || 0) > (best.saved_at || 0)) best = d;
+          }
+        } catch (e2) {}
+      }
+      if (!best) return null;
+      // 自愈：保证主键存在且为最新，下次读取直接命中
+      try {
+        const cur = localStorage.getItem('qxnet_saved_login');
+        if (!cur || JSON.parse(cur).saved_at !== best.saved_at) {
+          localStorage.setItem('qxnet_saved_login', JSON.stringify(best));
+        }
+      } catch (e3) {}
+      return best;
+    } catch (e) { return null; }
+  }
+  (function autoFillLogin() {
+    const saved = loadSavedLogin();
+    if (!saved) return;
+    const accInput = $('accountInput');
+    if (accInput) accInput.value = saved.account;
+    if (saved.password) {
+      // 保存过密码：自动切到密码登录模式并预填密码
+      setLoginType('pwd');
+      const pwdInput = $('passwordInput');
+      if (pwdInput) pwdInput.value = saved.password;
+    }
+  })();
 
-  // ===== 提交 =====
-
+  // 提交
 </script>
 
 </body>
