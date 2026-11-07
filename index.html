@@ -6,17 +6,28 @@
 <title>QXNet 认证</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232563EB'/><text x='50' y='68' font-size='52' font-weight='bold' text-anchor='middle' fill='white' font-family='sans-serif'>Q</text></svg>">
 <link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Zhi+Mang+Xing&family=Ma+Shan+Zheng&family=Dancing+Script:wght@500;700&family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script>
   // Supabase 配置（SDK 加载失败时容错，避免整页脚本中断）
   const SUPABASE_URL = 'https://gngcducutevgllbaejec.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_i5npxDKfL83UBEDBBPm57A_WqqYeh-P';
   let sb = null;
-  try {
-    if (window.supabase) {
-      sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  function tryInitSupabase() {
+    if (sb) return true;
+    if (window.supabase && window.supabase.createClient) {
+      try { sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); return true; }
+      catch (e) { sb = null; }
     }
-  } catch (e) { sb = null; }
+    return false;
+  }
+  tryInitSupabase();
+  // SDK 走 defer 异步加载：页面先可用，客户端就绪后补齐（最多轮询 10 秒）
+  (function () {
+    let tries = 0;
+    const timer = setInterval(() => {
+      if (tryInitSupabase() || ++tries > 50) clearInterval(timer);
+    }, 200);
+  })();
 
   // 登录成功后带 token 跳转主页面恢复云端备份（地址走云端下发/本地加密，源码无明文）
   async function goMainPage() {
