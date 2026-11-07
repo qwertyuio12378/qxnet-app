@@ -2274,7 +2274,7 @@
   function appendChatMsg(text, isMine, userName) {
     const div = document.createElement('div');
     div.className = 'chat-msg ' + (isMine ? 'chat-mine' : 'chat-other');
-    div.textContent = (userName ? userName + '：' : '') + text;
+    div.textContent = text;
     chatMessages.appendChild(div);
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
