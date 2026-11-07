@@ -267,9 +267,9 @@
     max-width: 396px;
     z-index: 100;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-    padding: 8px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+    padding: 7px;
     border-radius: 32px;
     background: transparent;
     touch-action: pan-y;
@@ -279,10 +279,10 @@
   /* 选中气泡：液态玻璃，跟随手指拖动移动 */
   .tab-indicator {
     position: absolute;
-    top: 8px;
-    bottom: 8px;
-    left: 8px;
-    width: calc((100% - 16px - 12px) / 3);
+    top: 7px;
+    bottom: 7px;
+    left: 7px;
+    width: calc((100% - 14px - 15px) / 4);
     border-radius: 999px;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.55) 100%);
     -webkit-backdrop-filter: blur(18px) saturate(1.6);
@@ -315,6 +315,64 @@
   .tab-btn.active {
     color: #0F172A;
     font-weight: 600;
+  }
+  /* 聊天视图 */
+  .chat-messages {
+    max-height: 220px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 4px 0;
+    margin-bottom: 12px;
+  }
+  .chat-msg {
+    max-width: 78%;
+    padding: 9px 13px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.45;
+    word-break: break-word;
+  }
+  .chat-other {
+    align-self: flex-start;
+    background: #F1F5F9;
+    color: #1E293B;
+    border-bottom-left-radius: 4px;
+  }
+  .chat-mine {
+    align-self: flex-end;
+    background: #1A73E8;
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+  .chat-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .chat-input-row input {
+    flex: 1;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 999px;
+    padding: 11px 16px;
+    font-size: 14px;
+    outline: none;
+    background: #F8FAFC;
+  }
+  .chat-input-row input:focus {
+    border-color: #1A73E8;
+    background: #fff;
+  }
+  .chat-send-btn {
+    border: none;
+    border-radius: 999px;
+    padding: 11px 18px;
+    background: #1A73E8;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
   }
 
   .field {
@@ -1017,6 +1075,17 @@
       <div style="font-size:12px;color:#94A3B8;text-align:center;margin-top:2px;">保存后留言将发送到站长邮箱</div>
     </div>
 
+    <!-- 聊天视图 -->
+    <div id="chatPanel" class="hidden">
+      <div class="chat-messages" id="chatMessages">
+        <div class="chat-msg chat-other">你好，请问有什么可以帮你？</div>
+      </div>
+      <div class="chat-input-row">
+        <input type="text" id="chatInput" placeholder="输入消息…" autocomplete="off">
+        <button class="chat-send-btn" id="chatSendBtn">发送</button>
+      </div>
+    </div>
+
     <button class="submit-btn" id="submitBtn">进入 QNET</button>
 
     <div style="text-align:center;font-size:11px;color:#94A3B8;margin-top:12px;" id="deviceIdLabel"></div>
@@ -1046,6 +1115,7 @@
     <button class="tab-btn active" data-tab="login">登录</button>
     <button class="tab-btn" data-tab="register">注册</button>
     <button class="tab-btn" data-tab="message">留言</button>
+    <button class="tab-btn" data-tab="chat">聊天</button>
   </div>
 
   <!-- 登录步骤进度：卡片下方空白区，进入第 2 步时显示 -->
@@ -1161,13 +1231,13 @@
   const tabs = document.querySelectorAll('.tab-btn');
   const tabsBar = $('tabsBar');
   const tabIndicator = $('tabIndicator');
-  const TAB_ORDER = ['login', 'register', 'message'];
+  const TAB_ORDER = ['login', 'register', 'message', 'chat'];
 
   // 移动选中气泡到指定 tab（像素计算，含 gap）
   function moveIndicator(tab, animate = true) {
     const idx = TAB_ORDER.indexOf(tab);
     const barW = tabsBar.offsetWidth || 396;
-    const step = (barW - 16) / 3; // 可用宽度 / 3 列
+    const step = (barW - 14) / 4; // 可用宽度 / 3 列
     tabIndicator.style.transition = animate ? 'transform 0.32s cubic-bezier(0.34, 1.2, 0.64, 1)' : 'none';
     tabIndicator.style.transform = `translateX(${idx * step}px)`;
   }
@@ -1178,6 +1248,9 @@
   const heroCard = $('heroCard');
   const accountFields = $('accountFields');
   const messagePanel = $('messagePanel');
+  const chatPanel = $('chatPanel');
+  const chatMessages = $('chatMessages');
+  const chatInput = $('chatInput');
   const loginStep1 = $('loginStep1');
   const loginStep2 = $('loginStep2');
   const resetView = $('resetView');
@@ -2072,6 +2145,15 @@
       showCardKey: false,
       showRemember: false,
     },
+    chat: {
+      badge: '聊天',
+      title: '在线客服',
+      tip: MARQUEE_TEXT,
+      submit: '发送',
+      showAccount: false,
+      showCardKey: false,
+      showRemember: false,
+    },
   };
 
   function setMarquee(text) {
@@ -2094,7 +2176,9 @@
     submitBtn.textContent = cfg.submit;
 
     accountFields.classList.toggle('hidden', !cfg.showAccount);
-    messagePanel.classList.toggle('hidden', cfg.showAccount);
+    messagePanel.classList.toggle('hidden', cfg.showAccount || tab === 'chat');
+    chatPanel.classList.toggle('hidden', tab !== 'chat');
+    submitBtn.classList.toggle('hidden', tab === 'chat');
 
     // 登录：两步式界面；注册：注册字段
     if (tab === 'login') {
@@ -2157,6 +2241,30 @@
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 
+  // 聊天发送
+  function sendChatMsg() {
+    const text = chatInput.value.trim();
+    if (!text) return;
+    const mine = document.createElement('div');
+    mine.className = 'chat-msg chat-mine';
+    mine.textContent = text;
+    chatMessages.appendChild(mine);
+    chatInput.value = '';
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    // 模拟客服自动回复
+    setTimeout(() => {
+      const reply = document.createElement('div');
+      reply.className = 'chat-msg chat-other';
+      reply.textContent = '收到，客服会尽快回复你～';
+      chatMessages.appendChild(reply);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }, 800);
+  }
+  $('chatSendBtn').addEventListener('click', sendChatMsg);
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') sendChatMsg();
+  });
+
   // 拖动胶囊切换 tab：手指拖动时气泡跟手，松手吸附到最近页面
   let dragStartX = 0;
   let dragStartIdx = 0;
@@ -2168,7 +2276,7 @@
     draggingTab = true;
     tabIndicator.style.transition = 'transform 0.15s ease';
     const barW = tabsBar.offsetWidth || 396;
-    const step = (barW - 16) / 3;
+    const step = (barW - 14) / 4;
     tabIndicator.style.transform = `translateX(${dragStartIdx * step}px) scale(1.06)`;
   }, { passive: true });
 
@@ -2176,7 +2284,7 @@
     if (!draggingTab) return;
     const dx = e.touches[0].clientX - dragStartX;
     const barW = tabsBar.offsetWidth || 396;
-    const step = (barW - 16) / 3;
+    const step = (barW - 14) / 4;
     let target = dragStartIdx * step + dx;
     target = Math.max(0, Math.min(step * 2, target));
     tabIndicator.style.transform = `translateX(${target}px) scale(1.06)`;
@@ -2187,7 +2295,7 @@
     draggingTab = false;
     const dx = e.changedTouches[0].clientX - dragStartX;
     const barW = tabsBar.offsetWidth || 396;
-    const step = (barW - 16) / 3;
+    const step = (barW - 14) / 4;
     let targetIdx = dragStartIdx + Math.round(dx / step);
     targetIdx = Math.max(0, Math.min(2, targetIdx));
     const targetTab = TAB_ORDER[targetIdx];
