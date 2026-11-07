@@ -325,14 +325,18 @@
     font-weight: 600;
   }
   /* 聊天视图 */
+  #chatPanel {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 140px);
+  }
   .chat-messages {
-    max-height: 220px;
+    flex: 1;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 10px;
     padding: 4px 0;
-    margin-bottom: 12px;
   }
   .chat-msg {
     max-width: 78%;
