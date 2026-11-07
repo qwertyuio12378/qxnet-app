@@ -2324,28 +2324,12 @@
   function subscribeChat() {
     if (!sb || chatSubscribed) return;
     chatSubscribed = true;
-    let lastId = 0;
-    // 长轮询：有新消息立刻返回，没有就挂起等待
-    async function poll() {
-      if (!sb) return;
-      try {
-        const { data, error } = await sb
-          .from('chat_messages')
-          .select('*')
-          .order('id', { ascending: false })
-          .limit(3);
-        if (error || !data) { setTimeout(poll, 1000); return; }
-        const fresh = data.reverse().filter(m => m.id > lastId);
-        if (fresh.length > 0) {
-          fresh.forEach(m => {
-            appendChatMsg(m.content, m.user_id === chatUserId, m.user_id);
-            if (m.id > lastId) lastId = m.id;
-          });
-        }
-      } catch (e) {}
-      setTimeout(poll, 100);
-    }
-    poll();
+    chatChannel = sb.channel('chat-room')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
+        const m = payload.new;
+        appendChatMsg(m.content, m.user_id === chatUserId, m.user_id);
+      })
+      .subscribe();
   }
 
   async function sendChatMsg() {
