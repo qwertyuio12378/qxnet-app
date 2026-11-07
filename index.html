@@ -2320,13 +2320,15 @@
     } catch (e) {}
   }
 
+  let chatChannel = null;
   function subscribeChat() {
     if (!sb || chatSubscribed) return;
     chatSubscribed = true;
-    sb.channel('chat-room')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
-        const m = payload.new;
-        appendChatMsg(m.content, m.user_id === chatUserId, m.user_id);
+    chatChannel = sb.channel('chat-room', { config: { broadcast: { self: true } } })
+      .on('broadcast', { event: 'new-message'}, (payload) => {
+        const m = payload.payload;
+        if (m.user_id === chatUserId) return; // 自己发的已经显示了
+        appendChatMsg(m.content, false, m.user_id);
       })
       .subscribe();
   }
@@ -2338,7 +2340,11 @@
     if (!sb) { appendChatMsg(text, true, '我'); return; }
     try {
       const { error } = await sb.from('chat_messages').insert({ content: text, user_id: chatUserId });
-      if (error) appendChatMsg('发送失败：' + error.message, true, '系统');
+      if (error) { appendChatMsg('发送失败', true, '系统'); return; }
+      // 广播给其他在线用户
+      if (chatChannel) {
+        chatChannel.send({ type: 'broadcast', event: 'new-message', payload: { content: text, user_id: chatUserId } });
+      }
     } catch (e) {
       appendChatMsg('网络异常', true, '系统');
     }
