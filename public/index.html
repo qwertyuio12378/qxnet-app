@@ -697,6 +697,52 @@
     width: min(470px, 88vw);
     height: auto;
   }
+  /* 登录成功后动态加载 Q 图标 */
+  .q-load {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(248, 250, 252, 0.82);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+  }
+  .q-load.show { opacity: 1; pointer-events: auto; }
+  .q-load-inner {
+    position: relative;
+    width: 108px;
+    height: 108px;
+  }
+  .q-load-img {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    animation: qPop 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.2) both,
+               qPulse 1.7s ease-in-out 0.55s infinite;
+    filter: drop-shadow(0 10px 24px rgba(66, 133, 244, 0.25));
+  }
+  .q-load-ring {
+    position: absolute;
+    inset: -16px;
+    border-radius: 50%;
+    border: 2px solid rgba(148, 163, 184, 0.18);
+    border-top-color: #4285F4;
+    border-right-color: #34A853;
+    animation: qSpin 1.1s linear infinite;
+  }
+  @keyframes qSpin { to { transform: rotate(360deg); } }
+  @keyframes qPop {
+    from { opacity: 0; transform: scale(0.62); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes qPulse {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.06); }
+  }
   /* 登录成功动态标志 */
   .success-ring {
     width: 56px;
@@ -1156,8 +1202,28 @@
       if (window.qnetAndroidObj) {
         window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
       }
-      playSignature();
+      playQIcon();
     }, 1000);
+  }
+
+  // 登录成功后动态加载 Q 图标（渐显 + 脉冲 + 旋转环），随后带 token 进入主站
+  function playQIcon() {
+    const wrap = document.createElement('div');
+    wrap.className = 'q-load';
+    wrap.innerHTML = `
+      <div class="q-load-inner">
+        <div class="q-load-ring"></div>
+        <img class="q-load-img" src="https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/LLGqbwebhoCBDKxiewfcnW4Mntd" alt="QXNET">
+      </div>`;
+    document.body.appendChild(wrap);
+    requestAnimationFrame(() => wrap.classList.add('show'));
+    setTimeout(() => {
+      wrap.classList.remove('show');
+      setTimeout(() => {
+        wrap.remove();
+        goMainPage();
+      }, 380);
+    }, 2400);
   }
 
   // 私人电子签名：登录后悬浮在卡片上，SVG 连笔逐笔书写
