@@ -292,8 +292,8 @@
     position: absolute;
     top: 2px;
     bottom: 2px;
-    left: 5px;
-    width: calc((100% - 10px - 15px) / 4);
+    left: 7px;
+    width: calc((100% - 14px - 15px) / 4);
     border-radius: 999px;
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(186, 225, 255, 0.4) 50%, rgba(255, 255, 255, 0.5) 100%);
     -webkit-backdrop-filter: blur(20px) saturate(1.8);
@@ -1287,7 +1287,7 @@
   function moveIndicator(tab, animate = true) {
     const idx = TAB_ORDER.indexOf(tab);
     const barW = tabsBar.offsetWidth || 396;
-    const step = (barW - 14 - 15) / 4; // 可用宽度减padding和gap后/4列
+    const step = (barW - 14 - 15) / 4 + 5; // grid cell宽度+gap
     tabIndicator.style.transition = animate ? 'transform 0.32s cubic-bezier(0.34, 1.2, 0.64, 1)' : 'none';
     tabIndicator.style.transform = `translateX(${idx * step}px)`;
   }
