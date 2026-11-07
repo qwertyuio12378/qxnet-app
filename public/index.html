@@ -256,27 +256,36 @@
     padding: 16px 18px 18px;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 20px rgba(15, 23, 42, 0.05);
   }
+  /* Tab 栏：Apple 风格分段控制器（毛玻璃胶囊 + 白色浮起选中块） */
   .tabs {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    gap: 0;
+    padding: 3px;
     margin-bottom: 18px;
+    background: rgba(120, 120, 128, 0.14);
+    border-radius: 12px;
+    box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.06);
   }
   .tab-btn {
-    padding: 10px 0;
+    padding: 9px 0;
     border: none;
-    border-radius: 10px;
-    font-size: 16px;
-    font-weight: 600;
+    border-radius: 9px;
+    font-size: 15px;
+    font-weight: 500;
     cursor: pointer;
     background: transparent;
-    color: #475569;
-    transition: all 0.2s;
-    font-family: inherit;
+    color: #6E6E73;
+    transition: color 0.24s ease, background 0.24s ease, box-shadow 0.24s ease;
+    font-family: -apple-system, 'SF Pro Text', 'PingFang SC', 'Noto Sans SC', sans-serif;
+    letter-spacing: 0.2px;
+    -webkit-tap-highlight-color: transparent;
   }
   .tab-btn.active {
-    background: #EFF6FF;
-    color: #1A73E8;
+    background: #FFFFFF;
+    color: #1C1C1E;
+    font-weight: 600;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.10), 0 0 0 0.5px rgba(0, 0, 0, 0.05);
   }
 
   .field {
