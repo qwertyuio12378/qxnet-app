@@ -264,14 +264,14 @@
     padding: 3px;
     margin-bottom: 18px;
     border-radius: 999px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.78) 0%, rgba(248, 250, 252, 0.58) 100%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(232, 239, 249, 0.40) 100%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
     backdrop-filter: blur(24px) saturate(180%);
     box-shadow:
-      inset 0 1px 1px rgba(255, 255, 255, 1),
-      inset 0 0 0 1px rgba(15, 23, 42, 0.07),
-      0 8px 22px rgba(15, 23, 42, 0.08),
-      0 2px 5px rgba(15, 23, 42, 0.04);
+      inset 0 1px 1px rgba(255, 255, 255, 0.95),
+      inset 0 -1px 1px rgba(15, 23, 42, 0.06),
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.55),
+      0 10px 28px rgba(15, 23, 42, 0.10);
   }
   .tab-btn {
     padding: 10px 0;
@@ -281,22 +281,23 @@
     font-weight: 500;
     cursor: pointer;
     background: transparent;
-    color: #6E6E73;
+    color: #6B7280;
     transition: color 0.26s cubic-bezier(0.34, 1.2, 0.64, 1), background 0.26s ease, box-shadow 0.26s ease, transform 0.26s ease;
     font-family: -apple-system, 'SF Pro Text', 'PingFang SC', 'Noto Sans SC', sans-serif;
     letter-spacing: 0.2px;
     -webkit-tap-highlight-color: transparent;
   }
   .tab-btn:active { transform: scale(0.96); }
-  /* 选中项：Apple 彩色实心玻璃胶囊（渐变蓝 + 白字 + 顶部高光） */
+  /* 选中项：液态玻璃气泡（半透明 + 白色高光描边 + 玻璃厚度阴影） */
   .tab-btn.active {
-    background: linear-gradient(180deg, #4C9CF5 0%, #1A73E8 100%);
-    color: #FFFFFF;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.55) 100%);
+    color: #0F172A;
     font-weight: 600;
     box-shadow:
-      inset 0 1px 1px rgba(255, 255, 255, 0.38),
-      inset 0 -1px 1px rgba(0, 0, 0, 0.12),
-      0 4px 12px rgba(26, 115, 232, 0.32);
+      inset 0 1px 1px rgba(255, 255, 255, 1),
+      inset 0 -1px 1px rgba(15, 23, 42, 0.05),
+      0 0 0 0.5px rgba(255, 255, 255, 0.9),
+      0 4px 14px rgba(15, 23, 42, 0.12);
   }
 
   .field {
