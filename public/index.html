@@ -256,21 +256,21 @@
     padding: 16px 18px 18px;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 20px rgba(15, 23, 42, 0.05);
   }
-  /* 顶部固定玻璃导航：sticky + 毛玻璃 + 底部高光 */
+  /* 底部固定玻璃导航：sticky bottom + 毛玻璃 + 顶部高光 */
   .tabs {
     position: sticky;
-    top: 0;
+    bottom: 0;
     z-index: 100;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 4px;
-    padding: 10px 8px;
+    padding: 10px 8px calc(10px + env(safe-area-inset-bottom));
     margin: 0;
     background: rgba(255, 255, 255, 0.72);
     -webkit-backdrop-filter: blur(18px) saturate(1.6);
     backdrop-filter: blur(18px) saturate(1.6);
-    border-bottom: 0.5px solid rgba(255, 255, 255, 0.9);
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    border-top: 0.5px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 -1px 3px rgba(15, 23, 42, 0.04);
   }
   .tab-btn {
     padding: 8px 0;
@@ -865,13 +865,6 @@
     </div>
   </div>
 
-  <!-- 顶部固定玻璃导航（sticky + 毛玻璃 + 底部高光） -->
-  <div class="tabs" id="tabsBar">
-    <button class="tab-btn active" data-tab="login">登录</button>
-    <button class="tab-btn" data-tab="register">注册</button>
-    <button class="tab-btn" data-tab="message">留言</button>
-  </div>
-
   <!-- 表单卡片 -->
   <div class="form-card">
     <!-- 登录第二步：卡片外面的 Q 图标（进第二步显示） -->
@@ -1027,6 +1020,13 @@
         <path d="M 290 84 C 292 100, 294 114, 296 126"/>
       </g>
     </svg>
+  </div>
+
+  <!-- 底部固定玻璃导航（sticky + 毛玻璃 + 顶部高光） -->
+  <div class="tabs" id="tabsBar">
+    <button class="tab-btn active" data-tab="login">登录</button>
+    <button class="tab-btn" data-tab="register">注册</button>
+    <button class="tab-btn" data-tab="message">留言</button>
   </div>
 
   <!-- 登录步骤进度：卡片下方空白区，进入第 2 步时显示 -->
