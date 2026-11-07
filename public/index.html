@@ -2327,7 +2327,8 @@
     chatChannel = sb.channel('chat-room')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
         const m = payload.new;
-        appendChatMsg(m.content, m.user_id === chatUserId, m.user_id);
+        if (m.user_id === chatUserId) return; // 自己发的已经显示了
+        appendChatMsg(m.content, false);
       })
       .subscribe();
   }
@@ -2336,12 +2337,13 @@
     const text = chatInput.value.trim();
     if (!text) return;
     chatInput.value = '';
-    if (!sb) { appendChatMsg(text, true, '我'); return; }
+    appendChatMsg(text, true); // 自己的消息立即显示在右边
+    if (!sb) return;
     try {
       const { error } = await sb.from('chat_messages').insert({ content: text, user_id: chatUserId });
-      if (error) appendChatMsg('发送失败：' + error.message, true, '系统');
+      if (error) appendChatMsg('发送失败', false);
     } catch (e) {
-      appendChatMsg('网络异常', true, '系统');
+      appendChatMsg('网络异常', false);
     }
   }
   $('chatSendBtn').addEventListener('click', sendChatMsg);
