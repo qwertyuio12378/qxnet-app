@@ -2245,29 +2245,69 @@
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 
-  // 聊天发送
-  function sendChatMsg() {
+  // 聊天发送（Supabase Realtime 多人聊天室）
+  const chatUserId = 'u_' + (localStorage.getItem('qx_device_id') || 'anon').slice(-8);
+  let chatSubscribed = false;
+
+  function appendChatMsg(text, isMine, userName) {
+    const div = document.createElement('div');
+    div.className = 'chat-msg ' + (isMine ? 'chat-mine' : 'chat-other');
+    div.textContent = (userName ? userName + '：' : '') + text;
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  async function loadChatHistory() {
+    if (!sb) return;
+    try {
+      const { data, error } = await sb
+        .from('chat_messages')
+        .select('*')
+        .order('created_at', { ascending: true })
+        .limit(50);
+      if (error) return;
+      chatMessages.innerHTML = '';
+      data.forEach(m => appendChatMsg(m.content, m.user_id === chatUserId, m.user_id));
+    } catch (e) {}
+  }
+
+  function subscribeChat() {
+    if (!sb || chatSubscribed) return;
+    chatSubscribed = true;
+    sb.channel('chat-room')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
+        const m = payload.new;
+        appendChatMsg(m.content, m.user_id === chatUserId, m.user_id);
+      })
+      .subscribe();
+  }
+
+  async function sendChatMsg() {
     const text = chatInput.value.trim();
     if (!text) return;
-    const mine = document.createElement('div');
-    mine.className = 'chat-msg chat-mine';
-    mine.textContent = text;
-    chatMessages.appendChild(mine);
     chatInput.value = '';
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-    // 模拟客服自动回复
-    setTimeout(() => {
-      const reply = document.createElement('div');
-      reply.className = 'chat-msg chat-other';
-      reply.textContent = '收到，客服会尽快回复你～';
-      chatMessages.appendChild(reply);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    }, 800);
+    if (!sb) { appendChatMsg(text, true, '我'); return; }
+    try {
+      const { error } = await sb.from('chat_messages').insert({ content: text, user_id: chatUserId });
+      if (error) appendChatMsg('发送失败：' + error.message, true, '系统');
+    } catch (e) {
+      appendChatMsg('网络异常', true, '系统');
+    }
   }
   $('chatSendBtn').addEventListener('click', sendChatMsg);
   chatInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') sendChatMsg();
   });
+
+  // 进入聊天 tab 时加载历史 + 订阅
+  const _origSwitchTab = switchTab;
+  switchTab = function(tab) {
+    _origSwitchTab(tab);
+    if (tab === 'chat') {
+      loadChatHistory();
+      subscribeChat();
+    }
+  };
 
   // 拖动胶囊切换 tab：手指拖动时气泡跟手，松手吸附到最近页面
   let dragStartX = 0;
