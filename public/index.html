@@ -256,25 +256,24 @@
     padding: 16px 18px 18px;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 20px rgba(15, 23, 42, 0.05);
   }
-  /* Tab 栏：Apple Liquid Glass 官方形态（白色玻璃胶囊条 + 浅灰选中胶囊 + 彩色文字） */
+  /* 顶部固定玻璃导航：sticky + 毛玻璃 + 底部高光 */
   .tabs {
+    position: sticky;
+    top: 0;
+    z-index: 100;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0;
-    padding: 3px;
-    margin-bottom: 18px;
-    border-radius: 999px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(232, 239, 249, 0.40) 100%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    backdrop-filter: blur(24px) saturate(180%);
-    box-shadow:
-      inset 0 1px 1px rgba(255, 255, 255, 0.95),
-      inset 0 -1px 1px rgba(15, 23, 42, 0.06),
-      inset 0 0 0 0.5px rgba(255, 255, 255, 0.55),
-      0 10px 28px rgba(15, 23, 42, 0.10);
+    gap: 4px;
+    padding: 10px 8px;
+    margin: 0;
+    background: rgba(255, 255, 255, 0.72);
+    -webkit-backdrop-filter: blur(18px) saturate(1.6);
+    backdrop-filter: blur(18px) saturate(1.6);
+    border-bottom: 0.5px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
   }
   .tab-btn {
-    padding: 10px 0;
+    padding: 8px 0;
     border: none;
     border-radius: 999px;
     font-size: 15px;
@@ -866,15 +865,17 @@
     </div>
   </div>
 
+  <!-- 顶部固定玻璃导航（sticky + 毛玻璃 + 底部高光） -->
+  <div class="tabs" id="tabsBar">
+    <button class="tab-btn active" data-tab="login">登录</button>
+    <button class="tab-btn" data-tab="register">注册</button>
+    <button class="tab-btn" data-tab="message">留言</button>
+  </div>
+
   <!-- 表单卡片 -->
   <div class="form-card">
     <!-- 登录第二步：卡片外面的 Q 图标（进第二步显示） -->
     <img class="step2-icon hidden" id="step2Icon" src="https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/LLGqbwebhoCBDKxiewfcnW4Mntd" alt="QXNET">
-    <div class="tabs" id="tabsBar">
-      <button class="tab-btn active" data-tab="login">登录</button>
-      <button class="tab-btn" data-tab="register">注册</button>
-      <button class="tab-btn" data-tab="message">留言</button>
-    </div>
 
     <!-- 账号字段区 -->
     <div id="accountFields">
