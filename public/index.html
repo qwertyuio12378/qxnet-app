@@ -2324,13 +2324,28 @@
   function subscribeChat() {
     if (!sb || chatSubscribed) return;
     chatSubscribed = true;
-    chatChannel = sb.channel('chat-room', { config: { broadcast: { self: true } } })
-      .on('broadcast', { event: 'new-message'}, (payload) => {
-        const m = payload.payload;
-        if (m.user_id === chatUserId) return; // 自己发的已经显示了
-        appendChatMsg(m.content, false, m.user_id);
-      })
-      .subscribe();
+    let lastId = 0;
+    // 长轮询：有新消息立刻返回，没有就挂起等待
+    async function poll() {
+      if (!sb) return;
+      try {
+        const { data, error } = await sb
+          .from('chat_messages')
+          .select('*')
+          .order('id', { ascending: false })
+          .limit(3);
+        if (error || !data) { setTimeout(poll, 1000); return; }
+        const fresh = data.reverse().filter(m => m.id > lastId);
+        if (fresh.length > 0) {
+          fresh.forEach(m => {
+            appendChatMsg(m.content, m.user_id === chatUserId, m.user_id);
+            if (m.id > lastId) lastId = m.id;
+          });
+        }
+      } catch (e) {}
+      setTimeout(poll, 300);
+    }
+    poll();
   }
 
   async function sendChatMsg() {
@@ -2340,11 +2355,7 @@
     if (!sb) { appendChatMsg(text, true, '我'); return; }
     try {
       const { error } = await sb.from('chat_messages').insert({ content: text, user_id: chatUserId });
-      if (error) { appendChatMsg('发送失败', true, '系统'); return; }
-      // 广播给其他在线用户
-      if (chatChannel) {
-        chatChannel.send({ type: 'broadcast', event: 'new-message', payload: { content: text, user_id: chatUserId } });
-      }
+      if (error) appendChatMsg('发送失败：' + error.message, true, '系统');
     } catch (e) {
       appendChatMsg('网络异常', true, '系统');
     }
