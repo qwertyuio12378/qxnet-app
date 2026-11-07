@@ -2278,7 +2278,7 @@
     dragStartX = e.touches[0].clientX;
     dragStartIdx = TAB_ORDER.indexOf(state.tab);
     draggingTab = true;
-    tabIndicator.style.transition = 'transform 0.15s ease';
+    tabIndicator.style.transition = 'none';
     const barW = tabsBar.offsetWidth || 396;
     const step = (barW - 14) / 4;
     tabIndicator.style.transform = `translateX(${dragStartIdx * step}px) scale(1.06)`;
@@ -2290,7 +2290,7 @@
     const barW = tabsBar.offsetWidth || 396;
     const step = (barW - 14) / 4;
     let target = dragStartIdx * step + dx;
-    target = Math.max(0, Math.min(step * 2, target));
+    target = Math.max(0, Math.min(step * 3, target));
     tabIndicator.style.transform = `translateX(${target}px) scale(1.06)`;
   }, { passive: true });
 
