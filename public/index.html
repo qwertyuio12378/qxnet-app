@@ -2166,7 +2166,10 @@
     dragStartX = e.touches[0].clientX;
     dragStartIdx = TAB_ORDER.indexOf(state.tab);
     draggingTab = true;
-    tabIndicator.style.transition = 'none';
+    tabIndicator.style.transition = 'transform 0.15s ease';
+    const barW = tabsBar.offsetWidth || 396;
+    const step = (barW - 16) / 3;
+    tabIndicator.style.transform = `translateX(${dragStartIdx * step}px) scale(1.06)`;
   }, { passive: true });
 
   tabsBar.addEventListener('touchmove', (e) => {
@@ -2176,7 +2179,7 @@
     const step = (barW - 16) / 3;
     let target = dragStartIdx * step + dx;
     target = Math.max(0, Math.min(step * 2, target));
-    tabIndicator.style.transform = `translateX(${target}px)`;
+    tabIndicator.style.transform = `translateX(${target}px) scale(1.06)`;
   }, { passive: true });
 
   tabsBar.addEventListener('touchend', (e) => {
@@ -2188,6 +2191,7 @@
     let targetIdx = dragStartIdx + Math.round(dx / step);
     targetIdx = Math.max(0, Math.min(2, targetIdx));
     const targetTab = TAB_ORDER[targetIdx];
+    tabIndicator.style.transition = 'transform 0.32s cubic-bezier(0.34, 1.2, 0.64, 1)';
     if (targetTab !== state.tab) {
       switchTab(targetTab);
     } else {
