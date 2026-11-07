@@ -257,6 +257,14 @@
     padding: 16px 18px 18px;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 20px rgba(15, 23, 42, 0.05);
   }
+  /* 聊天模式：去掉卡片外壳，全屏布局 */
+  .form-card.chat-mode {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+  }
   /* 底部悬浮液态玻璃胶囊：全透明背景 + 大尺寸 */
   .tabs {
     position: fixed;
@@ -1246,6 +1254,7 @@
   const heroSub = $('heroSub');
   const heroTip = $('heroTip');
   const heroCard = $('heroCard');
+  const formCard = document.querySelector('.form-card');
   const accountFields = $('accountFields');
   const messagePanel = $('messagePanel');
   const chatPanel = $('chatPanel');
@@ -2171,6 +2180,7 @@
 
     tabs.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
     moveIndicator(tab);
+    formCard.classList.toggle('chat-mode', tab === 'chat');
     heroBadge.textContent = cfg.badge;
     heroTitle.textContent = cfg.title;
     submitBtn.textContent = cfg.submit;
@@ -2210,7 +2220,7 @@
       tabsBar.classList.remove('hidden');
       heroSub.textContent = '登录后畅享最完美的2.1.5';
     } else {
-      // 聊天：隐藏 hero 卡片，只显示聊天内容
+      // 聊天：隐藏 hero 卡片，表单卡片改全屏
       heroCard.classList.add('hidden');
       tabsBar.classList.remove('hidden');
     }
