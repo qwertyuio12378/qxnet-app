@@ -382,12 +382,15 @@
   .chat-send-btn {
     border: none;
     border-radius: 999px;
-    padding: 11px 18px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: #1A73E8;
     color: #fff;
-    font-size: 14px;
-    font-weight: 600;
     cursor: pointer;
+    flex-shrink: 0;
   }
 
   .field {
@@ -1097,7 +1100,9 @@
       </div>
       <div class="chat-input-row">
         <input type="text" id="chatInput" placeholder="输入消息…" autocomplete="off">
-        <button class="chat-send-btn" id="chatSendBtn">发送</button>
+        <button class="chat-send-btn" id="chatSendBtn" aria-label="发送">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+        </button>
       </div>
     </div>
 
