@@ -257,25 +257,28 @@
     padding: 16px 18px 18px;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 20px rgba(15, 23, 42, 0.05);
   }
-  /* 底部固定玻璃导航：fixed bottom + 毛玻璃 + 顶部高光 */
+  /* 底部悬浮液态玻璃胶囊：fixed + 圆角玻璃 + 高光边 + 悬浮阴影 */
   .tabs {
     position: fixed;
-    bottom: 0;
+    bottom: 16px;
     left: 50%;
     transform: translateX(-50%);
-    width: 100%;
-    max-width: 420px;
+    width: calc(100% - 32px);
+    max-width: 388px;
     z-index: 100;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 4px;
-    padding: 10px 8px calc(10px + env(safe-area-inset-bottom));
-    margin: 0;
-    background: rgba(255, 255, 255, 0.72);
+    padding: 6px;
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.55);
     -webkit-backdrop-filter: blur(18px) saturate(1.6);
     backdrop-filter: blur(18px) saturate(1.6);
-    border-top: 0.5px solid rgba(255, 255, 255, 0.9);
-    box-shadow: 0 -1px 3px rgba(15, 23, 42, 0.04);
+    box-shadow:
+      inset 0 1px 1px rgba(255, 255, 255, 0.9),
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.6),
+      0 8px 28px rgba(15, 23, 42, 0.12),
+      0 2px 6px rgba(15, 23, 42, 0.06);
   }
   .tab-btn {
     padding: 8px 0;
