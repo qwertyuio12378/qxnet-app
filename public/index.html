@@ -256,7 +256,7 @@
     padding: 16px 18px 18px;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 20px rgba(15, 23, 42, 0.05);
   }
-  /* Tab 栏：Apple Liquid Glass 风格（胶囊玻璃条 + 高光边胶囊选中块） */
+  /* Tab 栏：Apple Liquid Glass 风格（玻璃条 + 透明气泡高光描边选中块） */
   .tabs {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -264,37 +264,42 @@
     padding: 3px;
     margin-bottom: 18px;
     border-radius: 999px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.78) 0%, rgba(238, 242, 247, 0.62) 100%);
+    background: linear-gradient(180deg, rgba(241, 245, 249, 0.85) 0%, rgba(226, 232, 240, 0.65) 100%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
     backdrop-filter: blur(24px) saturate(180%);
     box-shadow:
-      inset 0 0 0 1px rgba(255, 255, 255, 0.9),
-      0 8px 24px rgba(15, 23, 42, 0.09),
-      0 1px 3px rgba(15, 23, 42, 0.05);
+      inset 0 0 0 1px rgba(255, 255, 255, 0.85),
+      inset 0 1px 1px rgba(255, 255, 255, 0.9),
+      inset 0 -1px 2px rgba(15, 23, 42, 0.05),
+      0 6px 20px rgba(15, 23, 42, 0.07);
   }
   .tab-btn {
     padding: 10px 0;
-    border: none;
+    border: 1px solid transparent;
     border-radius: 999px;
     font-size: 15px;
     font-weight: 500;
     cursor: pointer;
     background: transparent;
-    color: #52525B;
-    transition: color 0.26s cubic-bezier(0.34, 1.2, 0.64, 1), background 0.26s ease, box-shadow 0.26s ease, transform 0.26s ease;
+    color: #64748B;
+    transition: color 0.26s cubic-bezier(0.34, 1.2, 0.64, 1), background 0.26s ease, border-color 0.26s ease, box-shadow 0.26s ease, transform 0.26s ease;
     font-family: -apple-system, 'SF Pro Text', 'PingFang SC', 'Noto Sans SC', sans-serif;
     letter-spacing: 0.2px;
     -webkit-tap-highlight-color: transparent;
   }
   .tab-btn:active { transform: scale(0.96); }
+  /* 选中项：透明玻璃气泡 + 白色高光描边 + 顶部反光 */
   .tab-btn.active {
-    background: rgba(255, 255, 255, 0.96);
-    color: #111827;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.78) 0%, rgba(255, 255, 255, 0.30) 55%, rgba(255, 255, 255, 0.46) 100%);
+    border-color: rgba(255, 255, 255, 0.96);
+    color: #0F172A;
     font-weight: 600;
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 1),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.75),
-      0 3px 10px rgba(15, 23, 42, 0.10);
+      inset 0 1px 1px rgba(255, 255, 255, 1),
+      inset 0 -1px 1px rgba(255, 255, 255, 0.6),
+      0 1px 2px rgba(15, 23, 42, 0.06),
+      0 4px 14px rgba(15, 23, 42, 0.11);
   }
 
   .field {
