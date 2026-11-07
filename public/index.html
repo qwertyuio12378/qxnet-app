@@ -333,6 +333,28 @@
     flex-direction: column;
     height: calc(100vh - 140px);
   }
+  .chat-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 4px 14px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1E293B;
+  }
+  .chat-header-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22C55E;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+  }
+  .chat-header-sub {
+    font-size: 12px;
+    font-weight: 400;
+    color: #94A3B8;
+    margin-left: auto;
+  }
   .chat-messages {
     flex: 1;
     overflow-y: auto;
@@ -1095,8 +1117,13 @@
 
     <!-- 聊天视图 -->
     <div id="chatPanel" class="hidden">
+      <div class="chat-header">
+        <div class="chat-header-dot"></div>
+        <span>聊天室</span>
+        <span class="chat-header-sub">大家都在聊</span>
+      </div>
       <div class="chat-messages" id="chatMessages">
-        <div class="chat-msg chat-other">你好，请问有什么可以帮你？</div>
+        <div class="chat-msg chat-other">欢迎来到聊天室，大家可以自由交流～</div>
       </div>
       <div class="chat-input-row">
         <input type="text" id="chatInput" placeholder="输入消息…" autocomplete="off">
