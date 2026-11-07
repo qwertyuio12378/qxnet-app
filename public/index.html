@@ -2205,10 +2205,14 @@
       loginStep2.classList.add('hidden');
       registerFields.classList.remove('hidden');
       heroSub.textContent = '登录后畅享最完美的2.1.5';
-    } else {
+    } else if (tab === 'message') {
       heroCard.classList.remove('hidden');
       tabsBar.classList.remove('hidden');
       heroSub.textContent = '登录后畅享最完美的2.1.5';
+    } else {
+      // 聊天：隐藏 hero 卡片，只显示聊天内容
+      heroCard.classList.add('hidden');
+      tabsBar.classList.remove('hidden');
     }
 
     playDropAnimation();
@@ -2297,7 +2301,7 @@
     const barW = tabsBar.offsetWidth || 396;
     const step = (barW - 14) / 4;
     let targetIdx = dragStartIdx + Math.round(dx / step);
-    targetIdx = Math.max(0, Math.min(2, targetIdx));
+    targetIdx = Math.max(0, Math.min(3, targetIdx));
     const targetTab = TAB_ORDER[targetIdx];
     tabIndicator.style.transition = 'transform 0.32s cubic-bezier(0.34, 1.2, 0.64, 1)';
     if (targetTab !== state.tab) {
