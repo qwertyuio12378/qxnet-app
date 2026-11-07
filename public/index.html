@@ -2323,31 +2323,12 @@
   function subscribeChat() {
     if (!sb || chatSubscribed) return;
     chatSubscribed = true;
-    // 轮询方式：每 3 秒拉一次最新消息
-    let lastId = 0;
-    try {
-      const existing = chatMessages.querySelectorAll('.chat-msg');
-      existing.forEach(el => { /* 已加载的历史消息，ID 未知，跳过 */ });
-    } catch (e) {}
-    setInterval(async () => {
-      if (!sb) return;
-      try {
-        const { data, error } = await sb
-          .from('chat_messages')
-          .select('*')
-          .order('id', { ascending: false })
-          .limit(5);
-        if (error || !data) return;
-        // data 是倒序，取最新的
-        const fresh = data.reverse().filter(m => m.id > lastId);
-        if (fresh.length > 0) {
-          fresh.forEach(m => {
-            appendChatMsg(m.content, m.user_id === chatUserId, m.user_id);
-            if (m.id > lastId) lastId = m.id;
-          });
-        }
-      } catch (e) {}
-    }, 200);
+    sb.channel('chat-room')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
+        const m = payload.new;
+        appendChatMsg(m.content, m.user_id === chatUserId, m.user_id);
+      })
+      .subscribe();
   }
 
   async function sendChatMsg() {
