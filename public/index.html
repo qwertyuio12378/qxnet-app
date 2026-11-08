@@ -1219,8 +1219,8 @@
 
   <!-- 表单卡片 -->
   <div class="form-card">
-    <!-- 汉堡菜单按钮 -->
-    <button class="hamburger-btn" id="hamburgerBtn" aria-label="菜单">
+    <!-- 汉堡菜单按钮（第二步显示） -->
+    <button class="hamburger-btn hidden" id="hamburgerBtn" aria-label="菜单">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <line x1="3" y1="6" x2="21" y2="6"/>
         <line x1="3" y1="12" x2="21" y2="12"/>
@@ -1953,6 +1953,8 @@
         void iconEl.offsetWidth;
         iconEl.classList.add('show-in');
       }
+      const hamburger = $('hamburgerBtn');
+      if (hamburger) hamburger.classList.remove('hidden');
       const typeOuter = $('loginTypeSwitchOuter');
       if (typeOuter) typeOuter.classList.remove('hidden');
       submitBtn.textContent = '登录';
@@ -1980,6 +1982,8 @@
       if (formCard) formCard.classList.remove('step2-gap');
       const iconEl = $('step2Icon');
       if (iconEl) iconEl.classList.add('hidden');
+      const hamburger = $('hamburgerBtn');
+      if (hamburger) hamburger.classList.add('hidden');
       const typeOuter = $('loginTypeSwitchOuter');
       if (typeOuter) typeOuter.classList.add('hidden');
       submitBtn.textContent = '下一步';
