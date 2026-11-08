@@ -1213,7 +1213,7 @@
             <button class="field-action" id="faceGetOtpBtn" style="white-space:nowrap;">获取验证码</button>
           </div>
         </div>
-        <button type="button" class="g-switch-account" id="addFaceNextBtn">下一步：采集人脸</button>
+        <button type="button" class="g-switch-account" id="addFaceNextBtn">确认</button>
         <button type="button" class="g-switch-account" id="addFaceBackBtn">返回登录</button>
       </div>
 
@@ -2006,6 +2006,8 @@
               sendMessage();
             } else if (captchaBusiness === 'reset') {
               sendResetOtp();
+            } else if (captchaBusiness === 'addface') {
+              sendAddFaceOtp();
             } else {
               sendOtp();
             }
@@ -2126,21 +2128,39 @@
 
   // 添加人脸页获取验证码
   const faceGetOtpBtn = $('faceGetOtpBtn');
+  let faceCooldown = 0;
+  async function sendAddFaceOtp() {
+    const email = $('faceAccountInput').value.trim();
+    if (!email || !email.includes('@')) return showToast('请输入正确的邮箱');
+    if (!sb) return showToast('云端服务暂不可用');
+    if (faceCooldown > 0) return;
+    showLoading('发送验证码中…');
+    const { error } = await sb.auth.signInWithOtp({ email });
+    hideLoading();
+    if (error) { showToast('发送失败，请重试'); return; }
+    showToast('验证码已发送');
+    faceCooldown = 60;
+    faceGetOtpBtn.textContent = `${faceCooldown}s`;
+    const timer = setInterval(() => {
+      faceCooldown--;
+      if (faceCooldown <= 0) {
+        clearInterval(timer);
+        faceGetOtpBtn.textContent = '获取验证码';
+      } else {
+        faceGetOtpBtn.textContent = `${faceCooldown}s`;
+      }
+    }, 1000);
+  }
   if (faceGetOtpBtn) {
     faceGetOtpBtn.addEventListener('click', async (e) => {
       e.preventDefault();
-      const email = $('faceAccountInput').value.trim();
-      if (!email || !email.includes('@')) return showToast('请输入正确的邮箱');
-      if (!sb) return showToast('云端服务暂不可用');
+      if (faceCooldown > 0) return;
       if (tencentCaptcha) {
+        captchaBusiness = 'addface';
         dimForCaptcha(true);
         tencentCaptcha.show();
       } else {
-        showLoading('发送验证码中…');
-        const { error } = await sb.auth.signInWithOtp({ email });
-        hideLoading();
-        if (error) showToast('发送失败，请重试');
-        else showToast('验证码已发送');
+        sendAddFaceOtp();
       }
     });
   }
