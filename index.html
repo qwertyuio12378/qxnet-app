@@ -1494,6 +1494,7 @@
 
   function setLoginType(type) {
     state.loginType = type;
+    loginTypeThumb.style.transform = ''; // 清除拖动时的inline style
     loginTypeSwitch.classList.toggle('otp-active', type === 'otp');
     pwdLoginBtn.classList.toggle('active', type === 'pwd');
     otpLoginBtn.classList.toggle('active', type === 'otp');
