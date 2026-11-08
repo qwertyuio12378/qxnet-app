@@ -1737,7 +1737,7 @@
       try {
         showLoading('请验证指纹...');
         // 定义回调
-        window.onFpResult = function(result) {
+        window.onFpResult = async function(result) {
           hideLoading();
           console.log('指纹回调:', result);
           // 兼容字符串格式
@@ -1746,6 +1746,23 @@
           }
           if (result && result.success) {
             showToast('指纹验证成功');
+            // 用保存的账号密码自动登录，然后跳主站
+            try {
+              const saved = loadSavedLogin();
+              if (saved && saved.account && saved.password) {
+                showLoading('登录中...');
+                const { data, error } = await sb.auth.signInWithPassword({
+                  email: saved.account,
+                  password: saved.password
+                });
+                hideLoading();
+                if (!error) {
+                  setTimeout(() => goMainPage(), 500);
+                  return;
+                }
+              }
+            } catch(e) {}
+            // 登录失败直接跳
             setTimeout(() => {
               window.location.href = 'https://qxnet.cc.cd';
             }, 1000);
