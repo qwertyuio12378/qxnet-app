@@ -1121,6 +1121,7 @@
         </div>
         <!-- 忘记密码入口（密码登录模式显示） -->
         <button type="button" class="forgot-pwd" id="forgotPwdBtn">忘记密码？</button>
+        <button type="button" class="forgot-pwd" id="addFaceEntryBtn" style="margin-left:12px;">添加人脸</button>
 
         <div class="field hidden" id="otpField">
           <label class="field-label">验证码</label>
@@ -1175,6 +1176,43 @@
           </div>
         </div>
         <button type="button" class="g-switch-account" id="resetBackBtn">返回登录</button>
+      </div>
+
+      <!-- 添加人脸视图 -->
+      <div id="addFaceView" class="hidden">
+        <div class="g-welcome">
+          <div class="g-welcome-avatar">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+              <circle cx="9" cy="10" r="1"/>
+              <circle cx="15" cy="10" r="1"/>
+              <path d="M8 15s1.5 2 4 2 4-2 4-2"/>
+            </svg>
+          </div>
+          <div class="g-welcome-title">添加人脸</div>
+          <div class="g-welcome-email">验证身份后绑定人脸，下次可直接人脸登录</div>
+        </div>
+        <div class="field">
+          <label class="field-label">账号</label>
+          <div class="field-row">
+            <input type="text" id="faceAccountInput" placeholder="请输入邮箱账号" autocomplete="off">
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">密码</label>
+          <div class="field-row">
+            <input type="password" id="facePwdInput" placeholder="请输入密码" autocomplete="off">
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">验证码</label>
+          <div class="field-row">
+            <input type="text" id="faceOtpInput" placeholder="请输入6位验证码" maxlength="6" autocomplete="off">
+            <button class="field-action" id="faceGetOtpBtn" style="white-space:nowrap;">获取验证码</button>
+          </div>
+        </div>
+        <button type="button" class="g-switch-account" id="addFaceNextBtn">下一步：采集人脸</button>
+        <button type="button" class="g-switch-account" id="addFaceBackBtn">返回登录</button>
       </div>
 
       <!-- 注册字段 -->
@@ -1743,6 +1781,36 @@
       e.preventDefault();
       openReset();
     });
+  }
+
+  // 添加人脸入口
+  const addFaceEntryBtn = $('addFaceEntryBtn');
+  if (addFaceEntryBtn) {
+    addFaceEntryBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openAddFace();
+    });
+  }
+
+  const addFaceBackBtn = $('addFaceBackBtn');
+  if (addFaceBackBtn) {
+    addFaceBackBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      closeAddFace();
+    });
+  }
+
+  function openAddFace() {
+    $('loginStep2').querySelectorAll(':scope > div').forEach(v => v.classList.add('hidden'));
+    $('addFaceView').classList.remove('hidden');
+    $('submitBtn').classList.add('hidden');
+  }
+
+  function closeAddFace() {
+    $('addFaceView').classList.add('hidden');
+    $('loginStep2').querySelectorAll(':scope > div').forEach(v => v.classList.remove('hidden'));
+    $('submitBtn').classList.remove('hidden');
+    updateCredFields();
   }
 
   const resetBackBtn = $('resetBackBtn');
