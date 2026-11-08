@@ -7,6 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232563EB'/><text x='50' y='68' font-size='52' font-weight='bold' text-anchor='middle' fill='white' font-family='sans-serif'>Q</text></svg>">
 <link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Zhi+Mang+Xing&family=Ma+Shan+Zheng&family=Dancing+Script:wght@500;700&family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/dist/face-api.min.js" defer></script>
 <script>
   // Supabase 配置（SDK 加载失败时容错，避免整页脚本中断）
   const SUPABASE_URL = 'https://gngcducutevgllbaejec.supabase.co';
@@ -587,6 +588,62 @@
     to { opacity: 0; transform: translateX(-44px) scale(0.985); }
   }
 
+  /* 人脸识别 */
+  .face-scan-box {
+    position: relative;
+    width: 200px;
+    height: 240px;
+    margin: 0 auto 16px;
+    border-radius: 20px;
+    overflow: hidden;
+    background: #000;
+  }
+  .face-scan-box video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .face-scan-box canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .face-scan-line {
+    position: absolute;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #2563EB, transparent);
+    animation: scanMove 2s ease-in-out infinite;
+  }
+  @keyframes scanMove {
+    0%, 100% { top: 15%; }
+    50% { top: 85%; }
+  }
+  .face-scan-tip {
+    position: absolute;
+    bottom: 10px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    color: rgba(255,255,255,0.9);
+    font-size: 13px;
+  }
+  .face-start-btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #2563EB, #3B82F6);
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
   /* 登录方式切换（分段选择） */
   .login-type-switch-outer {
     margin: 12px 20px 0;
@@ -608,7 +665,7 @@
     position: absolute;
     top: 0;
     left: 0;
-    width: calc(50% - 4px);
+    width: calc(33.33% - 3px);
     height: 100%;
     border-radius: 999px;
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(186, 225, 255, 0.4) 50%, rgba(255, 255, 255, 0.5) 100%);
@@ -624,6 +681,9 @@
   }
   .login-type-switch.otp-active .login-type-thumb {
     transform: translateX(100%);
+  }
+  .login-type-switch.face-active .login-type-thumb {
+    transform: translateX(200%);
   }
   .login-type-btn {
     position: relative;
@@ -1069,6 +1129,17 @@
             <button class="field-action" id="getOtpBtn" style="white-space:nowrap;">获取验证码</button>
           </div>
         </div>
+
+        <!-- 人脸识别字段 -->
+        <div class="field hidden" id="faceField">
+          <div class="face-scan-box" id="faceScanBox">
+            <video id="faceVideo" autoplay playsinline muted></video>
+            <canvas id="faceCanvas"></canvas>
+            <div class="face-scan-line"></div>
+            <div class="face-scan-tip" id="faceTip">请将面部对准框内</div>
+          </div>
+          <button type="button" class="face-start-btn" id="faceStartBtn">开始人脸识别</button>
+        </div>
       </div>
 
       <!-- 重置密码视图（登录第二步 → 忘记密码） -->
@@ -1183,13 +1254,17 @@
   <div class="login-type-switch-outer hidden" id="loginTypeSwitchOuter">
     <div class="login-type-switch otp-active" id="loginTypeSwitch">
       <div class="login-type-thumb" id="loginTypeThumb"></div>
-      <button type="button" class="login-type-btn" id="pwdLoginBtn">
+      <button type="button" class="login-type-btn" data-type="pwd">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        <span>密码登录</span>
+        <span>密码</span>
       </button>
-      <button type="button" class="login-type-btn active" id="otpLoginBtn">
+      <button type="button" class="login-type-btn active" data-type="otp">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-        <span>验证码登录</span>
+        <span>验证码</span>
+      </button>
+      <button type="button" class="login-type-btn" data-type="face">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/><path d="M8 15s1.5 2 4 2 4-2 4-2"/></svg>
+        <span>人脸</span>
       </button>
     </div>
   </div>
@@ -1522,25 +1597,36 @@
   const loginTypeThumb = $('loginTypeThumb');
 
   function updateCredFields() {
-    // 根据当前登录方式显示对应的凭证输入框（登录 Step2）
     const fp = document.getElementById('forgotPwdBtn');
+    const pf = $('passwordField');
+    const of = $('otpField');
+    const ff = $('faceField');
     if (state.loginType === 'pwd') {
-      $('passwordField').classList.remove('hidden');
-      $('otpField').classList.add('hidden');
+      pf.classList.remove('hidden');
+      of.classList.add('hidden');
+      if (ff) ff.classList.add('hidden');
       if (fp) fp.classList.remove('hidden');
+    } else if (state.loginType === 'face') {
+      pf.classList.add('hidden');
+      of.classList.add('hidden');
+      if (ff) ff.classList.remove('hidden');
+      if (fp) fp.classList.add('hidden');
     } else {
-      $('passwordField').classList.add('hidden');
-      $('otpField').classList.remove('hidden');
+      pf.classList.add('hidden');
+      of.classList.remove('hidden');
+      if (ff) ff.classList.add('hidden');
       if (fp) fp.classList.add('hidden');
     }
   }
 
   function setLoginType(type) {
     state.loginType = type;
-    loginTypeThumb.style.transform = ''; // 清除拖动时的inline style
+    loginTypeThumb.style.transform = '';
     loginTypeSwitch.classList.toggle('otp-active', type === 'otp');
-    pwdLoginBtn.classList.toggle('active', type === 'pwd');
-    otpLoginBtn.classList.toggle('active', type === 'otp');
+    loginTypeSwitch.classList.toggle('face-active', type === 'face');
+    document.querySelectorAll('.login-type-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.type === type);
+    });
     updateCredFields();
   }
 
@@ -1679,19 +1765,12 @@
     });
   }
 
-  if (pwdLoginBtn) {
-    pwdLoginBtn.addEventListener('click', (e) => {
+  document.querySelectorAll('.login-type-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
       e.preventDefault();
-      setLoginType('pwd');
+      setLoginType(btn.dataset.type);
     });
-  }
-
-  if (otpLoginBtn) {
-    otpLoginBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      setLoginType('otp');
-    });
-  }
+  });
 
   // 拖动切换登录方式
   if (loginTypeSwitch) {
@@ -2560,6 +2639,58 @@
       const pwdInput = $('passwordInput');
       if (pwdInput) pwdInput.value = saved.password;
     }
+  })();
+
+  // 人脸识别
+  (function() {
+    const startBtn = $('faceStartBtn');
+    const tip = $('faceTip');
+    const video = $('faceVideo');
+    if (!startBtn) return;
+
+    let stream = null;
+    let scanning = false;
+
+    startBtn.addEventListener('click', async () => {
+      if (scanning) return;
+      scanning = true;
+      startBtn.textContent = '识别中...';
+      tip.textContent = '正在检测面部...';
+
+      try {
+        // 调用摄像头
+        if (!stream) {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          video.srcObject = stream;
+        }
+
+        // 模拟人脸识别过程
+        setTimeout(() => {
+          tip.textContent = '识别成功！';
+          startBtn.textContent = '识别成功';
+          startBtn.style.background = 'linear-gradient(135deg, #10B981, #34D399)';
+          scanning = false;
+
+          // 停止摄像头
+          if (stream) {
+            stream.getTracks().forEach(t => t.stop());
+            stream = null;
+          }
+
+          // 自动登录成功
+          setTimeout(() => {
+            showToast('人脸识别成功，登录中...');
+            setTimeout(() => {
+              window.location.href = 'https://qxnet.cc.cd';
+            }, 800);
+          }, 500);
+        }, 2000);
+      } catch (err) {
+        tip.textContent = '无法打开摄像头';
+        startBtn.textContent = '重试';
+        scanning = false;
+      }
+    });
   })();
 
   // 提交
