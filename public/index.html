@@ -2487,11 +2487,14 @@
     // 登录：两步式界面；注册：注册字段
     if (tab === 'login') {
       registerFields.classList.add('hidden');
+      // 关闭添加人脸视图
+      $('addFaceView').classList.add('hidden');
       if (state.loginStep === 2) {
         loginStep1.classList.add('hidden');
         loginStep2.classList.remove('hidden');
         heroCard.classList.add('hidden');
         tabsBar.classList.add('hidden');
+        submitBtn.classList.remove('hidden');
         submitBtn.textContent = '登录';
         updateCredFields();
       } else {
@@ -2512,6 +2515,9 @@
     } else if (tab === 'message') {
       heroCard.classList.remove('hidden');
       tabsBar.classList.remove('hidden');
+      loginStep1.classList.add('hidden');
+      loginStep2.classList.add('hidden');
+      registerFields.classList.add('hidden');
       heroSub.textContent = '登录后畅享最完美的2.1.5';
     } else {
       // 聊天：隐藏 hero 卡片，表单卡片改全屏
