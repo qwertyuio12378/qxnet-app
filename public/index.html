@@ -1816,6 +1816,31 @@
     });
   }
 
+  // 添加人脸页确认按钮
+  const addFaceNextBtn = $('addFaceNextBtn');
+  if (addFaceNextBtn) {
+    addFaceNextBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const email = $('faceAccountInput').value.trim();
+      const password = $('facePasswordInput').value;
+      const otp = $('faceOtpInput').value.trim();
+      if (!email || !email.includes('@')) return showToast('请输入正确的邮箱');
+      if (!password) return showToast('请输入密码');
+      if (!otp || otp.length !== 6) return showToast('请输入6位验证码');
+      if (!sb) return showToast('云端服务暂不可用');
+      showLoading('验证身份中…');
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) {
+        hideLoading();
+        return showToast('账号或密码错误');
+      }
+      // 验证通过，开始采集人脸
+      hideLoading();
+      showToast('身份验证通过，请开始采集人脸');
+      // 这里可以跳转到人脸采集页面
+    });
+  }
+
   function openAddFace() {
     $('loginStep2').querySelectorAll(':scope > div').forEach(v => v.classList.add('hidden'));
     $('addFaceView').classList.remove('hidden');
