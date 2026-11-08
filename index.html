@@ -1628,6 +1628,7 @@
     pwdVisible: false,
     cardKeyVisible: false,
     resetMode: false,
+    currentUserEmail: '',
   };
 
   // DOM
@@ -1737,16 +1738,20 @@
     }
     try {
       showLoading('请验证指纹...');
-      // 检查是否有本地凭证
-      const creds = JSON.parse(localStorage.getItem('fingerprint_creds') || '[]');
-      if (creds.length === 0) {
-        // 没有凭证，先注册
+      // 从 Supabase 读取已绑定的指纹凭证
+      const { data: creds, error } = await supabaseClient
+        .from('user_fingerprints')
+        .select('cred_id, email')
+        .eq('email', state.currentUserEmail || '');
+      if (error || !creds || creds.length === 0) {
+        hideLoading();
+        // 没有凭证，先录入
         await registerFingerprint();
         return;
       }
       // 登录：获取断言
       const allowCredentials = creds.map(c => ({
-        id: Uint8Array.from(atob(c.id), b => b.charCodeAt(0)),
+        id: Uint8Array.from(atob(c.cred_id), b => b.charCodeAt(0)),
         type: 'public-key',
         transports: ['internal']
       }));
@@ -1761,7 +1766,6 @@
       hideLoading();
       if (assertion) {
         showToast('指纹验证成功');
-        // 登录成功，跳转
         setTimeout(() => {
           window.location.href = 'https://qxnet.cc.cd';
         }, 1000);
@@ -1776,13 +1780,18 @@
     }
   }
 
-  // 注册指纹
+  // 录入指纹
   async function registerFingerprint() {
     try {
+      const email = prompt('请输入要绑定指纹的账号:');
+      if (!email) {
+        hideLoading();
+        return;
+      }
       const user = {
-        id: Uint8Array.from([1, 2, 3, 4]),
-        name: 'user@example.com',
-        displayName: '用户'
+        id: Uint8Array.from([...email].map(c => c.charCodeAt(0))),
+        name: email,
+        displayName: email
       };
       const credential = await navigator.credentials.create({
         publicKey: {
@@ -1797,14 +1806,19 @@
           timeout: 60000
         }
       });
-      hideLoading();
       if (credential) {
-        // 保存凭证
-        const creds = JSON.parse(localStorage.getItem('fingerprint_creds') || '[]');
+        // 保存到 Supabase
         const credId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
-        creds.push({ id: credId });
-        localStorage.setItem('fingerprint_creds', JSON.stringify(creds));
-        showToast('指纹录入成功');
+        const { error } = await supabaseClient
+          .from('user_fingerprints')
+          .insert([{ email: email, cred_id: credId, created_at: new Date().toISOString() }]);
+        hideLoading();
+        if (error) {
+          showToast('保存失败: ' + error.message);
+        } else {
+          state.currentUserEmail = email;
+          showToast('指纹录入成功');
+        }
       }
     } catch (err) {
       hideLoading();
