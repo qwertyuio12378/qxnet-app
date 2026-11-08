@@ -1663,6 +1663,20 @@
         closeDrawer();
         return;
       }
+      if (page === 'face') {
+        // 切换到登录 tab，然后切换到人脸模式
+        switchTab('login');
+        // 如果已经在第二步，直接切人脸模式
+        if (state.loginStep === 2) {
+          setLoginType('face');
+        } else {
+          // 先进入第二步
+          goNextStep();
+          setTimeout(() => setLoginType('face'), 300);
+        }
+        closeDrawer();
+        return;
+      }
       if (TAB_ORDER.includes(page)) {
         switchTab(page);
       }
