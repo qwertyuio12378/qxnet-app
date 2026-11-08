@@ -1739,7 +1739,12 @@
         // 定义回调
         window.onFpResult = function(result) {
           hideLoading();
-          if (result.success) {
+          console.log('指纹回调:', result);
+          // 兼容字符串格式
+          if (typeof result === 'string') {
+            try { result = JSON.parse(result); } catch(e) {}
+          }
+          if (result && result.success) {
             showToast('指纹验证成功');
             setTimeout(() => {
               window.location.href = 'https://qxnet.cc.cd';
