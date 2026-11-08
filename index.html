@@ -1937,13 +1937,13 @@
   }
 
   function openAddFace() {
-    $('loginStep2').querySelectorAll(':scope > div').forEach(v => v.classList.add('hidden'));
+    $('loginStep2').querySelectorAll(':scope > div, :scope > button').forEach(v => v.classList.add('hidden'));
     $('addFaceView').classList.remove('hidden');
     $('submitBtn').classList.add('hidden');
   }
 
   function closeAddFace() {
-    $('loginStep2').querySelectorAll(':scope > div').forEach(v => v.classList.remove('hidden'));
+    $('loginStep2').querySelectorAll(':scope > div, :scope > button').forEach(v => v.classList.remove('hidden'));
     $('addFaceView').classList.add('hidden');
     $('submitBtn').classList.remove('hidden');
     updateCredFields();
