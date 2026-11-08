@@ -1659,7 +1659,8 @@
     item.addEventListener('click', () => {
       const page = item.dataset.page;
       if (page === 'fingerprint') {
-        showToast('指纹识别开发中，敬请期待');
+        // 指纹登录
+        fingerprintLogin();
         closeDrawer();
         return;
       }
@@ -1726,6 +1727,89 @@
     toastEl.classList.add('show');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2000);
+  }
+
+  // 指纹登录（WebAuthn）
+  async function fingerprintLogin() {
+    if (!window.PublicKeyCredential) {
+      showToast('设备不支持指纹识别');
+      return;
+    }
+    try {
+      showLoading('请验证指纹...');
+      // 检查是否有本地凭证
+      const creds = JSON.parse(localStorage.getItem('fingerprint_creds') || '[]');
+      if (creds.length === 0) {
+        // 没有凭证，先注册
+        await registerFingerprint();
+        return;
+      }
+      // 登录：获取断言
+      const allowCredentials = creds.map(c => ({
+        id: Uint8Array.from(atob(c.id), b => b.charCodeAt(0)),
+        type: 'public-key',
+        transports: ['internal']
+      }));
+      const assertion = await navigator.credentials.get({
+        publicKey: {
+          challenge: new Uint8Array(32),
+          allowCredentials: allowCredentials,
+          userVerification: 'required',
+          timeout: 60000
+        }
+      });
+      hideLoading();
+      if (assertion) {
+        showToast('指纹验证成功');
+        // 登录成功，跳转
+        setTimeout(() => {
+          window.location.href = 'https://qxnet.cc.cd';
+        }, 1000);
+      }
+    } catch (err) {
+      hideLoading();
+      if (err.name === 'NotAllowedError') {
+        showToast('指纹验证已取消');
+      } else {
+        showToast('指纹识别失败: ' + err.message);
+      }
+    }
+  }
+
+  // 注册指纹
+  async function registerFingerprint() {
+    try {
+      const user = {
+        id: Uint8Array.from([1, 2, 3, 4]),
+        name: 'user@example.com',
+        displayName: '用户'
+      };
+      const credential = await navigator.credentials.create({
+        publicKey: {
+          challenge: new Uint8Array(32),
+          rp: { name: 'QXNet' },
+          user: user,
+          pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
+          authenticatorSelection: {
+            authenticatorAttachment: 'platform',
+            userVerification: 'required'
+          },
+          timeout: 60000
+        }
+      });
+      hideLoading();
+      if (credential) {
+        // 保存凭证
+        const creds = JSON.parse(localStorage.getItem('fingerprint_creds') || '[]');
+        const credId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+        creds.push({ id: credId });
+        localStorage.setItem('fingerprint_creds', JSON.stringify(creds));
+        showToast('指纹录入成功');
+      }
+    } catch (err) {
+      hideLoading();
+      showToast('指纹录入失败: ' + err.message);
+    }
   }
 
   // Loading 弹窗（提前定义）
