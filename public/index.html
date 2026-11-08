@@ -1733,14 +1733,8 @@
   // 指纹登录
   async function fingerprintLogin() {
     // 优先用应用原生指纹接口
-    if (window.qnetAndroidObj && window.qnetAndroidObj.qxFpAvailable) {
+    if (window.qnetAndroidObj && window.qnetAndroidObj.qxFpStart) {
       try {
-        const availStr = window.qnetAndroidObj.qxFpAvailable();
-        const avail = JSON.parse(availStr);
-        if (!avail.hardware || !avail.enrolled) {
-          showToast('设备未录入指纹');
-          return;
-        }
         showLoading('请验证指纹...');
         // 定义回调
         window.onFpResult = function(result) {
@@ -1757,6 +1751,7 @@
         window.qnetAndroidObj.qxFpStart('onFpResult');
         return;
       } catch (err) {
+        hideLoading();
         showToast('指纹识别失败: ' + err.message);
         return;
       }
