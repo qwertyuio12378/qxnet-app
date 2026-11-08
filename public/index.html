@@ -1730,9 +1730,39 @@
     toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2000);
   }
 
-  // 指纹登录（WebAuthn）
+  // 指纹登录
   async function fingerprintLogin() {
-    // 详细检测
+    // 优先用应用原生指纹接口
+    if (window.qnetAndroidObj && window.qnetAndroidObj.qxFpAvailable) {
+      try {
+        const availStr = window.qnetAndroidObj.qxFpAvailable();
+        const avail = JSON.parse(availStr);
+        if (!avail.hardware || !avail.enrolled) {
+          showToast('设备未录入指纹');
+          return;
+        }
+        showLoading('请验证指纹...');
+        // 定义回调
+        window.onFpResult = function(result) {
+          hideLoading();
+          if (result.success) {
+            showToast('指纹验证成功');
+            setTimeout(() => {
+              window.location.href = 'https://qxnet.cc.cd';
+            }, 1000);
+          } else {
+            showToast('指纹验证失败');
+          }
+        };
+        window.qnetAndroidObj.qxFpStart('onFpResult');
+        return;
+      } catch (err) {
+        showToast('指纹识别失败: ' + err.message);
+        return;
+      }
+    }
+    
+    // 网页环境用 WebAuthn
     const isHTTPS = window.isSecureContext;
     const hasWebAuthn = !!window.PublicKeyCredential;
     const hasCredentials = !!(navigator.credentials && navigator.credentials.create);
@@ -1742,7 +1772,7 @@
       return;
     }
     if (!hasWebAuthn || !hasCredentials) {
-      showToast('当前浏览器不支持，请用Chrome/Safari打开');
+      showToast('当前浏览器不支持，请在应用内使用');
       return;
     }
     try {
