@@ -224,27 +224,17 @@
   /* 登录第二步：卡片外面上方的 Q 图标（透明底，无背景） */
   .step2-icon {
     position: absolute;
-    top: -100px;
+    top: -96px;
     left: 50%;
     transform: translateX(-50%);
-    width: 88px;
-    height: 88px;
+    width: 80px;
+    height: 80px;
     z-index: 5;
-    border-radius: 50%;
-    overflow: hidden;
-    background: #fff;
-    box-shadow: 0 8px 24px rgba(30, 64, 175, 0.15);
     animation: step2IconIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .step2-icon.hidden {
     display: none;
     animation: none;
-  }
-  .step2-icon img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
   }
   @keyframes step2IconIn {
     from { opacity: 0; transform: translateX(-50%) translateY(-30px) scale(0.8); }
@@ -999,7 +989,18 @@
   <!-- 表单卡片 -->
   <div class="form-card">
     <!-- 登录第二步：卡片外面的 Q 图标（进第二步显示） -->
-    <img class="step2-icon hidden" id="step2Icon" src="https://aka.doubaocdn.com/s/DXEiQZ4aCd" alt="QXNET">
+    <svg class="step2-icon hidden" id="step2Icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="qGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#4285F4"/>
+          <stop offset="33%" stop-color="#EA4335"/>
+          <stop offset="66%" stop-color="#FBBC05"/>
+          <stop offset="100%" stop-color="#34A853"/>
+        </linearGradient>
+      </defs>
+      <circle cx="50" cy="45" r="32" fill="none" stroke="url(#qGrad)" stroke-width="10" stroke-linecap="round"/>
+      <line x1="68" y1="68" x2="82" y2="82" stroke="#34A853" stroke-width="10" stroke-linecap="round"/>
+    </svg>
 
     <!-- 账号字段区 -->
     <div id="accountFields">
