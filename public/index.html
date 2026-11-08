@@ -2653,30 +2653,55 @@
     const startBtn = $('faceStartBtn');
     const tip = $('faceTip');
     const video = $('faceVideo');
+    const canvas = $('faceCanvas');
     if (!startBtn) return;
 
     let stream = null;
     let scanning = false;
+    let modelLoaded = false;
+
+    async function loadModel() {
+      if (modelLoaded) return true;
+      try {
+        await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model');
+        modelLoaded = true;
+        return true;
+      } catch (e) {
+        tip.textContent = '模型加载失败';
+        return false;
+      }
+    }
 
     startBtn.addEventListener('click', async () => {
       if (scanning) return;
       scanning = true;
-      startBtn.textContent = '识别中...';
-      tip.textContent = '正在检测面部...';
+      startBtn.textContent = '加载中...';
+      tip.textContent = '正在加载模型...';
+
+      const ok = await loadModel();
+      if (!ok) {
+        scanning = false;
+        startBtn.textContent = '重试';
+        return;
+      }
 
       try {
-        // 调用摄像头
+        tip.textContent = '请将面部对准框内';
         if (!stream) {
           stream = await navigator.mediaDevices.getUserMedia({ video: true });
           video.srcObject = stream;
         }
 
-        // 模拟人脸识别过程
-        setTimeout(() => {
+        startBtn.textContent = '识别中...';
+        tip.textContent = '正在检测面部...';
+
+        // 检测人脸
+        const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions());
+
+        if (detection) {
           tip.textContent = '识别成功！';
           startBtn.textContent = '识别成功';
           startBtn.style.background = 'linear-gradient(135deg, #10B981, #34D399)';
-          scanning = false;
 
           // 停止摄像头
           if (stream) {
@@ -2691,12 +2716,15 @@
               window.location.href = 'https://qxnet.cc.cd';
             }, 800);
           }, 500);
-        }, 2000);
+        } else {
+          tip.textContent = '未检测到人脸，请重试';
+          startBtn.textContent = '重试';
+        }
       } catch (err) {
         tip.textContent = '无法打开摄像头';
         startBtn.textContent = '重试';
-        scanning = false;
       }
+      scanning = false;
     });
   })();
 
