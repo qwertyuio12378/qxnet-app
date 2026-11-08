@@ -1645,6 +1645,39 @@
     });
   }
 
+  // 拖动切换登录方式
+  if (loginTypeSwitch) {
+    let dragStartX = 0;
+    let dragStartType = 'otp';
+    let dragging = false;
+    loginTypeSwitch.addEventListener('touchstart', (e) => {
+      dragging = true;
+      dragStartX = e.touches[0].clientX;
+      dragStartType = state.loginType;
+      loginTypeThumb.style.transition = 'none';
+    });
+    loginTypeSwitch.addEventListener('touchmove', (e) => {
+      if (!dragging) return;
+      const dx = e.touches[0].clientX - dragStartX;
+      const switchW = loginTypeSwitch.offsetWidth;
+      const thumbW = loginTypeThumb.offsetWidth;
+      const maxDx = switchW - thumbW - 4;
+      let target = dragStartType === 'otp' ? maxDx : 0;
+      target += dx;
+      target = Math.max(0, Math.min(maxDx, target));
+      loginTypeThumb.style.transform = `translateX(${target}px) scale(1.04)`;
+    });
+    loginTypeSwitch.addEventListener('touchend', (e) => {
+      if (!dragging) return;
+      dragging = false;
+      loginTypeThumb.style.transition = 'transform 0.32s cubic-bezier(0.34, 1.2, 0.64, 1)';
+      const dx = e.changedTouches[0].clientX - dragStartX;
+      if (dx < -20) setLoginType('pwd');
+      else if (dx > 20) setLoginType('otp');
+      else setLoginType(dragStartType);
+    });
+  }
+
   // 清除按钮
   if (clearBtn) {
     clearBtn.addEventListener('click', (e) => {
