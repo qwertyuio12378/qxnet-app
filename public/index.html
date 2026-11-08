@@ -1953,7 +1953,7 @@
   }
   prefetchSiteUrl();
 
-  // 登录成功：显示动态成功标志，1 秒后进入
+  // 登录成功：显示动态成功标志，加开启指纹登录选项
   function showLoginSuccess() {
     if (!loadingModal) return;
     const box = loadingModal.querySelector('.loading-box');
@@ -1964,16 +1964,42 @@
           <path class="success-check" d="M15 27l8 8 14-16" fill="none" stroke="#22C55E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
-      <div class="loading-text">登录成功，正在进入…</div>
+      <div class="loading-text">登录成功</div>
+      <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px;">
+        <button id="enableFpBtn" style="padding:10px 20px;border-radius:12px;border:1px solid #E2E8F0;background:rgba(255,255,255,0.8);font-size:14px;color:#3B82F6;cursor:pointer;backdrop-filter:blur(10px);">开启指纹登录</button>
+        <button id="skipFpBtn" style="padding:10px 20px;border-radius:12px;border:none;background:transparent;font-size:13px;color:#94A3B8;cursor:pointer;">暂不开启，直接进入</button>
+      </div>
     `;
     loadingModal.classList.add('show');
+    
+    // 开启指纹登录按钮
+    const enableFpBtn = document.getElementById('enableFpBtn');
+    if (enableFpBtn) {
+      enableFpBtn.addEventListener('click', () => {
+        enableFingerprint();
+      });
+    }
+    
+    // 直接进入按钮
+    const skipFpBtn = document.getElementById('skipFpBtn');
+    if (skipFpBtn) {
+      skipFpBtn.addEventListener('click', () => {
+        goToMain();
+      });
+    }
+    
+    // 5秒后自动进入
     setTimeout(() => {
-      hideLoading();
-      if (window.qnetAndroidObj) {
-        window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
-      }
-      playQIcon();
-    }, 1000);
+      goToMain();
+    }, 5000);
+  }
+  
+  function goToMain() {
+    hideLoading();
+    if (window.qnetAndroidObj) {
+      window.qnetAndroidObj.callAndroidApi({api: 'close_loading'});
+    }
+    playQIcon();
   }
 
   // 登录成功后动态加载 Q 图标（渐显 + 脉冲 + 旋转环），随后带 token 进入主站
