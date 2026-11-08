@@ -1732,8 +1732,17 @@
 
   // 指纹登录（WebAuthn）
   async function fingerprintLogin() {
-    if (!window.PublicKeyCredential) {
-      showToast('设备不支持指纹识别');
+    // 详细检测
+    const isHTTPS = window.isSecureContext;
+    const hasWebAuthn = !!window.PublicKeyCredential;
+    const hasCredentials = !!(navigator.credentials && navigator.credentials.create);
+    
+    if (!isHTTPS) {
+      showToast('需要HTTPS环境才能用指纹');
+      return;
+    }
+    if (!hasWebAuthn || !hasCredentials) {
+      showToast('当前浏览器不支持，请用Chrome/Safari打开');
       return;
     }
     try {
