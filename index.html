@@ -230,11 +230,18 @@
     width: 80px;
     height: 80px;
     z-index: 5;
+    filter: drop-shadow(0 6px 12px rgba(30, 64, 175, 0.25));
     animation: step2IconIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .step2-icon.hidden {
     display: none;
     animation: none;
+  }
+  .step2-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
   }
   @keyframes step2IconIn {
     from { opacity: 0; transform: translateX(-50%) translateY(-30px) scale(0.8); }
@@ -989,29 +996,7 @@
   <!-- 表单卡片 -->
   <div class="form-card">
     <!-- 登录第二步：卡片外面的 Q 图标（进第二步显示） -->
-    <svg class="step2-icon hidden" id="step2Icon" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="qGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#3B82F6"/>
-          <stop offset="40%" stop-color="#10B981"/>
-          <stop offset="70%" stop-color="#F59E0B"/>
-          <stop offset="100%" stop-color="#EF4444"/>
-        </linearGradient>
-      </defs>
-      <!-- 底部阴影 -->
-      <ellipse cx="60" cy="102" rx="28" ry="5" fill="rgba(0,0,0,0.12)"/>
-      <!-- 底层厚度 -->
-      <g transform="translate(2,5)">
-        <path d="M 60 20 A 35 35 0 1 1 35 60" fill="none" stroke="rgba(0,0,0,0.15)" stroke-width="13" stroke-linecap="round"/>
-        <line x1="75" y1="72" x2="92" y2="89" stroke="rgba(0,0,0,0.15)" stroke-width="13" stroke-linecap="round"/>
-      </g>
-      <!-- 主体圆环 -->
-      <path d="M 60 20 A 35 35 0 1 1 35 60" fill="none" stroke="url(#qGrad)" stroke-width="13" stroke-linecap="round"/>
-      <!-- 尾巴 -->
-      <line x1="75" y1="72" x2="92" y2="89" stroke="#10B981" stroke-width="13" stroke-linecap="round"/>
-      <!-- 高光 -->
-      <path d="M 38 38 A 35 35 0 0 1 55 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="4" stroke-linecap="round"/>
-    </svg>
+    <img class="step2-icon hidden" id="step2Icon" src="https://aka.doubaocdn.com/s/DXEiQZ4aCd" alt="QXNET">
 
     <!-- 账号字段区 -->
     <div id="accountFields">
