@@ -1767,8 +1767,7 @@
               window.location.href = 'https://qxnet.cc.cd';
             }, 1000);
           } else {
-            const msg = (result && result.msg) ? result.msg : '未知错误';
-            showToast('指纹验证失败: ' + msg);
+            showToast('指纹验证失败，请重试');
           }
         };
         window.qnetAndroidObj.qxFpStart('onFpResult');
