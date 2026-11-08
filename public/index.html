@@ -1657,24 +1657,28 @@
     const pf = $('passwordField');
     const of = $('otpField');
     const ff = $('faceField');
+    const sb = $('submitBtn');
     if (state.loginType === 'pwd') {
       pf.classList.remove('hidden');
       of.classList.add('hidden');
       if (ff) ff.classList.add('hidden');
       if (fp) fp.classList.remove('hidden');
       if (af) af.classList.remove('hidden');
+      if (sb) sb.classList.remove('hidden');
     } else if (state.loginType === 'face') {
       pf.classList.add('hidden');
       of.classList.add('hidden');
       if (ff) ff.classList.remove('hidden');
       if (fp) fp.classList.add('hidden');
       if (af) af.classList.add('hidden');
+      if (sb) sb.classList.add('hidden');
     } else {
       pf.classList.add('hidden');
       of.classList.remove('hidden');
       if (ff) ff.classList.add('hidden');
       if (fp) fp.classList.add('hidden');
       if (af) af.classList.add('hidden');
+      if (sb) sb.classList.remove('hidden');
     }
   }
 
