@@ -596,12 +596,19 @@
     margin: 0 auto 16px;
     border-radius: 20px;
     overflow: hidden;
-    background: #000;
+    background: linear-gradient(135deg, #f0f4ff 0%, #e8f0ff 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .face-scan-box video {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: none;
+  }
+  .face-scan-box.ready video {
+    display: block;
   }
   .face-scan-box canvas {
     position: absolute;
@@ -609,6 +616,16 @@
     left: 0;
     width: 100%;
     height: 100%;
+  }
+  .face-placeholder {
+    text-align: center;
+    color: #94a3b8;
+  }
+  .face-placeholder svg {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 8px;
+    opacity: 0.5;
   }
   .face-scan-line {
     position: absolute;
@@ -1140,6 +1157,15 @@
             <canvas id="faceCanvas"></canvas>
             <div class="face-scan-line"></div>
             <div class="face-scan-tip" id="faceTip">请将面部对准框内</div>
+            <div class="face-placeholder" id="facePlaceholder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+                <circle cx="9" cy="10" r="1.5"/>
+                <circle cx="15" cy="10" r="1.5"/>
+                <path d="M8 15s1.5 2 4 2 4-2 4-2"/>
+              </svg>
+              <div>点击下方按钮开始</div>
+            </div>
           </div>
           <button type="button" class="face-start-btn" id="faceStartBtn">开始人脸识别</button>
         </div>
@@ -2940,6 +2966,11 @@
       if (scanning) return;
       scanning = true;
       startBtn.textContent = '加载中...';
+      // 隐藏占位图标，显示视频
+      const placeholder = $('facePlaceholder');
+      if (placeholder) placeholder.style.display = 'none';
+      const scanBox = $('faceScanBox');
+      if (scanBox) scanBox.classList.add('ready');
 
       const ok = await loadModel();
       if (!ok) {
