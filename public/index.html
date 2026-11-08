@@ -2124,6 +2124,22 @@
     });
   }
 
+  // 添加人脸页获取验证码
+  const faceGetOtpBtn = $('faceGetOtpBtn');
+  if (faceGetOtpBtn) {
+    faceGetOtpBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const email = $('faceAccountInput').value.trim();
+      if (!email || !email.includes('@')) return showToast('请输入正确的邮箱');
+      if (!sb) return showToast('云端服务暂不可用');
+      showLoading('发送验证码中…');
+      const { error } = await sb.auth.signInWithOtp({ email });
+      hideLoading();
+      if (error) showToast('发送失败，请重试');
+      else showToast('验证码已发送');
+    });
+  }
+
   // 发送重置验证码（找回密码）
   let resetCooldown = 0;
   async function sendResetOtp() {
