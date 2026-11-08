@@ -1896,6 +1896,14 @@
         }
         if (detected) {
           tip.textContent = '人脸采集成功！';
+          // 保存人脸记录到本地
+          const faceRecords = JSON.parse(localStorage.getItem('user_faces') || '[]');
+          const email = $('faceAccountInput').value.trim();
+          faceRecords.push({
+            email: email,
+            capturedAt: new Date().toISOString()
+          });
+          localStorage.setItem('user_faces', JSON.stringify(faceRecords));
           showToast('人脸绑定成功');
           // 关闭摄像头
           if (captureStream) {
