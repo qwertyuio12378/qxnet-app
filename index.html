@@ -1643,6 +1643,7 @@
 
   function updateCredFields() {
     const fp = document.getElementById('forgotPwdBtn');
+    const af = document.getElementById('addFaceEntryBtn');
     const pf = $('passwordField');
     const of = $('otpField');
     const ff = $('faceField');
@@ -1651,16 +1652,19 @@
       of.classList.add('hidden');
       if (ff) ff.classList.add('hidden');
       if (fp) fp.classList.remove('hidden');
+      if (af) af.classList.remove('hidden');
     } else if (state.loginType === 'face') {
       pf.classList.add('hidden');
       of.classList.add('hidden');
       if (ff) ff.classList.remove('hidden');
       if (fp) fp.classList.add('hidden');
+      if (af) af.classList.add('hidden');
     } else {
       pf.classList.add('hidden');
       of.classList.remove('hidden');
       if (ff) ff.classList.add('hidden');
       if (fp) fp.classList.add('hidden');
+      if (af) af.classList.add('hidden');
     }
   }
 
