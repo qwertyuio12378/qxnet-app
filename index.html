@@ -1896,14 +1896,22 @@
         }
         if (detected) {
           tip.textContent = '人脸采集成功！';
-          // 保存人脸记录到本地
-          const faceRecords = JSON.parse(localStorage.getItem('user_faces') || '[]');
+          // 保存人脸记录到 Supabase
           const email = $('faceAccountInput').value.trim();
-          faceRecords.push({
+          showLoading('保存人脸中…');
+          const { error } = await sb.from('user_faces').insert({
+            user_id: email,
             email: email,
-            capturedAt: new Date().toISOString()
+            face_data: { detected: true, score: 0.8 }
           });
-          localStorage.setItem('user_faces', JSON.stringify(faceRecords));
+          hideLoading();
+          if (error) {
+            tip.textContent = '保存失败: ' + error.message;
+            faceCaptureBtn.textContent = '重试采集';
+            faceCaptureBtn.disabled = false;
+            return;
+          }
+          tip.textContent = '人脸绑定成功！';
           showToast('人脸绑定成功');
           // 关闭摄像头
           if (captureStream) {
