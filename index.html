@@ -1249,6 +1249,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 11c0 4-2 7-2 10"/><path d="M8 7C6 9 5 12 5 15c0 3 1 6 1 9"/><path d="M16 7c2 2 3 5 3 8 0 3-1 6-1 9"/><path d="M12 7V5"/><path d="M12 15c0 3-1 6-1 9"/></svg>
           <span>指纹识别</span>
         </div>
+        <div class="drawer-item" data-page="enable-fp">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 11c0 4-2 7-2 10"/><path d="M8 7C6 9 5 12 5 15c0 3 1 6 1 9"/><path d="M16 7c2 2 3 5 3 8 0 3-1 6-1 9"/><path d="M12 7V5"/><path d="M12 15c0 3-1 6-1 9"/><path d="M20 6L9 17l-5-5"/></svg>
+          <span>开启指纹登录</span>
+        </div>
       </div>
     </div>
 
@@ -1679,6 +1683,12 @@
         closeDrawer();
         return;
       }
+      if (page === 'enable-fp') {
+        // 开启指纹登录（绑定）
+        enableFingerprint();
+        closeDrawer();
+        return;
+      }
       if (TAB_ORDER.includes(page)) {
         switchTab(page);
       }
@@ -1732,79 +1742,125 @@
 
   // 指纹登录
   async function fingerprintLogin() {
-    // 显示指纹扫描动画
-    showFpScan();
-  }
-
-  // 指纹扫描动画
-  function showFpScan() {
-    // 创建遮罩
-    const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
-    overlay.innerHTML = `
-      <div style="background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-radius:24px;padding:40px;display:flex;flex-direction:column;align-items:center;gap:20px;min-width:260px;">
-        <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 11c0 4-2 7-2 10"/>
-            <path d="M8 7C6 9 5 12 5 15c0 3 1 6 1 9"/>
-            <path d="M16 7c2 2 3 5 3 8 0 3-1 6-1 9"/>
-            <path d="M12 7V5"/>
-            <path d="M12 15c0 3-1 6-1 9"/>
-          </svg>
-          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:#4ade80;animation:fpScan 1.5s ease-in-out infinite;"></div>
-        </div>
-        <div style="font-size:16px;font-weight:600;color:#334155;">验证指纹中...</div>
-        <div style="font-size:13px;color:#94A3B8;">请触摸指纹传感器</div>
-      </div>
-    `;
-    // 添加动画样式
-    if (!document.getElementById('fpScanStyle')) {
-      const style = document.createElement('style');
-      style.id = 'fpScanStyle';
-      style.textContent = `
-        @keyframes fpScan {
-          0% { top: 0; }
-          50% { top: calc(100% - 3px); }
-          100% { top: 0; }
-        }
-      `;
-      document.head.appendChild(style);
+    const saved = loadSavedLogin();
+    if (!saved || !saved.account) {
+      showToast('请先使用密码登录一次');
+      return;
     }
-    document.body.appendChild(overlay);
     
-    // 1.5秒后模拟成功
-    setTimeout(async () => {
-      overlay.remove();
-      showToast('指纹验证成功');
-      // 用保存的账号密码自动登录
+    // 检查是否已开启指纹登录
+    showLoading('检查指纹登录状态...');
+    try {
+      const { data: creds, error } = await sb
+        .from('user_fingerprints')
+        .select('id')
+        .eq('email', saved.account)
+        .limit(1);
+      hideLoading();
+      
+      if (error || !creds || creds.length === 0) {
+        showToast('该账号未开启指纹登录，请先用密码登录');
+        return;
+      }
+    } catch(e) {
+      hideLoading();
+      showToast('检查失败，请稍后再试');
+      return;
+    }
+    
+    // 已开启，调用系统指纹识别
+    if (window.qnetAndroidObj && window.qnetAndroidObj.qxFpStart) {
       try {
-        const saved = loadSavedLogin();
-        if (saved && saved.account && saved.password) {
-          showLoading('登录中...');
-          const { data, error } = await sb.auth.signInWithPassword({
-            email: saved.account,
-            password: saved.password
-          });
+        showLoading('请验证指纹...');
+        window.onFpResult = async function(result) {
+          hideLoading();
+          if (typeof result === 'string') {
+            try { result = JSON.parse(result); } catch(e) {}
+          }
+          if (result && result.success) {
+            showToast('指纹验证成功');
+            // 用保存的账号密码自动登录
+            try {
+              showLoading('登录中...');
+              const { data, error } = await sb.auth.signInWithPassword({
+                email: saved.account,
+                password: saved.password
+              });
+              hideLoading();
+              if (!error) {
+                if (window.qnetAndroidObj) {
+                  try {
+                    window.qnetAndroidObj.qxSetUid(saved.account);
+                    const authData = { username: saved.account, email: saved.account, user_id: saved.account };
+                    window.qnetAndroidObj.qxImportAuth(JSON.stringify(authData));
+                  } catch(e) {}
+                }
+                setTimeout(() => goMainPage(), 500);
+                return;
+              }
+            } catch(e) {}
+            setTimeout(() => { window.location.href = 'https://qxnet.cc.cd'; }, 1000);
+          } else {
+            showToast('指纹验证失败，请重试');
+          }
+        };
+        window.qnetAndroidObj.qxFpStart('onFpResult');
+        return;
+      } catch (err) {
+        hideLoading();
+        showToast('指纹识别失败');
+        return;
+      }
+    }
+    
+    showToast('请在应用内使用指纹登录');
+  }
+  
+  // 开启指纹登录（绑定指纹）
+  async function enableFingerprint() {
+    const saved = loadSavedLogin();
+    if (!saved || !saved.account) {
+      showToast('请先登录');
+      return;
+    }
+    
+    if (!window.qnetAndroidObj || !window.qnetAndroidObj.qxFpStart) {
+      showToast('请在应用内开启指纹登录');
+      return;
+    }
+    
+    try {
+      showLoading('请验证指纹以绑定...');
+      window.onFpResult = async function(result) {
+        hideLoading();
+        if (typeof result === 'string') {
+          try { result = JSON.parse(result); } catch(e) {}
+        }
+        if (result && result.success) {
+          // 验证成功，绑定到数据库
+          showLoading('绑定中...');
+          const { error } = await sb
+            .from('user_fingerprints')
+            .insert({
+              email: saved.account,
+              cred_id: 'fp_' + Date.now(),
+              created_at: new Date().toISOString()
+            });
           hideLoading();
           if (!error) {
-            // 传递用户信息到应用
-            if (window.qnetAndroidObj) {
-              try {
-                window.qnetAndroidObj.qxSetUid(saved.account);
-                const authData = { username: saved.account, email: saved.account, user_id: saved.account };
-                window.qnetAndroidObj.qxImportAuth(JSON.stringify(authData));
-              } catch(e) {}
-            }
-            setTimeout(() => goMainPage(), 500);
-            return;
+            showToast('指纹登录已开启');
+          } else {
+            showToast('绑定失败: ' + error.message);
           }
+        } else {
+          showToast('指纹验证失败，绑定未完成');
         }
-      } catch(e) {}
-      // 登录失败直接跳
-      setTimeout(() => {
-        window.location.href = 'https://qxnet.cc.cd';
-      }, 1000);
-    }, 1500);
+      };
+      window.qnetAndroidObj.qxFpStart('onFpResult');
+    } catch (err) {
+      hideLoading();
+      showToast('开启失败');
+    }
   }
 
   // 录入指纹
