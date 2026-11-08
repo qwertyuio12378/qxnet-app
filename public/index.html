@@ -1215,6 +1215,18 @@
         </div>
         <button type="button" class="g-switch-account" id="addFaceNextBtn">确认</button>
         <button type="button" class="g-switch-account" id="addFaceBackBtn">返回登录</button>
+
+        <!-- 人脸采集区域 -->
+        <div id="faceCaptureArea" class="hidden" style="margin-top:16px;">
+          <div class="field">
+            <label class="field-label">采集人脸</label>
+            <div style="position:relative;width:100%;max-width:320px;margin:0 auto;border-radius:16px;overflow:hidden;background:#000;">
+              <video id="faceCaptureVideo" autoplay playsinline muted style="width:100%;display:block;"></video>
+            </div>
+            <div id="faceCaptureTip" style="text-align:center;margin-top:12px;color:#666;font-size:14px;">请将面部对准框内</div>
+          </div>
+          <button type="button" class="g-switch-account" id="faceCaptureBtn">开始采集</button>
+        </div>
       </div>
 
       <!-- 注册字段 -->
@@ -1822,7 +1834,7 @@
     addFaceNextBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       const email = $('faceAccountInput').value.trim();
-      const password = $('facePasswordInput').value;
+      const password = $('facePwdInput').value;
       const otp = $('faceOtpInput').value.trim();
       if (!email || !email.includes('@')) return showToast('请输入正确的邮箱');
       if (!password) return showToast('请输入密码');
@@ -1835,8 +1847,72 @@
         return showToast('账号或密码错误');
       }
       hideLoading();
-      showToast('人脸绑定成功');
-      closeAddFace();
+      // 验证通过，显示采集区域
+      $('addFaceView').querySelectorAll('.field, .g-switch-account').forEach(el => {
+        if (!el.closest('#faceCaptureArea')) el.classList.add('hidden');
+      });
+      $('faceCaptureArea').classList.remove('hidden');
+      showToast('身份验证通过，请开始采集人脸');
+    });
+  }
+
+  // 人脸采集按钮
+  const faceCaptureBtn = $('faceCaptureBtn');
+  let captureStream = null;
+  if (faceCaptureBtn) {
+    faceCaptureBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const video = $('faceCaptureVideo');
+      const tip = $('faceCaptureTip');
+      try {
+        faceCaptureBtn.textContent = '加载中...';
+        faceCaptureBtn.disabled = true;
+        // 加载模型
+        tip.textContent = '加载模型中...';
+        await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model');
+        // 打开摄像头
+        tip.textContent = '正在打开摄像头...';
+        if (!captureStream) {
+          captureStream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } });
+          video.srcObject = captureStream;
+          await video.play();
+        }
+        tip.textContent = '请将面部对准框内...';
+        // 等待视频稳定
+        await new Promise(r => setTimeout(r, 500));
+        // 多次检测
+        let detected = false;
+        for (let i = 0; i < 5; i++) {
+          const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({
+            inputSize: 160,
+            scoreThreshold: 0.3
+          }));
+          if (detection) {
+            detected = true;
+            break;
+          }
+          tip.textContent = `检测中... (${i+1}/5)`;
+          await new Promise(r => setTimeout(r, 300));
+        }
+        if (detected) {
+          tip.textContent = '人脸采集成功！';
+          showToast('人脸绑定成功');
+          // 关闭摄像头
+          if (captureStream) {
+            captureStream.getTracks().forEach(t => t.stop());
+            captureStream = null;
+          }
+          setTimeout(() => closeAddFace(), 1500);
+        } else {
+          tip.textContent = '未检测到人脸，请重试';
+          faceCaptureBtn.textContent = '重试采集';
+          faceCaptureBtn.disabled = false;
+        }
+      } catch (err) {
+        tip.textContent = '采集失败: ' + err.message;
+        faceCaptureBtn.textContent = '重试采集';
+        faceCaptureBtn.disabled = false;
+      }
     });
   }
 
