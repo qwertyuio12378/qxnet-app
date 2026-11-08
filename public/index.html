@@ -2889,12 +2889,13 @@
 
     // 汉堡菜单只在登录第二步显示
     const hamburger = $('hamburgerBtn');
-    if (hamburger) {
-      if (tab === 'login' && state.loginStep === 2) {
-        hamburger.classList.remove('hidden');
-      } else {
-        hamburger.classList.add('hidden');
-      }
+    const step2Icon = $('step2Icon');
+    if (tab === 'login' && state.loginStep === 2) {
+      if (hamburger) hamburger.classList.remove('hidden');
+      if (step2Icon) step2Icon.classList.remove('hidden');
+    } else {
+      if (hamburger) hamburger.classList.add('hidden');
+      if (step2Icon) step2Icon.classList.add('hidden');
     }
 
     // 登录：两步式界面；注册：注册字段
