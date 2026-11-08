@@ -2887,6 +2887,16 @@
     chatPanel.classList.toggle('hidden', tab !== 'chat');
     submitBtn.classList.toggle('hidden', tab === 'chat');
 
+    // 汉堡菜单只在登录第二步显示
+    const hamburger = $('hamburgerBtn');
+    if (hamburger) {
+      if (tab === 'login' && state.loginStep === 2) {
+        hamburger.classList.remove('hidden');
+      } else {
+        hamburger.classList.add('hidden');
+      }
+    }
+
     // 登录：两步式界面；注册：注册字段
     if (tab === 'login') {
       registerFields.classList.add('hidden');
