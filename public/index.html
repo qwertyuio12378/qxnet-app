@@ -224,15 +224,13 @@
   /* 登录第二步：卡片外面上方的 Q 图标（透明底，无背景） */
   .step2-icon {
     position: absolute;
-    top: -104px;
+    top: -100px;
     left: 50%;
     transform: translateX(-50%);
-    width: 92px;
-    height: 92px;
-    border-radius: 50%;
+    width: 88px;
+    height: 88px;
     z-index: 5;
-    box-shadow: 0 10px 24px rgba(30, 64, 175, 0.25);
-    animation: step2IconIn 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+    animation: step2IconIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .step2-icon.hidden {
     display: none;
@@ -241,13 +239,13 @@
   .step2-icon img {
     width: 100%;
     height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
+    object-fit: contain;
     display: block;
+    filter: drop-shadow(0 8px 20px rgba(30, 64, 175, 0.2));
   }
   @keyframes step2IconIn {
-    from { opacity: 0; transform: translateX(-50%) scale(0.7); }
-    to { opacity: 1; transform: translateX(-50%) scale(1); }
+    from { opacity: 0; transform: translateX(-50%) translateY(-30px) scale(0.8); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
   }
   .form-card {
     position: relative;
@@ -998,7 +996,7 @@
   <!-- 表单卡片 -->
   <div class="form-card">
     <!-- 登录第二步：卡片外面的 Q 图标（进第二步显示） -->
-    <img class="step2-icon hidden" id="step2Icon" src="https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/LLGqbwebhoCBDKxiewfcnW4Mntd" alt="QXNET">
+    <img class="step2-icon hidden" id="step2Icon" src="https://aka.doubaocdn.com/s/DXEiQZ4aCd" alt="QXNET">
 
     <!-- 账号字段区 -->
     <div id="accountFields">
