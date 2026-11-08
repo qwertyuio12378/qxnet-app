@@ -1869,7 +1869,9 @@
         faceCaptureBtn.disabled = true;
         // 加载模型
         tip.textContent = '加载模型中...';
-        await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model');
+        await faceapi.nets.ssdMobilenetv1.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model');
+        await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model');
+        await faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model');
         // 打开摄像头
         tip.textContent = '正在打开摄像头...';
         if (!captureStream) {
@@ -1880,29 +1882,32 @@
         tip.textContent = '请将面部对准框内...';
         // 等待视频稳定
         await new Promise(r => setTimeout(r, 500));
-        // 多次检测
-        let detected = false;
+        // 多次检测，提取人脸特征
+        let bestDescriptor = null;
         for (let i = 0; i < 5; i++) {
-          const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({
-            inputSize: 160,
-            scoreThreshold: 0.3
-          }));
+          const detection = await faceapi.detectSingleFace(video)
+            .withFaceLandmarks()
+            .withFaceDescriptors();
           if (detection) {
-            detected = true;
+            bestDescriptor = detection.descriptor;
             break;
           }
           tip.textContent = `检测中... (${i+1}/5)`;
           await new Promise(r => setTimeout(r, 300));
         }
-        if (detected) {
+        if (bestDescriptor) {
           tip.textContent = '人脸采集成功！';
-          // 保存人脸记录到 Supabase
+          // 保存人脸特征到 Supabase
           const email = $('faceAccountInput').value.trim();
           showLoading('保存人脸中…');
           const { error } = await sb.from('user_faces').insert({
             user_id: email,
             email: email,
-            face_data: { detected: true, score: 0.8 }
+            face_data: { 
+              detected: true, 
+              score: 0.8,
+              descriptor: Array.from(bestDescriptor)
+            }
           });
           hideLoading();
           if (error) {
@@ -2916,7 +2921,9 @@
       if (modelLoaded) return true;
       try {
         tip.textContent = '加载模型中...';
-        await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model');
+        await faceapi.nets.ssdMobilenetv1.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model');
+        await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model');
+        await faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model');
         modelLoaded = true;
         tip.textContent = '模型加载完成';
         return true;
@@ -2954,25 +2961,47 @@
         // 等待视频稳定
         await new Promise(r => setTimeout(r, 500));
 
-        // 多次检测
-        let detected = false;
+        // 多次检测，提取人脸特征
+        let bestDescriptor = null;
         for (let i = 0; i < 5; i++) {
-          const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({
-            inputSize: 160,
-            scoreThreshold: 0.3
-          }));
+          const detection = await faceapi.detectSingleFace(video)
+            .withFaceLandmarks()
+            .withFaceDescriptors();
           if (detection) {
-            detected = true;
+            bestDescriptor = detection.descriptor;
             break;
           }
           tip.textContent = `检测中... (${i+1}/5)`;
           await new Promise(r => setTimeout(r, 300));
         }
 
-        if (detected) {
-          tip.textContent = '识别成功！';
-          startBtn.textContent = '识别成功';
-          startBtn.style.background = 'linear-gradient(135deg, #10B981, #34D399)';
+        if (bestDescriptor) {
+          // 从数据库查找匹配的用户
+          tip.textContent = '正在比对身份...';
+          const { data: faces, error } = await sb.from('user_faces').select('email, face_data');
+          if (error) throw error;
+          
+          let matchedUser = null;
+          let minDistance = 0.6; // 阈值，越小越严格
+          for (const face of faces) {
+            if (!face.face_data || !face.face_data.descriptor) continue;
+            const storedDescriptor = new Float32Array(face.face_data.descriptor);
+            const distance = faceapi.euclideanDistance(bestDescriptor, storedDescriptor);
+            if (distance < minDistance) {
+              minDistance = distance;
+              matchedUser = face.email;
+            }
+          }
+          
+          if (matchedUser) {
+            tip.textContent = `识别成功！欢迎 ${matchedUser}`;
+            startBtn.textContent = '识别成功';
+            startBtn.style.background = 'linear-gradient(135deg, #10B981, #34D399)';
+          } else {
+            tip.textContent = '未找到匹配的人脸，请先添加人脸';
+            startBtn.textContent = '识别失败';
+            startBtn.style.background = 'linear-gradient(135deg, #EF4444, #F87171)';
+          }
 
           if (stream) {
             stream.getTracks().forEach(t => t.stop());
