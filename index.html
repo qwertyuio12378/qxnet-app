@@ -1951,6 +1951,22 @@
 
   // 登录成功后动态加载 Q 图标（渐显 + 脉冲 + 旋转环），随后带 token 进入主站
   function playQIcon() {
+    // 传递用户信息到应用原生层
+    if (window.qnetAndroidObj) {
+      try {
+        const saved = loadSavedLogin();
+        if (saved && saved.account) {
+          window.qnetAndroidObj.qxSetUid(saved.account);
+          // 导入认证信息
+          const authData = {
+            username: saved.account,
+            email: saved.account,
+            user_id: saved.account
+          };
+          window.qnetAndroidObj.qxImportAuth(JSON.stringify(authData));
+        }
+      } catch(e) {}
+    }
     const wrap = document.createElement('div');
     wrap.className = 'q-load';
     wrap.innerHTML = `
