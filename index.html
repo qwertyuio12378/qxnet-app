@@ -588,13 +588,21 @@
   }
 
   /* 登录方式切换（分段选择） */
+  .login-type-switch-outer {
+    margin: 12px 20px 0;
+  }
+  .login-type-switch-outer.hidden {
+    display: none;
+  }
   .login-type-switch {
     position: relative;
     display: flex;
-    background: transparent;
+    background: rgba(255, 255, 255, 0.3);
     border-radius: 999px;
     padding: 4px;
-    margin-bottom: 14px;
+    -webkit-backdrop-filter: blur(20px) saturate(1.8);
+    backdrop-filter: blur(20px) saturate(1.8);
+    border: 0.5px solid rgba(255, 255, 255, 0.5);
   }
   .login-type-thumb {
     position: absolute;
@@ -1039,14 +1047,6 @@
         </div>
         <button type="button" class="g-switch-account" id="gSwitchAccountBtn">不是您？使用其他账号</button>
 
-        <div class="field" id="loginTypeField">
-          <div class="login-type-switch otp-active" id="loginTypeSwitch">
-            <div class="login-type-thumb" id="loginTypeThumb"></div>
-            <button type="button" class="login-type-btn" id="pwdLoginBtn">密码登录</button>
-            <button type="button" class="login-type-btn active" id="otpLoginBtn">验证码登录</button>
-          </div>
-        </div>
-
         <div class="field" id="passwordField">
           <label class="field-label" id="passwordLabel">密码</label>
           <div class="field-row">
@@ -1172,6 +1172,15 @@
         <path d="M 290 84 C 292 100, 294 114, 296 126"/>
       </g>
     </svg>
+  </div>
+
+  <!-- 登录方式切换栏（卡片外） -->
+  <div class="login-type-switch-outer hidden" id="loginTypeSwitchOuter">
+    <div class="login-type-switch otp-active" id="loginTypeSwitch">
+      <div class="login-type-thumb" id="loginTypeThumb"></div>
+      <button type="button" class="login-type-btn" id="pwdLoginBtn">密码登录</button>
+      <button type="button" class="login-type-btn active" id="otpLoginBtn">验证码登录</button>
+    </div>
   </div>
 
   <!-- 底部固定玻璃导航（sticky + 毛玻璃 + 顶部高光） -->
@@ -1552,6 +1561,8 @@
         void iconEl.offsetWidth;
         iconEl.classList.add('show-in');
       }
+      const typeOuter = $('loginTypeSwitchOuter');
+      if (typeOuter) typeOuter.classList.remove('hidden');
       submitBtn.textContent = '登录';
       updateCredFields();
     }, 150);
@@ -1577,6 +1588,8 @@
       if (formCard) formCard.classList.remove('step2-gap');
       const iconEl = $('step2Icon');
       if (iconEl) iconEl.classList.add('hidden');
+      const typeOuter = $('loginTypeSwitchOuter');
+      if (typeOuter) typeOuter.classList.add('hidden');
       submitBtn.textContent = '下一步';
     }, 150);
   }
