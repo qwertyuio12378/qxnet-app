@@ -2890,12 +2890,15 @@
     // 汉堡菜单只在登录第二步显示
     const hamburger = $('hamburgerBtn');
     const step2Icon = $('step2Icon');
+    const typeOuter = $('loginTypeSwitchOuter');
     if (tab === 'login' && state.loginStep === 2) {
       if (hamburger) hamburger.classList.remove('hidden');
       if (step2Icon) step2Icon.classList.remove('hidden');
+      if (typeOuter) typeOuter.classList.remove('hidden');
     } else {
       if (hamburger) hamburger.classList.add('hidden');
       if (step2Icon) step2Icon.classList.add('hidden');
+      if (typeOuter) typeOuter.classList.add('hidden');
     }
 
     // 登录：两步式界面；注册：注册字段
