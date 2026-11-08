@@ -2132,11 +2132,16 @@
       const email = $('faceAccountInput').value.trim();
       if (!email || !email.includes('@')) return showToast('请输入正确的邮箱');
       if (!sb) return showToast('云端服务暂不可用');
-      showLoading('发送验证码中…');
-      const { error } = await sb.auth.signInWithOtp({ email });
-      hideLoading();
-      if (error) showToast('发送失败，请重试');
-      else showToast('验证码已发送');
+      if (tencentCaptcha) {
+        dimForCaptcha(true);
+        tencentCaptcha.show();
+      } else {
+        showLoading('发送验证码中…');
+        const { error } = await sb.auth.signInWithOtp({ email });
+        hideLoading();
+        if (error) showToast('发送失败，请重试');
+        else showToast('验证码已发送');
+      }
     });
   }
 
