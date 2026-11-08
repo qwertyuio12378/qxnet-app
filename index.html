@@ -2663,11 +2663,13 @@
     async function loadModel() {
       if (modelLoaded) return true;
       try {
+        tip.textContent = '加载模型中...';
         await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model');
         modelLoaded = true;
+        tip.textContent = '模型加载完成';
         return true;
       } catch (e) {
-        tip.textContent = '模型加载失败';
+        tip.textContent = '模型加载失败: ' + e.message;
         return false;
       }
     }
@@ -2676,7 +2678,6 @@
       if (scanning) return;
       scanning = true;
       startBtn.textContent = '加载中...';
-      tip.textContent = '正在加载模型...';
 
       const ok = await loadModel();
       if (!ok) {
@@ -2686,30 +2687,46 @@
       }
 
       try {
-        tip.textContent = '请将面部对准框内';
+        tip.textContent = '正在打开摄像头...';
         if (!stream) {
-          stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { width: 320, height: 240 } 
+          });
           video.srcObject = stream;
+          await video.play();
         }
 
         startBtn.textContent = '识别中...';
-        tip.textContent = '正在检测面部...';
+        tip.textContent = '请将面部对准框内...';
 
-        // 检测人脸
-        const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions());
+        // 等待视频稳定
+        await new Promise(r => setTimeout(r, 500));
 
-        if (detection) {
+        // 多次检测
+        let detected = false;
+        for (let i = 0; i < 5; i++) {
+          const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({
+            inputSize: 160,
+            scoreThreshold: 0.3
+          }));
+          if (detection) {
+            detected = true;
+            break;
+          }
+          tip.textContent = `检测中... (${i+1}/5)`;
+          await new Promise(r => setTimeout(r, 300));
+        }
+
+        if (detected) {
           tip.textContent = '识别成功！';
           startBtn.textContent = '识别成功';
           startBtn.style.background = 'linear-gradient(135deg, #10B981, #34D399)';
 
-          // 停止摄像头
           if (stream) {
             stream.getTracks().forEach(t => t.stop());
             stream = null;
           }
 
-          // 自动登录成功
           setTimeout(() => {
             showToast('人脸识别成功，登录中...');
             setTimeout(() => {
@@ -2717,11 +2734,11 @@
             }, 800);
           }, 500);
         } else {
-          tip.textContent = '未检测到人脸，请重试';
+          tip.textContent = '未检测到人脸，请正对镜头';
           startBtn.textContent = '重试';
         }
       } catch (err) {
-        tip.textContent = '无法打开摄像头';
+        tip.textContent = '错误: ' + err.message;
         startBtn.textContent = '重试';
       }
       scanning = false;
