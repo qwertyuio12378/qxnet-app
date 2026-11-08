@@ -989,27 +989,31 @@
   <!-- 表单卡片 -->
   <div class="form-card">
     <!-- 登录第二步：卡片外面的 Q 图标（进第二步显示） -->
-    <svg class="step2-icon hidden" id="step2Icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <svg class="step2-icon hidden" id="step2Icon" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="qGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#5B9BFF"/>
-          <stop offset="30%" stop-color="#FF6B6B"/>
-          <stop offset="60%" stop-color="#FFD93D"/>
-          <stop offset="100%" stop-color="#6BCB77"/>
+          <stop offset="0%" stop-color="#60A5FA"/>
+          <stop offset="35%" stop-color="#F87171"/>
+          <stop offset="65%" stop-color="#FBBF24"/>
+          <stop offset="100%" stop-color="#34D399"/>
         </linearGradient>
-        <linearGradient id="qShine" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stop-color="rgba(255,255,255,0.6)"/>
-          <stop offset="50%" stop-color="rgba(255,255,255,0)"/>
+        <linearGradient id="qEdge" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="rgba(255,255,255,0.8)"/>
+          <stop offset="100%" stop-color="rgba(0,0,0,0.2)"/>
         </linearGradient>
-        <filter id="qShadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#1E40AF" flood-opacity="0.3"/>
-        </filter>
       </defs>
-      <g filter="url(#qShadow)">
-        <circle cx="50" cy="45" r="28" fill="none" stroke="url(#qGrad)" stroke-width="12" stroke-linecap="round"/>
-        <line x1="65" y1="65" x2="79" y2="79" stroke="#6BCB77" stroke-width="12" stroke-linecap="round"/>
+      <!-- 底部阴影 -->
+      <ellipse cx="60" cy="100" rx="30" ry="6" fill="rgba(0,0,0,0.15)"/>
+      <!-- 底层（厚度） -->
+      <g transform="translate(0,4)">
+        <circle cx="60" cy="55" r="32" fill="none" stroke="rgba(0,0,0,0.2)" stroke-width="14"/>
+        <line x1="78" y1="73" x2="94" y2="89" stroke="rgba(0,0,0,0.2)" stroke-width="14" stroke-linecap="round"/>
       </g>
-      <circle cx="50" cy="45" r="28" fill="none" stroke="url(#qShine)" stroke-width="6" stroke-linecap="round" opacity="0.5"/>
+      <!-- 主体 -->
+      <circle cx="60" cy="55" r="32" fill="none" stroke="url(#qGrad)" stroke-width="14" stroke-linecap="round"/>
+      <line x1="78" y1="73" x2="94" y2="89" stroke="#34D399" stroke-width="14" stroke-linecap="round"/>
+      <!-- 高光 -->
+      <path d="M 35 40 A 32 32 0 0 1 60 23" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="5" stroke-linecap="round"/>
     </svg>
 
     <!-- 账号字段区 -->
