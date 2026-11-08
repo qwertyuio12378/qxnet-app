@@ -1853,6 +1853,7 @@
     let dragStartX = 0;
     let dragStartType = 'otp';
     let dragging = false;
+    const TYPES = ['pwd', 'otp', 'face', 'addface'];
     loginTypeSwitch.addEventListener('touchstart', (e) => {
       dragging = true;
       dragStartX = e.touches[0].clientX;
@@ -1865,7 +1866,8 @@
       const switchW = loginTypeSwitch.offsetWidth;
       const thumbW = loginTypeThumb.offsetWidth;
       const maxDx = switchW - thumbW - 4;
-      let target = dragStartType === 'otp' ? maxDx : 0;
+      const startIdx = TYPES.indexOf(dragStartType);
+      let target = startIdx * (maxDx / 3);
       target += dx;
       target = Math.max(0, Math.min(maxDx, target));
       loginTypeThumb.style.transform = `translateX(${target}px) scale(1.04)`;
@@ -1875,9 +1877,12 @@
       dragging = false;
       loginTypeThumb.style.transition = 'transform 0.32s cubic-bezier(0.34, 1.2, 0.64, 1)';
       const dx = e.changedTouches[0].clientX - dragStartX;
-      if (dx < -20) setLoginType('pwd');
-      else if (dx > 20) setLoginType('otp');
-      else setLoginType(dragStartType);
+      const switchW = loginTypeSwitch.offsetWidth;
+      const thumbW = loginTypeThumb.offsetWidth;
+      const step = (switchW - thumbW - 4) / 3;
+      let targetIdx = TYPES.indexOf(dragStartType) + Math.round(dx / step);
+      targetIdx = Math.max(0, Math.min(3, targetIdx));
+      setLoginType(TYPES[targetIdx]);
     });
   }
 
