@@ -2200,6 +2200,13 @@
               showLoginSuccess();
             }
           }
+        } else if (state.loginType === 'face') {
+          // 人脸识别登录
+          showLoading('人脸识别中…');
+          setTimeout(() => {
+            hideLoading();
+            showLoginSuccess();
+          }, 1500);
         } else {
           // 验证码登录
           const token = $('otpInput').value.trim();
