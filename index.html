@@ -32,13 +32,19 @@
   
   // 后台预加载人脸模型，用户点人脸识别时就已经加载好了
   let faceModelPreloaded = false;
+  let faceModelProgress = 0;
+  function getFaceModelProgress() { return faceModelProgress; }
   (function preloadFaceModel() {
     setTimeout(async () => {
       try {
         if (window.faceapi && !faceModelPreloaded) {
+          faceModelProgress = 5;
           await faceapi.nets.ssdMobilenetv1.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+          faceModelProgress = 40;
           await faceapi.nets.faceLandmark68Net.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+          faceModelProgress = 75;
           await faceapi.nets.faceRecognitionNet.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+          faceModelProgress = 100;
           faceModelPreloaded = true;
         }
       } catch(e) {}
@@ -2387,14 +2393,18 @@
         faceCaptureBtn.disabled = true;
         // 加载模型（已经预加载过就跳过）
         if (!faceModelPreloaded) {
-          tip.textContent = '加载模型中（约5MB）...';
+          const p = getFaceModelProgress();
+          tip.textContent = `正在下载人脸识别模型 ${p}%...`;
           try {
             await faceapi.nets.ssdMobilenetv1.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+            tip.textContent = '正在下载人脸识别模型 40%...';
             await faceapi.nets.faceLandmark68Net.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+            tip.textContent = '正在下载人脸识别模型 75%...';
             await faceapi.nets.faceRecognitionNet.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
             faceModelPreloaded = true;
+            faceModelProgress = 100;
           } catch(modelErr) {
-            tip.textContent = '模型加载失败，请刷新重试';
+            tip.textContent = '模型下载失败，请刷新重试';
             faceCaptureBtn.textContent = '重新加载';
             faceCaptureBtn.disabled = false;
             return;
@@ -3467,15 +3477,19 @@
         return true;
       }
         try {
-          tip.textContent = '加载模型中（约5MB）...';
+          const p = getFaceModelProgress();
+          tip.textContent = `正在下载人脸识别模型 ${p}%...`;
           await faceapi.nets.ssdMobilenetv1.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+          tip.textContent = `正在下载人脸识别模型 40%...`;
           await faceapi.nets.faceLandmark68Net.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+          tip.textContent = `正在下载人脸识别模型 75%...`;
           await faceapi.nets.faceRecognitionNet.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
           modelLoaded = true;
           faceModelPreloaded = true;
+          faceModelProgress = 100;
           return true;
         } catch (e) {
-          tip.textContent = '模型加载失败，请刷新重试';
+          tip.textContent = '模型下载失败，请刷新重试';
           return false;
         }
     }
