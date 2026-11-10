@@ -46,17 +46,17 @@
     });
   }
 
-  async function loadFaceModel() {
+  async function loadFaceModel(onProgress) {
     if (faceModelLoaded) return true;
     try {
       await loadFaceApiLib();
-      faceModelProgress = 10;
+      if (onProgress) onProgress(10, '正在加载人脸检测模型...');
       await faceapi.nets.ssdMobilenetv1.loadFromUri('./models');
-      faceModelProgress = 40;
+      if (onProgress) onProgress(40, '正在加载人脸特征点模型...');
       await faceapi.nets.faceLandmark68Net.loadFromUri('./models');
-      faceModelProgress = 75;
+      if (onProgress) onProgress(75, '正在加载人脸识别模型...');
       await faceapi.nets.faceRecognitionNet.loadFromUri('./models');
-      faceModelProgress = 100;
+      if (onProgress) onProgress(100, '加载完成');
       faceModelLoaded = true;
       return true;
     } catch(e) {
@@ -2405,8 +2405,9 @@
         faceCaptureBtn.textContent = '加载中...';
         faceCaptureBtn.disabled = true;
         // 动态加载模型
-        tip.textContent = '正在下载人脸识别模型...';
-        const modelOk = await loadFaceModel();
+        const modelOk = await loadFaceModel((p, text) => {
+          tip.textContent = `正在下载模型 ${p}% - ${text}`;
+        });
         if (!modelOk) {
           tip.textContent = '模型下载失败，请刷新重试';
           faceCaptureBtn.textContent = '重新加载';
@@ -3485,8 +3486,9 @@
     let scanning = false;
 
     async function loadModel() {
-      tip.textContent = '正在下载人脸识别模型...';
-      const ok = await loadFaceModel();
+      const ok = await loadFaceModel((p, text) => {
+        tip.textContent = `正在下载模型 ${p}% - ${text}`;
+      });
       if (!ok) {
         tip.textContent = '模型下载失败，请刷新重试';
         return false;
