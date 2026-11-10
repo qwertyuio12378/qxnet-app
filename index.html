@@ -7,7 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232563EB'/><text x='50' y='68' font-size='52' font-weight='bold' text-anchor='middle' fill='white' font-family='sans-serif'>Q</text></svg>">
 <link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Zhi+Mang+Xing&family=Ma+Shan+Zheng&family=Dancing+Script:wght@500;700&family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/dist/face-api.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js" defer></script>
 <script>
   // Supabase 配置（SDK 加载失败时容错，避免整页脚本中断）
   const SUPABASE_URL = 'https://gngcducutevgllbaejec.supabase.co';
@@ -39,11 +39,11 @@
       try {
         if (window.faceapi && !faceModelPreloaded) {
           faceModelProgress = 5;
-          await faceapi.nets.ssdMobilenetv1.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+          await faceapi.nets.ssdMobilenetv1.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights');
           faceModelProgress = 40;
-          await faceapi.nets.faceLandmark68Net.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+          await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights');
           faceModelProgress = 75;
-          await faceapi.nets.faceRecognitionNet.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+          await faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights');
           faceModelProgress = 100;
           faceModelPreloaded = true;
         }
@@ -2396,11 +2396,11 @@
           const p = getFaceModelProgress();
           tip.textContent = `正在下载人脸识别模型 ${p}%...`;
           try {
-            await faceapi.nets.ssdMobilenetv1.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+            await faceapi.nets.ssdMobilenetv1.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights');
             tip.textContent = '正在下载人脸识别模型 40%...';
-            await faceapi.nets.faceLandmark68Net.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+            await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights');
             tip.textContent = '正在下载人脸识别模型 75%...';
-            await faceapi.nets.faceRecognitionNet.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+            await faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights');
             faceModelPreloaded = true;
             faceModelProgress = 100;
           } catch(modelErr) {
@@ -3492,11 +3492,11 @@
         try {
           const p = getFaceModelProgress();
           tip.textContent = `正在下载人脸识别模型 ${p}%...`;
-          await faceapi.nets.ssdMobilenetv1.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+          await faceapi.nets.ssdMobilenetv1.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights');
           tip.textContent = `正在下载人脸识别模型 40%...`;
-          await faceapi.nets.faceLandmark68Net.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+          await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights');
           tip.textContent = `正在下载人脸识别模型 75%...`;
-          await faceapi.nets.faceRecognitionNet.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+          await faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights');
           modelLoaded = true;
           faceModelPreloaded = true;
           faceModelProgress = 100;
