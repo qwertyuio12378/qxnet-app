@@ -1974,10 +1974,14 @@
     `;
     loadingModal.classList.add('show');
     
+    // 自动跳转定时器
+    let autoGoTimer;
+    
     // 开启指纹登录按钮
     const enableFpBtn = document.getElementById('enableFpBtn');
     if (enableFpBtn) {
       enableFpBtn.addEventListener('click', () => {
+        clearTimeout(autoGoTimer);
         enableFingerprint();
       });
     }
@@ -1986,12 +1990,13 @@
     const skipFpBtn = document.getElementById('skipFpBtn');
     if (skipFpBtn) {
       skipFpBtn.addEventListener('click', () => {
+        clearTimeout(autoGoTimer);
         goToMain();
       });
     }
     
     // 5秒后自动进入
-    setTimeout(() => {
+    autoGoTimer = setTimeout(() => {
       goToMain();
     }, 5000);
   }
