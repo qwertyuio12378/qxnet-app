@@ -39,11 +39,11 @@
       try {
         if (window.faceapi && !faceModelPreloaded) {
           faceModelProgress = 5;
-          await faceapi.nets.ssdMobilenetv1.loadFromUri('https://unpkg.com/face-api.js@0.22.2/weights');
+          await faceapi.nets.ssdMobilenetv1.loadFromUri('./models');
           faceModelProgress = 40;
-          await faceapi.nets.faceLandmark68Net.loadFromUri('https://unpkg.com/face-api.js@0.22.2/weights');
+          await faceapi.nets.faceLandmark68Net.loadFromUri('./models');
           faceModelProgress = 75;
-          await faceapi.nets.faceRecognitionNet.loadFromUri('https://unpkg.com/face-api.js@0.22.2/weights');
+          await faceapi.nets.faceRecognitionNet.loadFromUri('./models');
           faceModelProgress = 100;
           faceModelPreloaded = true;
         }
@@ -2396,11 +2396,11 @@
           const p = getFaceModelProgress();
           tip.textContent = `正在下载人脸识别模型 ${p}%...`;
           try {
-            await faceapi.nets.ssdMobilenetv1.loadFromUri('https://unpkg.com/face-api.js@0.22.2/weights');
+            await faceapi.nets.ssdMobilenetv1.loadFromUri('./models');
             tip.textContent = '正在下载人脸识别模型 40%...';
-            await faceapi.nets.faceLandmark68Net.loadFromUri('https://unpkg.com/face-api.js@0.22.2/weights');
+            await faceapi.nets.faceLandmark68Net.loadFromUri('./models');
             tip.textContent = '正在下载人脸识别模型 75%...';
-            await faceapi.nets.faceRecognitionNet.loadFromUri('https://unpkg.com/face-api.js@0.22.2/weights');
+            await faceapi.nets.faceRecognitionNet.loadFromUri('./models');
             faceModelPreloaded = true;
             faceModelProgress = 100;
           } catch(modelErr) {
@@ -3492,11 +3492,11 @@
         try {
           const p = getFaceModelProgress();
           tip.textContent = `正在下载人脸识别模型 ${p}%...`;
-          await faceapi.nets.ssdMobilenetv1.loadFromUri('https://unpkg.com/face-api.js@0.22.2/weights');
+          await faceapi.nets.ssdMobilenetv1.loadFromUri('./models');
           tip.textContent = `正在下载人脸识别模型 40%...`;
-          await faceapi.nets.faceLandmark68Net.loadFromUri('https://unpkg.com/face-api.js@0.22.2/weights');
+          await faceapi.nets.faceLandmark68Net.loadFromUri('./models');
           tip.textContent = `正在下载人脸识别模型 75%...`;
-          await faceapi.nets.faceRecognitionNet.loadFromUri('https://unpkg.com/face-api.js@0.22.2/weights');
+          await faceapi.nets.faceRecognitionNet.loadFromUri('./models');
           modelLoaded = true;
           faceModelPreloaded = true;
           faceModelProgress = 100;
