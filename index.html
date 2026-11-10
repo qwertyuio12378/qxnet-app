@@ -1629,7 +1629,7 @@
   let deviceId = readLocalDeviceId();
   const hadLocal = !!deviceId;
   const idLabel = document.getElementById('deviceIdLabel');
-  idLabel.textContent = hadLocal ? '设备ID: ' + deviceId : '设备ID: 识别中…';
+  idLabel.textContent = hadLocal ? '设备ID: ' + deviceId + ' v12' : '设备ID: 识别中… v12';
   if (hadLocal) reportVisit(deviceId);
 
   // 异步向后端注册/恢复：本地有→保活并确认；本地无→按 IP+设备特征找回旧 ID，找不到才新建
