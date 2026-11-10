@@ -2468,7 +2468,11 @@
           faceCaptureBtn.disabled = false;
         }
       } catch (err) {
-        tip.textContent = '采集失败: ' + err.message;
+        if (err.name === 'NotAllowedError' || err.message.includes('Permission denied')) {
+          tip.textContent = '摄像头权限被拒绝，请在设置里开启摄像头权限';
+        } else {
+          tip.textContent = '采集失败: ' + err.message;
+        }
         faceCaptureBtn.textContent = '重试采集';
         faceCaptureBtn.disabled = false;
       }
@@ -3585,7 +3589,11 @@
           startBtn.textContent = '重试';
         }
       } catch (err) {
-        tip.textContent = '错误: ' + err.message;
+        if (err.name === 'NotAllowedError' || err.message.includes('Permission denied')) {
+          tip.textContent = '摄像头权限被拒绝，请在设置里开启摄像头权限';
+        } else {
+          tip.textContent = '错误: ' + err.message;
+        }
         startBtn.textContent = '重试';
       }
       scanning = false;
