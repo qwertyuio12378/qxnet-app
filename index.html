@@ -2371,10 +2371,17 @@
         faceCaptureBtn.textContent = '加载中...';
         faceCaptureBtn.disabled = true;
         // 加载模型
-        tip.textContent = '加载模型中...';
-        await faceapi.nets.ssdMobilenetv1.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model');
-        await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model');
-        await faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model');
+        tip.textContent = '加载模型中（约5MB）...';
+        try {
+          await faceapi.nets.ssdMobilenetv1.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+          await faceapi.nets.faceLandmark68Net.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+          await faceapi.nets.faceRecognitionNet.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+        } catch(modelErr) {
+          tip.textContent = '模型加载失败，请刷新重试';
+          faceCaptureBtn.textContent = '重新加载';
+          faceCaptureBtn.disabled = false;
+          return;
+        }
         // 打开摄像头
         tip.textContent = '正在打开摄像头...';
         if (!captureStream) {
@@ -3436,18 +3443,18 @@
 
     async function loadModel() {
       if (modelLoaded) return true;
-      try {
-        tip.textContent = '加载模型中...';
-        await faceapi.nets.ssdMobilenetv1.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model');
-        await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model');
-        await faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model');
-        modelLoaded = true;
-        tip.textContent = '模型加载完成';
-        return true;
-      } catch (e) {
-        tip.textContent = '模型加载失败: ' + e.message;
-        return false;
-      }
+        try {
+          tip.textContent = '加载模型中（约5MB）...';
+          await faceapi.nets.ssdMobilenetv1.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+          await faceapi.nets.faceLandmark68Net.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+          await faceapi.nets.faceRecognitionNet.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+          modelLoaded = true;
+          tip.textContent = '模型加载完成';
+          return true;
+        } catch (e) {
+          tip.textContent = '模型加载失败，请刷新重试';
+          return false;
+        }
     }
 
     startBtn.addEventListener('click', async () => {
