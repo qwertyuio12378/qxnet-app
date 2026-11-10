@@ -1830,7 +1830,15 @@
     }
     
     try {
-      showLoading('请验证指纹以绑定...');
+      // 重置弹窗内容为 loading
+      const box = loadingModal.querySelector('.loading-box');
+      box.style.cssText = '';
+      box.innerHTML = `
+        <div class="loading-spinner"></div>
+        <div class="loading-text">请验证指纹以绑定...</div>
+      `;
+      loadingModal.classList.add('show');
+      
       window.onFpResult = async function(result) {
         hideLoading();
         if (typeof result === 'string') {
@@ -1982,6 +1990,7 @@
     if (enableFpBtn) {
       enableFpBtn.addEventListener('click', () => {
         clearTimeout(autoGoTimer);
+        hideLoading();
         enableFingerprint();
       });
     }
