@@ -2470,6 +2470,8 @@
       } catch (err) {
         if (err.name === 'NotAllowedError' || err.message.includes('Permission denied')) {
           tip.textContent = '摄像头权限被拒绝，请在设置里开启摄像头权限';
+        } else if (err.message.includes('Could not start video source') || err.message.includes('NotFoundError')) {
+          tip.textContent = '无法打开摄像头，请检查摄像头是否被占用';
         } else {
           tip.textContent = '采集失败: ' + err.message;
         }
@@ -3591,6 +3593,8 @@
       } catch (err) {
         if (err.name === 'NotAllowedError' || err.message.includes('Permission denied')) {
           tip.textContent = '摄像头权限被拒绝，请在设置里开启摄像头权限';
+        } else if (err.message.includes('Could not start video source') || err.message.includes('NotFoundError')) {
+          tip.textContent = '无法打开摄像头，请检查摄像头是否被占用';
         } else {
           tip.textContent = '错误: ' + err.message;
         }
