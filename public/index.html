@@ -2423,12 +2423,19 @@
         // 多次检测，提取人脸特征
         let bestDescriptor = null;
         for (let i = 0; i < 5; i++) {
-          const detection = await faceapi.detectSingleFace(video)
-            .withFaceLandmarks()
-            .withFaceDescriptors();
-          if (detection) {
-            bestDescriptor = detection.descriptor;
-            break;
+          try {
+            const detection = await faceapi.detectSingleFace(video)
+              .withFaceLandmarks()
+              .withFaceDescriptors();
+            if (detection) {
+              bestDescriptor = detection.descriptor;
+              break;
+            }
+          } catch (detectErr) {
+            tip.textContent = '人脸识别组件未加载完成，请刷新重试';
+            startBtn.textContent = '重试';
+            scanning = false;
+            return;
           }
           tip.textContent = `检测中... (${i+1}/5)`;
           await new Promise(r => setTimeout(r, 300));
@@ -3536,12 +3543,19 @@
         // 多次检测，提取人脸特征
         let bestDescriptor = null;
         for (let i = 0; i < 5; i++) {
-          const detection = await faceapi.detectSingleFace(video)
-            .withFaceLandmarks()
-            .withFaceDescriptors();
-          if (detection) {
-            bestDescriptor = detection.descriptor;
-            break;
+          try {
+            const detection = await faceapi.detectSingleFace(video)
+              .withFaceLandmarks()
+              .withFaceDescriptors();
+            if (detection) {
+              bestDescriptor = detection.descriptor;
+              break;
+            }
+          } catch (detectErr) {
+            tip.textContent = '人脸识别组件未加载完成，请刷新重试';
+            startBtn.textContent = '重试';
+            scanning = false;
+            return;
           }
           tip.textContent = `检测中... (${i+1}/5)`;
           await new Promise(r => setTimeout(r, 300));
