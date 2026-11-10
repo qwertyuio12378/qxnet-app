@@ -2435,7 +2435,7 @@
               break;
             }
           } catch (detectErr) {
-            tip.textContent = '人脸识别组件未加载完成，请刷新重试';
+            tip.textContent = '错误: ' + (detectErr.message || detectErr);
             startBtn.textContent = '重试';
             scanning = false;
             return;
@@ -3539,7 +3539,7 @@
               break;
             }
           } catch (detectErr) {
-            tip.textContent = '人脸识别组件未加载完成，请刷新重试';
+            tip.textContent = '错误: ' + (detectErr.message || detectErr);
             startBtn.textContent = '重试';
             scanning = false;
             return;
