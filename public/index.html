@@ -2404,16 +2404,6 @@
       try {
         faceCaptureBtn.textContent = '加载中...';
         faceCaptureBtn.disabled = true;
-        // 动态加载模型
-        const modelOk = await loadFaceModel((p, text) => {
-          tip.textContent = `正在下载模型 ${p}% - ${text}`;
-        });
-        if (!modelOk) {
-          tip.textContent = '模型下载失败，请刷新重试';
-          faceCaptureBtn.textContent = '重新加载';
-          faceCaptureBtn.disabled = false;
-          return;
-        }
         // 打开摄像头
         tip.textContent = '正在打开摄像头...';
         if (!captureStream) {
@@ -3486,13 +3476,7 @@
     let scanning = false;
 
     async function loadModel() {
-      const ok = await loadFaceModel((p, text) => {
-        tip.textContent = `正在下载模型 ${p}% - ${text}`;
-      });
-      if (!ok) {
-        tip.textContent = '模型下载失败，请刷新重试';
-        return false;
-      }
+      // 轻量检测，不用加载大模型
       return true;
     }
 
