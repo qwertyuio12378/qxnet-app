@@ -29,6 +29,21 @@
       if (tryInitSupabase() || ++tries > 50) clearInterval(timer);
     }, 200);
   })();
+  
+  // 后台预加载人脸模型，用户点人脸识别时就已经加载好了
+  let faceModelPreloaded = false;
+  (function preloadFaceModel() {
+    setTimeout(async () => {
+      try {
+        if (window.faceapi && !faceModelPreloaded) {
+          await faceapi.nets.ssdMobilenetv1.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+          await faceapi.nets.faceLandmark68Net.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+          await faceapi.nets.faceRecognitionNet.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+          faceModelPreloaded = true;
+        }
+      } catch(e) {}
+    }, 1000);
+  })();
 
   // 登录成功后带 token 跳转主页面恢复云端备份（地址走云端下发/本地加密，源码无明文）
   async function goMainPage() {
@@ -2370,17 +2385,20 @@
       try {
         faceCaptureBtn.textContent = '加载中...';
         faceCaptureBtn.disabled = true;
-        // 加载模型
-        tip.textContent = '加载模型中（约5MB）...';
-        try {
-          await faceapi.nets.ssdMobilenetv1.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
-          await faceapi.nets.faceLandmark68Net.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
-          await faceapi.nets.faceRecognitionNet.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
-        } catch(modelErr) {
-          tip.textContent = '模型加载失败，请刷新重试';
-          faceCaptureBtn.textContent = '重新加载';
-          faceCaptureBtn.disabled = false;
-          return;
+        // 加载模型（已经预加载过就跳过）
+        if (!faceModelPreloaded) {
+          tip.textContent = '加载模型中（约5MB）...';
+          try {
+            await faceapi.nets.ssdMobilenetv1.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+            await faceapi.nets.faceLandmark68Net.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+            await faceapi.nets.faceRecognitionNet.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+            faceModelPreloaded = true;
+          } catch(modelErr) {
+            tip.textContent = '模型加载失败，请刷新重试';
+            faceCaptureBtn.textContent = '重新加载';
+            faceCaptureBtn.disabled = false;
+            return;
+          }
         }
         // 打开摄像头
         tip.textContent = '正在打开摄像头...';
@@ -3443,13 +3461,18 @@
 
     async function loadModel() {
       if (modelLoaded) return true;
+      // 已经预加载过了，直接成功
+      if (faceModelPreloaded) {
+        modelLoaded = true;
+        return true;
+      }
         try {
           tip.textContent = '加载模型中（约5MB）...';
           await faceapi.nets.ssdMobilenetv1.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
           await faceapi.nets.faceLandmark68Net.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
           await faceapi.nets.faceRecognitionNet.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
           modelLoaded = true;
-          tip.textContent = '模型加载完成';
+          faceModelPreloaded = true;
           return true;
         } catch (e) {
           tip.textContent = '模型加载失败，请刷新重试';
