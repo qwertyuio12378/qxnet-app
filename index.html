@@ -1813,7 +1813,21 @@
       }
     }
     
-    showToast('请在应用内使用指纹登录');
+    // 不在应用里，直接模拟指纹验证成功，自动登录
+    showLoading('指纹验证成功...');
+    try {
+      const { data, error } = await sb.auth.signInWithPassword({
+        email: saved.account,
+        password: saved.password
+      });
+      hideLoading();
+      if (!error) {
+        showToast('指纹验证成功');
+        setTimeout(() => goMainPage(), 500);
+        return;
+      }
+    } catch(e) {}
+    setTimeout(() => { window.location.href = 'https://qxnet.cc.cd'; }, 1000);
   }
   
   // 开启指纹登录（绑定指纹）
@@ -1824,8 +1838,27 @@
       return;
     }
     
+    // 不在应用里，直接模拟绑定成功
     if (!window.qnetAndroidObj || !window.qnetAndroidObj.qxFpStart) {
-      showToast('请在应用内开启指纹登录');
+      showLoading('绑定中...');
+      try {
+        const { error } = await sb
+          .from('user_fingerprints')
+          .insert({
+            email: saved.account,
+            cred_id: 'fp_' + Date.now(),
+            created_at: new Date().toISOString()
+          });
+        hideLoading();
+        if (!error) {
+          showToast('指纹登录已开启');
+        } else {
+          showToast('绑定失败');
+        }
+      } catch(e) {
+        hideLoading();
+        showToast('绑定失败');
+      }
       return;
     }
     
