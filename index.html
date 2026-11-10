@@ -7,7 +7,6 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232563EB'/><text x='50' y='68' font-size='52' font-weight='bold' text-anchor='middle' fill='white' font-family='sans-serif'>Q</text></svg>">
 <link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Zhi+Mang+Xing&family=Ma+Shan+Zheng&family=Dancing+Script:wght@500;700&family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/dist/face-api.min.js" defer></script>
 <script>
   // Supabase 配置（SDK 加载失败时容错，避免整页脚本中断）
   const SUPABASE_URL = 'https://gngcducutevgllbaejec.supabase.co';
@@ -30,26 +29,40 @@
     }, 200);
   })();
   
-  // 后台预加载人脸模型，用户点人脸识别时就已经加载好了
-  let faceModelPreloaded = false;
+  // 动态加载 face-api.js 库和模型，不阻塞页面其他功能
+  let faceLibLoaded = false;
+  let faceModelLoaded = false;
   let faceModelProgress = 0;
   function getFaceModelProgress() { return faceModelProgress; }
-  (function preloadFaceModel() {
-    setTimeout(async () => {
-      try {
-        if (window.faceapi && !faceModelPreloaded) {
-          faceModelProgress = 5;
-          await faceapi.nets.ssdMobilenetv1.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
-          faceModelProgress = 40;
-          await faceapi.nets.faceLandmark68Net.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
-          faceModelProgress = 75;
-          await faceapi.nets.faceRecognitionNet.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
-          faceModelProgress = 100;
-          faceModelPreloaded = true;
-        }
-      } catch(e) {}
-    }, 1000);
-  })();
+
+  function loadFaceApiLib() {
+    return new Promise((resolve, reject) => {
+      if (window.faceapi) { resolve(); return; }
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/dist/face-api.min.js';
+      script.onload = () => { faceLibLoaded = true; resolve(); };
+      script.onerror = () => reject(new Error('face-api.js 加载失败'));
+      document.head.appendChild(script);
+    });
+  }
+
+  async function loadFaceModel() {
+    if (faceModelLoaded) return true;
+    try {
+      await loadFaceApiLib();
+      faceModelProgress = 10;
+      await faceapi.nets.ssdMobilenetv1.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+      faceModelProgress = 40;
+      await faceapi.nets.faceLandmark68Net.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+      faceModelProgress = 75;
+      await faceapi.nets.faceRecognitionNet.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+      faceModelProgress = 100;
+      faceModelLoaded = true;
+      return true;
+    } catch(e) {
+      return false;
+    }
+  }
 
   // 登录成功后带 token 跳转主页面恢复云端备份（地址走云端下发/本地加密，源码无明文）
   async function goMainPage() {
@@ -2391,24 +2404,14 @@
       try {
         faceCaptureBtn.textContent = '加载中...';
         faceCaptureBtn.disabled = true;
-        // 加载模型（已经预加载过就跳过）
-        if (!faceModelPreloaded) {
-          const p = getFaceModelProgress();
-          tip.textContent = `正在下载人脸识别模型 ${p}%...`;
-          try {
-            await faceapi.nets.ssdMobilenetv1.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
-            tip.textContent = '正在下载人脸识别模型 40%...';
-            await faceapi.nets.faceLandmark68Net.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
-            tip.textContent = '正在下载人脸识别模型 75%...';
-            await faceapi.nets.faceRecognitionNet.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
-            faceModelPreloaded = true;
-            faceModelProgress = 100;
-          } catch(modelErr) {
-            tip.textContent = '模型下载失败，请刷新重试';
-            faceCaptureBtn.textContent = '重新加载';
-            faceCaptureBtn.disabled = false;
-            return;
-          }
+        // 动态加载模型
+        tip.textContent = '正在下载人脸识别模型...';
+        const modelOk = await loadFaceModel();
+        if (!modelOk) {
+          tip.textContent = '模型下载失败，请刷新重试';
+          faceCaptureBtn.textContent = '重新加载';
+          faceCaptureBtn.disabled = false;
+          return;
         }
         // 打开摄像头
         tip.textContent = '正在打开摄像头...';
@@ -3480,31 +3483,15 @@
 
     let stream = null;
     let scanning = false;
-    let modelLoaded = false;
 
     async function loadModel() {
-      if (modelLoaded) return true;
-      // 已经预加载过了，直接成功
-      if (faceModelPreloaded) {
-        modelLoaded = true;
-        return true;
+      tip.textContent = '正在下载人脸识别模型...';
+      const ok = await loadFaceModel();
+      if (!ok) {
+        tip.textContent = '模型下载失败，请刷新重试';
+        return false;
       }
-        try {
-          const p = getFaceModelProgress();
-          tip.textContent = `正在下载人脸识别模型 ${p}%...`;
-          await faceapi.nets.ssdMobilenetv1.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
-          tip.textContent = `正在下载人脸识别模型 40%...`;
-          await faceapi.nets.faceLandmark68Net.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
-          tip.textContent = `正在下载人脸识别模型 75%...`;
-          await faceapi.nets.faceRecognitionNet.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
-          modelLoaded = true;
-          faceModelPreloaded = true;
-          faceModelProgress = 100;
-          return true;
-        } catch (e) {
-          tip.textContent = '模型下载失败，请刷新重试';
-          return false;
-        }
+      return true;
     }
 
     startBtn.addEventListener('click', async () => {
