@@ -39,7 +39,7 @@
     return new Promise((resolve, reject) => {
       if (window.faceapi) { resolve(); return; }
       const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/dist/face-api.min.js';
+      script.src = './face-api.min.js';
       script.onload = () => { faceLibLoaded = true; resolve(); };
       script.onerror = () => reject(new Error('face-api.js 加载失败'));
       document.head.appendChild(script);
@@ -51,11 +51,11 @@
     try {
       await loadFaceApiLib();
       faceModelProgress = 10;
-      await faceapi.nets.ssdMobilenetv1.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+      await faceapi.nets.ssdMobilenetv1.loadFromUri('./models');
       faceModelProgress = 40;
-      await faceapi.nets.faceLandmark68Net.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+      await faceapi.nets.faceLandmark68Net.loadFromUri('./models');
       faceModelProgress = 75;
-      await faceapi.nets.faceRecognitionNet.loadFromUri('https://unpkg.com/@vladmandic/face-api@1.7.13/model');
+      await faceapi.nets.faceRecognitionNet.loadFromUri('./models');
       faceModelProgress = 100;
       faceModelLoaded = true;
       return true;
