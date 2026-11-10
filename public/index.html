@@ -1953,21 +1953,23 @@
   }
   prefetchSiteUrl();
 
-  // 登录成功：显示动态成功标志，加开启指纹登录选项
+  // 登录成功：液态玻璃弹窗，加开启指纹登录选项
   function showLoginSuccess() {
     if (!loadingModal) return;
     const box = loadingModal.querySelector('.loading-box');
+    box.style.cssText = 'background:rgba(255,255,255,0.7);backdrop-filter:blur(30px) saturate(1.8);-webkit-backdrop-filter:blur(30px) saturate(1.8);border-radius:28px;padding:40px 32px;box-shadow:0 8px 32px rgba(0,0,0,0.08),inset 0 1px 0 rgba(255,255,255,0.8);border:1px solid rgba(255,255,255,0.6);max-width:300px;width:90%;';
     box.innerHTML = `
-      <div class="success-ring">
-        <svg viewBox="0 0 52 52">
-          <circle class="success-circle" cx="26" cy="26" r="23" fill="none" stroke="#22C55E" stroke-width="3" stroke-linecap="round"/>
-          <path class="success-check" d="M15 27l8 8 14-16" fill="none" stroke="#22C55E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
-      <div class="loading-text">登录成功</div>
-      <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px;">
-        <button id="enableFpBtn" style="padding:10px 20px;border-radius:12px;border:1px solid #E2E8F0;background:rgba(255,255,255,0.8);font-size:14px;color:#3B82F6;cursor:pointer;backdrop-filter:blur(10px);">开启指纹登录</button>
-        <button id="skipFpBtn" style="padding:10px 20px;border-radius:12px;border:none;background:transparent;font-size:13px;color:#94A3B8;cursor:pointer;">暂不开启，直接进入</button>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:20px;">
+        <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#dcfce7,#bbf7d0);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(34,197,94,0.2);">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg>
+        </div>
+        <div style="font-size:18px;font-weight:600;color:#1e293b;">登录成功</div>
+        <div style="display:flex;flex-direction:column;gap:10px;width:100%;">
+          <button id="enableFpBtn" style="width:100%;padding:14px;border-radius:16px;border:1px solid rgba(59,130,246,0.2);background:rgba(59,130,246,0.08);font-size:15px;font-weight:500;color:#3B82F6;cursor:pointer;backdrop-filter:blur(10px);transition:all 0.2s;">开启指纹登录</button>
+          <button id="skipFpBtn" style="width:100%;padding:12px;border-radius:16px;border:none;background:transparent;font-size:14px;color:#94A3B8;cursor:pointer;transition:color 0.2s;">暂不开启，直接进入</button>
+        </div>
       </div>
     `;
     loadingModal.classList.add('show');
