@@ -2116,11 +2116,17 @@
     `;
     loadingModal.classList.add('show');
     
+    // 背景点击测试
+    loadingModal.onclick = () => {
+      alert('弹窗背景被点击了！');
+    };
+    
     // 直接用addEventListener绑定测试按钮
     setTimeout(() => {
       const testBtn = document.getElementById('testBtn');
       if (testBtn) {
-        testBtn.addEventListener('click', () => {
+        testBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
           alert('按钮被点击了！');
         });
         console.log('测试按钮绑定成功');
