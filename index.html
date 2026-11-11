@@ -39,7 +39,7 @@
     return new Promise((resolve, reject) => {
       if (window.faceapi) { resolve(); return; }
       const script = document.createElement('script');
-      script.src = './face-api.min.js';
+      script.src = 'https://gngcducutevgllbaejec.supabase.co/storage/v1/object/public/face-models/face-api.min.js';
       script.onload = () => { faceLibLoaded = true; resolve(); };
       script.onerror = () => reject(new Error('face-api.js 加载失败'));
       document.head.appendChild(script);
