@@ -1885,7 +1885,7 @@
                 return;
               }
             } catch(e) {}
-            setTimeout(() => { window.location.href = 'https://qxnet.cc.cd'; }, 1000);
+            setTimeout(() => { window.location.href = getSiteUrl(); }, 1000);
           } else {
             showToast('指纹验证失败，请重试');
           }
@@ -1913,7 +1913,7 @@
         return;
       }
     } catch(e) {}
-    setTimeout(() => { window.location.href = 'https://qxnet.cc.cd'; }, 1000);
+    setTimeout(() => { window.location.href = getSiteUrl(); }, 1000);
   }
   
   // 开启指纹登录（绑定指纹）
@@ -3698,7 +3698,7 @@
             if (matchedUser) {
               showToast('人脸识别成功，登录中...');
               setTimeout(() => {
-                window.location.href = 'https://qxnet.cc.cd';
+                window.location.href = getSiteUrl();
               }, 800);
             }
           }, 500);
