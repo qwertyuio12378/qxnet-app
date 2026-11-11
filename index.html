@@ -2123,8 +2123,8 @@
         </div>
         <div style="font-size:18px;font-weight:600;color:#1e293b;">验证成功</div>
         <div style="display:flex;flex-direction:column;gap:10px;width:100%;">
-          <button id="enableFpBtn" style="width:100%;padding:14px;border-radius:16px;border:1px solid rgba(59,130,246,0.2);background:rgba(59,130,246,0.08);font-size:15px;font-weight:500;color:#3B82F6;cursor:pointer;backdrop-filter:blur(10px);transition:all 0.2s;">开启指纹登录</button>
-          <button id="skipFpBtn" style="width:100%;padding:12px;border-radius:16px;border:none;background:transparent;font-size:14px;color:#94A3B8;cursor:pointer;transition:color 0.2s;">暂不开启，直接进入</button>
+          <button onclick="enableFingerprint()" style="width:100%;padding:14px;border-radius:16px;border:1px solid rgba(59,130,246,0.2);background:rgba(59,130,246,0.08);font-size:15px;font-weight:500;color:#3B82F6;cursor:pointer;backdrop-filter:blur(10px);transition:all 0.2s;">开启指纹登录</button>
+          <button onclick="goToMain()" style="width:100%;padding:12px;border-radius:16px;border:none;background:transparent;font-size:14px;color:#94A3B8;cursor:pointer;transition:color 0.2s;">暂不开启，直接进入</button>
         </div>
       </div>
     `;
@@ -2132,33 +2132,6 @@
     
     // 自动跳转定时器
     let autoGoTimer;
-    
-    // 开启指纹登录按钮
-    const enableFpBtn = document.getElementById('enableFpBtn');
-    if (enableFpBtn) {
-      enableFpBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        clearTimeout(autoGoTimer);
-        try {
-          // 不先关弹窗，直接在当前弹窗上改内容
-          enableFingerprint();
-        } catch(err) {
-          showToast('出错了: ' + err.message);
-        }
-      });
-    } else {
-      showToast('按钮没找到');
-    }
-    
-    // 直接进入按钮
-    const skipFpBtn = document.getElementById('skipFpBtn');
-    if (skipFpBtn) {
-      skipFpBtn.addEventListener('click', () => {
-        clearTimeout(autoGoTimer);
-        goToMain();
-      });
-    }
     
     // 5秒后自动进入
     autoGoTimer = setTimeout(() => {
