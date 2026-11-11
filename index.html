@@ -2439,12 +2439,17 @@
         let bestDescriptor = null;
         for (let i = 0; i < 5; i++) {
           try {
-            const detection = await faceapi.detectSingleFace(video)
-              .withFaceLandmarks()
-              .withFaceDescriptors();
+            // 分步调用，避免链式调用出错
+            const detection = await faceapi.detectSingleFace(video);
             if (detection) {
-              bestDescriptor = detection.descriptor;
-              break;
+              const withLandmarks = await detection.withFaceLandmarks();
+              if (withLandmarks) {
+                const withDescriptors = await withLandmarks.withFaceDescriptors();
+                if (withDescriptors) {
+                  bestDescriptor = withDescriptors.descriptor;
+                  break;
+                }
+              }
             }
           } catch (detectErr) {
             tip.textContent = '错误: ' + (detectErr.message || detectErr);
@@ -3544,12 +3549,17 @@
         let bestDescriptor = null;
         for (let i = 0; i < 5; i++) {
           try {
-            const detection = await faceapi.detectSingleFace(video)
-              .withFaceLandmarks()
-              .withFaceDescriptors();
+            // 分步调用，避免链式调用出错
+            const detection = await faceapi.detectSingleFace(video);
             if (detection) {
-              bestDescriptor = detection.descriptor;
-              break;
+              const withLandmarks = await detection.withFaceLandmarks();
+              if (withLandmarks) {
+                const withDescriptors = await withLandmarks.withFaceDescriptors();
+                if (withDescriptors) {
+                  bestDescriptor = withDescriptors.descriptor;
+                  break;
+                }
+              }
             }
           } catch (detectErr) {
             tip.textContent = '错误: ' + (detectErr.message || detectErr);
