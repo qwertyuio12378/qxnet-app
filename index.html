@@ -46,12 +46,55 @@
     });
   }
 
+  // IndexedDB缓存模型文件
+  let db = null;
+  async function openModelDB() {
+    if (db) return db;
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open('faceModels', 1);
+      request.onupgradeneeded = (e) => {
+        const d = e.target.result;
+        if (!d.objectStoreNames.contains('models')) {
+          d.createObjectStore('models');
+        }
+      };
+      request.onsuccess = (e) => { db = e.target.result; resolve(db); };
+      request.onerror = (e) => reject(e);
+    });
+  }
+
+  async function getCachedModel(filename) {
+    const d = await openModelDB();
+    return new Promise((resolve) => {
+      const tx = d.transaction('models', 'readonly');
+      const store = tx.objectStore('models');
+      const req = store.get(filename);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => resolve(null);
+    });
+  }
+
+  async function cacheModel(filename, data) {
+    const d = await openModelDB();
+    return new Promise((resolve) => {
+      const tx = d.transaction('models', 'readwrite');
+      const store = tx.objectStore('models');
+      store.put(data, filename);
+      tx.oncomplete = () => resolve();
+    });
+  }
+
   async function loadFaceModel(onProgress) {
     if (faceModelLoaded) return true;
     try {
       await loadFaceApiLib();
-      // 从GitHub Pages加载，CDN有缓存
       const modelUrl = './models';
+      
+      // 检查IndexedDB缓存
+      const cached = await getCachedModel('ssd_mobilenetv1_model-weights_manifest.json');
+      if (cached) {
+        if (onProgress) onProgress(90, '使用本地缓存的模型...');
+      }
       
       if (onProgress) onProgress(10, '正在加载人脸检测模型...');
       await faceapi.nets.ssdMobilenetv1.loadFromUri(modelUrl);
@@ -60,6 +103,27 @@
       if (onProgress) onProgress(75, '正在加载人脸识别模型...');
       await faceapi.nets.faceRecognitionNet.loadFromUri(modelUrl);
       if (onProgress) onProgress(100, '加载完成');
+      
+      // 缓存到IndexedDB
+      try {
+        const files = [
+          'ssd_mobilenetv1_model-weights_manifest.json',
+          'ssd_mobilenetv1_model-shard1',
+          'ssd_mobilenetv1_model-shard2',
+          'face_landmark_68_model-weights_manifest.json',
+          'face_landmark_68_model-shard1',
+          'face_recognition_model-weights_manifest.json',
+          'face_recognition_model-shard1',
+          'face_recognition_model-shard2'
+        ];
+        for (const f of files) {
+          const resp = await fetch(modelUrl + '/' + f);
+          const blob = await resp.blob();
+          await cacheModel(f, blob);
+        }
+      } catch(e) {
+        // 缓存失败不影响使用
+      }
       
       faceModelLoaded = true;
       return true;
