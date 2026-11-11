@@ -2136,11 +2136,19 @@
     // 开启指纹登录按钮
     const enableFpBtn = document.getElementById('enableFpBtn');
     if (enableFpBtn) {
-      enableFpBtn.addEventListener('click', () => {
+      enableFpBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         clearTimeout(autoGoTimer);
-        // 不先关弹窗，直接在当前弹窗上改内容
-        enableFingerprint();
+        try {
+          // 不先关弹窗，直接在当前弹窗上改内容
+          enableFingerprint();
+        } catch(err) {
+          showToast('出错了: ' + err.message);
+        }
       });
+    } else {
+      showToast('按钮没找到');
     }
     
     // 直接进入按钮
