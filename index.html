@@ -1660,7 +1660,27 @@
       setCookie('qxnet_device_id', id, 3650);
     } catch (e) {}
   }
-  function genDeviceId() { return 'dev_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15); }
+  function genDeviceId() {
+    // 用浏览器指纹生成设备ID，尽量稳定
+    const fingerprint = [
+      navigator.userAgent,
+      screen.width + 'x' + screen.height,
+      screen.colorDepth,
+      new Date().getTimezoneOffset(),
+      navigator.language,
+      navigator.platform,
+      navigator.hardwareConcurrency || '',
+      navigator.deviceMemory || ''
+    ].join('|');
+    // 简单哈希
+    let hash = 0;
+    for (let i = 0; i < fingerprint.length; i++) {
+      const char = fingerprint.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return 'dev_' + Math.abs(hash).toString(36);
+  }
   function reportVisit(did) { if (sb) sb.from('visits').insert({ device_id: did }).then(() => {}).catch(() => {}); }
   // 登录后：账号绑定设备 ID；账号里已有设备 ID 则优先恢复（换环境/清存储后登录即找回）
   function bindDeviceIdToAccount(user) {
