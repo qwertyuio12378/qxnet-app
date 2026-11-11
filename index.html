@@ -2138,7 +2138,7 @@
     if (enableFpBtn) {
       enableFpBtn.addEventListener('click', () => {
         clearTimeout(autoGoTimer);
-        hideLoading();
+        // 不先关弹窗，直接在当前弹窗上改内容
         enableFingerprint();
       });
     }
