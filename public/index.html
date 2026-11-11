@@ -109,13 +109,6 @@
   async function goMainPage() {
     const url = getSiteUrl();
     try {
-      if (window.qnetAndroidObj) {
-        // 应用内：让原生层打开主站
-        window.qnetAndroidObj.callAndroidApi({api: 'open_url', url: url});
-        return;
-      }
-    } catch(e) {}
-    try {
       if (!sb) { window.location.href = url; return; }
       const { data } = await sb.auth.getSession();
       if (data && data.session) {
