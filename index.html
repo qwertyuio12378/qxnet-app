@@ -2580,10 +2580,32 @@
     });
   }
 
-  function openAddFace() {
+  async function openAddFace() {
     $('loginStep2').querySelectorAll(':scope > div, :scope > button').forEach(v => v.classList.add('hidden'));
     $('addFaceView').classList.remove('hidden');
     $('submitBtn').classList.add('hidden');
+    
+    // 自动填入第一步的账号
+    const firstStepAccount = $('accountInput').value.trim() || gAccountDisplay.textContent.trim();
+    if (firstStepAccount) {
+      $('faceAccountInput').value = firstStepAccount;
+    }
+    
+    // 查询是否已有人脸数据，自动改标题
+    if (firstStepAccount && sb) {
+      try {
+        const { data: faces } = await sb.from('user_faces').select('email').eq('email', firstStepAccount);
+        const titleEl = document.querySelector('#addFaceView .g-welcome-title');
+        const descEl = document.querySelector('#addFaceView .g-welcome-email');
+        if (faces && faces.length > 0) {
+          if (titleEl) titleEl.textContent = '修改人脸';
+          if (descEl) descEl.textContent = '已有人脸数据，重新采集将覆盖原记录';
+        } else {
+          if (titleEl) titleEl.textContent = '添加人脸';
+          if (descEl) descEl.textContent = '验证身份后绑定人脸，下次可直接人脸登录';
+        }
+      } catch(e) {}
+    }
   }
 
   function closeAddFace() {
