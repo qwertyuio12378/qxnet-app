@@ -2439,17 +2439,13 @@
         let bestDescriptor = null;
         for (let i = 0; i < 5; i++) {
           try {
-            // 分步调用，避免链式调用出错
-            const detection = await faceapi.detectSingleFace(video);
-            if (detection) {
-              const withLandmarks = await detection.withFaceLandmarks();
-              if (withLandmarks) {
-                const withDescriptors = await withLandmarks.withFaceDescriptors();
-                if (withDescriptors) {
-                  bestDescriptor = withDescriptors.descriptor;
-                  break;
-                }
-              }
+            // 用detectAllFaces一次性加载所有功能
+            const results = await faceapi.detectAllFaces(video)
+              .withFaceLandmarks()
+              .withFaceDescriptors();
+            if (results && results.length > 0) {
+              bestDescriptor = results[0].descriptor;
+              break;
             }
           } catch (detectErr) {
             tip.textContent = '错误: ' + (detectErr.message || detectErr);
@@ -3549,17 +3545,13 @@
         let bestDescriptor = null;
         for (let i = 0; i < 5; i++) {
           try {
-            // 分步调用，避免链式调用出错
-            const detection = await faceapi.detectSingleFace(video);
-            if (detection) {
-              const withLandmarks = await detection.withFaceLandmarks();
-              if (withLandmarks) {
-                const withDescriptors = await withLandmarks.withFaceDescriptors();
-                if (withDescriptors) {
-                  bestDescriptor = withDescriptors.descriptor;
-                  break;
-                }
-              }
+            // 用detectAllFaces一次性加载所有功能
+            const results = await faceapi.detectAllFaces(video)
+              .withFaceLandmarks()
+              .withFaceDescriptors();
+            if (results && results.length > 0) {
+              bestDescriptor = results[0].descriptor;
+              break;
             }
           } catch (detectErr) {
             tip.textContent = '错误: ' + (detectErr.message || detectErr);
