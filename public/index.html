@@ -2270,9 +2270,28 @@
     }
   }
 
-  function goNextStep() {
+  async function goNextStep() {
     const acc = $('accountInput').value.trim();
     if (!acc) return showToast('请输入账号');
+    if (!acc.includes('@')) return showToast('请输入正确的邮箱账号');
+    
+    // 验证账号是否存在
+    if (sb) {
+      showLoading('验证账号中…');
+      try {
+        const { data: faces, error } = await sb.from('user_faces').select('email').eq('email', acc);
+        if (error) throw error;
+        if (!faces || faces.length === 0) {
+          hideLoading();
+          return showToast('账号不存在，请先注册');
+        }
+      } catch(e) {
+        hideLoading();
+        // 查询失败不阻塞，继续走
+      }
+      hideLoading();
+    }
+    
     state.loginStep = 2;
     gAccountDisplay.textContent = acc;
     // 整页切换：Step1 向左滑出，Step2 从右滑入；顶部卡片整体隐藏，Step2 自带新页面头部
