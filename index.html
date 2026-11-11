@@ -1963,10 +1963,28 @@
       box.innerHTML = `
         <div class="loading-spinner"></div>
         <div class="loading-text">请验证指纹以绑定...</div>
+        <button id="cancelFpBtn" style="margin-top:16px;padding:8px 20px;border-radius:12px;border:none;background:rgba(0,0,0,0.05);font-size:14px;color:#666;cursor:pointer;">取消</button>
       `;
       loadingModal.classList.add('show');
       
+      // 取消按钮
+      const cancelBtn = document.getElementById('cancelFpBtn');
+      if (cancelBtn) {
+        cancelBtn.onclick = () => {
+          hideLoading();
+          goMainPage();
+        };
+      }
+      
+      // 超时自动取消（10秒）
+      const fpTimeout = setTimeout(() => {
+        hideLoading();
+        showToast('指纹验证超时，已跳过');
+        goMainPage();
+      }, 10000);
+      
       window.onFpResult = async function(result) {
+        clearTimeout(fpTimeout);
         hideLoading();
         if (typeof result === 'string') {
           try { result = JSON.parse(result); } catch(e) {}
@@ -1987,14 +2005,17 @@
           } else {
             showToast('绑定失败: ' + error.message);
           }
+          goMainPage();
         } else {
           showToast('指纹验证失败，绑定未完成');
+          goMainPage();
         }
       };
       window.qnetAndroidObj.qxFpStart('onFpResult');
     } catch (err) {
       hideLoading();
       showToast('开启失败');
+      goMainPage();
     }
   }
 
