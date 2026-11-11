@@ -1068,16 +1068,12 @@
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
     z-index: 99999;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
   }
   .loading-modal.show {
-    opacity: 1;
-    pointer-events: auto;
+    display: flex;
   }
   .loading-box {
     background: #fff;
@@ -1088,14 +1084,6 @@
     align-items: center;
     gap: 16px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
-    transform: scale(0.9) translateY(20px);
-    opacity: 0;
-    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
-    pointer-events: auto;
-  }
-  .loading-modal.show .loading-box {
-    transform: scale(1) translateY(0);
-    opacity: 1;
   }
   .loading-spinner {
     width: 40px;
