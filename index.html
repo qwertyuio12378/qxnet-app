@@ -50,13 +50,8 @@
     if (faceModelLoaded) return true;
     try {
       await loadFaceApiLib();
-      const modelUrl = 'https://gngcducutevgllbaejec.supabase.co/storage/v1/object/public/face-models';
-      
-      // 检查是否已缓存模型
-      const cached = localStorage.getItem('faceModelCached');
-      if (cached) {
-        if (onProgress) onProgress(50, '使用本地缓存的模型...');
-      }
+      // 从GitHub Pages加载，CDN有缓存
+      const modelUrl = './models';
       
       if (onProgress) onProgress(10, '正在加载人脸检测模型...');
       await faceapi.nets.ssdMobilenetv1.loadFromUri(modelUrl);
@@ -66,8 +61,6 @@
       await faceapi.nets.faceRecognitionNet.loadFromUri(modelUrl);
       if (onProgress) onProgress(100, '加载完成');
       
-      // 标记已缓存
-      localStorage.setItem('faceModelCached', 'true');
       faceModelLoaded = true;
       return true;
     } catch(e) {
