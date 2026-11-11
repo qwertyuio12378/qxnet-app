@@ -2111,13 +2111,23 @@
           </svg>
         </div>
         <div style="font-size:18px;font-weight:600;color:#1e293b;">验证成功</div>
-        <div style="display:flex;flex-direction:column;gap:10px;width:100%;">
-          <button onclick="alert('按钮被点击了');enableFingerprint()" style="width:100%;padding:14px;border-radius:16px;border:1px solid rgba(59,130,246,0.2);background:rgba(59,130,246,0.08);font-size:15px;font-weight:500;color:#3B82F6;cursor:pointer;backdrop-filter:blur(10px);transition:all 0.2s;">开启指纹登录</button>
-          <button onclick="goToMain()" style="width:100%;padding:12px;border-radius:16px;border:none;background:transparent;font-size:14px;color:#94A3B8;cursor:pointer;transition:color 0.2s;">暂不开启，直接进入</button>
-        </div>
+        <button id="testBtn" style="width:200px;padding:14px;border-radius:16px;border:none;background:#3B82F6;color:white;font-size:15px;cursor:pointer;">点我测试</button>
       </div>
     `;
     loadingModal.classList.add('show');
+    
+    // 直接用addEventListener绑定测试按钮
+    setTimeout(() => {
+      const testBtn = document.getElementById('testBtn');
+      if (testBtn) {
+        testBtn.addEventListener('click', () => {
+          alert('按钮被点击了！');
+        });
+        console.log('测试按钮绑定成功');
+      } else {
+        console.log('测试按钮没找到');
+      }
+    }, 100);
     
     // 自动跳转定时器
     let autoGoTimer;
