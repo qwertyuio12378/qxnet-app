@@ -2425,12 +2425,28 @@
         return showToast('账号或密码错误');
       }
       hideLoading();
+      
+      // 查询是否已有人脸数据
+      let isExistingFace = false;
+      try {
+        const { data: faces } = await sb.from('user_faces').select('email').eq('email', email);
+        if (faces && faces.length > 0) {
+          isExistingFace = true;
+        }
+      } catch(e) {}
+      
+      // 修改标题
+      const titleEl = document.querySelector('#addFaceView .g-welcome-title');
+      const descEl = document.querySelector('#addFaceView .g-welcome-email');
+      if (titleEl) titleEl.textContent = isExistingFace ? '修改人脸' : '添加人脸';
+      if (descEl) descEl.textContent = isExistingFace ? '已有人脸数据，重新采集将覆盖原记录' : '验证身份后绑定人脸，下次可直接人脸登录';
+      
       // 验证通过，显示采集区域
       $('addFaceView').querySelectorAll('.field, .g-switch-account').forEach(el => {
         if (!el.closest('#faceCaptureArea')) el.classList.add('hidden');
       });
       $('faceCaptureArea').classList.remove('hidden');
-      showToast('身份验证通过，请开始采集人脸');
+      showToast(isExistingFace ? '身份验证通过，请重新采集人脸' : '身份验证通过，请开始采集人脸');
     });
   }
 
