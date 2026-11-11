@@ -1661,8 +1661,10 @@
     } catch (e) {}
   }
   function genDeviceId() {
-    // 用浏览器指纹生成设备ID，尽量稳定
+    // 用基础ID + 浏览器指纹生成设备ID，尽量稳定
+    const baseId = 'qxnet_base_2024';
     const fingerprint = [
+      baseId,
       navigator.userAgent,
       screen.width + 'x' + screen.height,
       screen.colorDepth,
