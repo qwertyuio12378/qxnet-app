@@ -2518,7 +2518,7 @@
         // 打开摄像头
         tip.textContent = '正在打开摄像头...';
         if (!captureStream) {
-          captureStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+          captureStream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 } });
           video.srcObject = captureStream;
           await video.play();
         }
@@ -3641,7 +3641,7 @@
         tip.textContent = '正在打开摄像头...';
         if (!stream) {
           stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { width: 640, height: 480 } 
+            video: { width: 1280, height: 720 } 
           });
           video.srcObject = stream;
           await video.play();
