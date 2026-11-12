@@ -109,6 +109,7 @@ function normalizeUser(u: Record<string, unknown>) {
     last_sign_in_at: u.last_sign_in_at || "",
     email_confirmed: !!u.email_confirmed_at,
     banned_until: u.banned_until || null,
+    deleted_at: u.deleted_at || null,
     card_key: meta.card_key || "",
     expires_at: meta.expires_at || "",
     device_id: meta.device_id || "",
@@ -167,7 +168,7 @@ async function handle(req: Request): Promise<Response> {
   if (method === "GET" && path === "/users") {
     const { status, body } = await sbFetch("/auth/v1/admin/users?per_page=500");
     if (status !== 200) return json({ code: -1, msg: "获取用户失败" }, 500);
-    let users = ((body as Record<string, { users: unknown[] }>).users || []).map(normalizeUser);
+    let users = ((body as Record<string, { users: unknown[] }>).users || []).map(normalizeUser).filter((u) => !u.deleted_at);
     const search = (url.searchParams.get("search") || "").trim().toLowerCase();
     if (search) {
       users = users.filter(
