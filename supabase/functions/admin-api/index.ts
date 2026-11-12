@@ -231,7 +231,7 @@ async function handle(req: Request): Promise<Response> {
     const n = Math.min(Math.max(parseInt(String(body.count), 10) || 0, 1), 500);
     if (!CARD_TYPES.includes(type)) return json({ code: -1, msg: "卡密类型无效" });
     const rows = Array.from({ length: n }, () => ({
-      card_key: `QXNET-${type.toUpperCase()}-${randomCode(8)}`,
+      card_key: `QXNET-${randomCode(8)}`,
       type,
       used: false,
       created_at: new Date().toISOString(),
