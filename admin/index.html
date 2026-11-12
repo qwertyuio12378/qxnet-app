@@ -140,13 +140,14 @@
   .item-actions { display:flex; gap:8px; flex-wrap:wrap; }
   .mono { font-family:ui-monospace,Menlo,Consolas,monospace; }
 
-  .badge { display:inline-flex; align-items:center; gap:6px; padding:4px 11px; border-radius:999px; font-size:12px; font-weight:600; white-space:nowrap; backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.5); box-shadow:inset 0 1px 0 rgba(255,255,255,.55); }
-  .badge::before { content:""; width:6px; height:6px; border-radius:50%; background:currentColor; }
-  .b-active { background:rgba(220,252,231,.72); color:#16a34a; }
-  .b-expired { background:rgba(254,243,199,.72); color:#d97706; }
-  .b-banned { background:rgba(254,226,226,.72); color:#dc2626; }
-  .b-used { background:rgba(241,245,249,.72); color:#64748b; }
-  .b-free { background:rgba(219,234,254,.72); color:#2563eb; }
+  .badge { display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:999px; font-size:11.5px; font-weight:600; letter-spacing:.1px; white-space:nowrap; border:1px solid transparent; }
+  .badge::before { content:""; width:6px; height:6px; border-radius:50%; background:currentColor; box-shadow:0 0 0 3px rgba(15,23,42,.06); }
+  .b-active { color:#16a34a; background:rgba(34,197,94,.13); border-color:rgba(34,197,94,.25); }
+  .b-expired { color:#d97706; background:rgba(245,158,11,.14); border-color:rgba(245,158,11,.26); }
+  .b-banned { color:#dc2626; background:rgba(239,68,68,.12); border-color:rgba(239,68,68,.24); }
+  .b-used { color:#64748b; background:rgba(100,116,139,.13); border-color:rgba(100,116,139,.24); }
+  .b-free { color:#2563eb; background:rgba(59,130,246,.13); border-color:rgba(59,130,246,.25); }
+  .b-type { color:#7c3aed; background:rgba(124,58,237,.12); border-color:rgba(124,58,237,.22); }
 
   .muted { color:var(--faint); font-size:12px; }
   .empty { text-align:center; color:var(--faint); padding:48px 0; font-size:14px; }
@@ -462,7 +463,7 @@ async function loadCards() {
       <div class="item-top">
         <div class="item-title mono">${esc(c.card_key)}</div>
         <div class="item-side">
-          <span class="badge b-free">${TYPE_CN[c.type] || c.type}</span>
+          <span class="badge b-type">${TYPE_CN[c.type] || c.type}</span>
           <span class="badge ${c.used ? 'b-used' : 'b-active'}">${c.used ? '已使用' : '未使用'}</span>
         </div>
       </div>
