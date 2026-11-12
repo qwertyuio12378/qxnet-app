@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QXNET 管理后台</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; }
+  body {
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:#F1F5F9; color:#1E293B; padding:0 0 80px;
+  }
+  .wrap { max-width:1080px; margin:0 auto; padding:0 16px; }
+
+  /* 顶栏 */
+  .topbar {
+    background:rgba(255,255,255,0.85); backdrop-filter:blur(20px) saturate(1.6);
+    -webkit-backdrop-filter:blur(20px) saturate(1.6);
+    border-bottom:1px solid rgba(0,0,0,0.06); position:sticky; top:0; z-index:50;
+  }
+  .topbar-inner { max-width:1080px; margin:0 auto; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; }
+  .brand { display:flex; align-items:center; gap:10px; font-weight:700; font-size:17px; }
+  .brand .logo { width:32px; height:32px; border-radius:10px; background:linear-gradient(135deg,#2563EB,#3B82F6); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:900; }
+  .top-actions { display:flex; gap:10px; align-items:center; }
+  .btn { border:none; border-radius:12px; padding:10px 16px; font-size:14px; font-weight:500; cursor:pointer; }
+  .btn-primary { background:#2563EB; color:#fff; }
+  .btn-ghost { background:rgba(0,0,0,0.05); color:#475569; }
+  .btn-danger { background:#FEE2E2; color:#DC2626; }
+  .btn-sm { padding:6px 12px; font-size:13px; border-radius:10px; }
+
+  /* 登录 */
+  .login-box { max-width:380px; margin:12vh auto 0; background:#fff; border-radius:24px; padding:36px 28px; box-shadow:0 12px 40px rgba(15,23,42,0.08); }
+  .login-box h1 { font-size:22px; margin-bottom:6px; }
+  .login-box p { color:#64748B; font-size:14px; margin-bottom:24px; }
+  .field { margin-bottom:16px; }
+  .field label { display:block; font-size:13px; color:#475569; margin-bottom:6px; }
+  .field input { width:100%; padding:12px 14px; border:1px solid #E2E8F0; border-radius:14px; font-size:15px; outline:none; }
+  .field input:focus { border-color:#3B82F6; }
+
+  /* Tabs */
+  .tabs { display:flex; gap:8px; margin:22px 0 18px; }
+  .tab { padding:10px 18px; border-radius:14px; background:#fff; color:#64748B; font-size:14px; cursor:pointer; border:1px solid transparent; }
+  .tab.active { background:#2563EB; color:#fff; }
+
+  .card { background:#fff; border-radius:20px; padding:18px; box-shadow:0 4px 20px rgba(15,23,42,0.05); }
+  .toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:16px; }
+  .toolbar input, .toolbar select { padding:10px 12px; border:1px solid #E2E8F0; border-radius:12px; font-size:14px; outline:none; }
+  .toolbar input { flex:1; min-width:160px; }
+
+  table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  th, td { text-align:left; padding:12px 10px; border-bottom:1px solid #F1F5F9; vertical-align:middle; }
+  th { color:#94A3B8; font-weight:500; font-size:12px; }
+  .table-wrap { overflow-x:auto; }
+  .mono { font-family:ui-monospace,Menlo,Consolas,monospace; }
+  .ell { max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  .badge { display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; }
+  .b-active { background:#DCFCE7; color:#16A34A; }
+  .b-expired { background:#FEF3C7; color:#D97706; }
+  .b-banned { background:#FEE2E2; color:#DC2626; }
+  .b-used { background:#F1F5F9; color:#64748B; }
+  .b-free { background:#DBEAFE; color:#2563EB; }
+
+  .row-actions { display:flex; gap:6px; flex-wrap:wrap; }
+  .muted { color:#94A3B8; font-size:12px; }
+  .empty { text-align:center; color:#94A3B8; padding:40px 0; }
+
+  /* 弹窗 */
+  .modal-mask { position:fixed; inset:0; background:rgba(15,23,42,0.45); backdrop-filter:blur(6px); z-index:100; display:none; align-items:center; justify-content:center; padding:20px; }
+  .modal-mask.show { display:flex; }
+  .modal { background:#fff; border-radius:24px; padding:26px 24px; width:100%; max-width:380px; }
+  .modal h3 { font-size:17px; margin-bottom:16px; }
+  .modal .field:last-of-type { margin-bottom:22px; }
+  .modal-actions { display:flex; gap:10px; justify-content:flex-end; }
+
+  .toast { position:fixed; left:50%; bottom:40px; transform:translateX(-50%); background:#1E293B; color:#fff; padding:10px 18px; border-radius:12px; font-size:14px; opacity:0; transition:opacity .2s; z-index:200; }
+  .toast.show { opacity:1; }
+  .hidden { display:none !important; }
+
+  .gen-result { background:#F8FAFC; border-radius:14px; padding:14px; margin-top:14px; max-height:180px; overflow:auto; }
+  .gen-result .code { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13px; padding:4px 0; }
+</style>
+</head>
+<body>
+
+<!-- 登录视图 -->
+<div id="loginView">
+  <div class="login-box">
+    <h1>QXNET 管理后台</h1>
+    <p>请输入管理员账号登录</p>
+    <div class="field">
+      <label>账号</label>
+      <input id="loginUser" autocomplete="off" placeholder="管理员账号">
+    </div>
+    <div class="field">
+      <label>密码</label>
+      <input id="loginPass" type="password" placeholder="管理员密码">
+    </div>
+    <button class="btn btn-primary" style="width:100%" id="loginBtn">登 录</button>
+  </div>
+</div>
+
+<!-- 主视图 -->
+<div id="mainView" class="hidden">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand"><div class="logo">Q</div>QXNET 管理后台</div>
+      <div class="top-actions">
+        <span class="muted" id="adminName"></span>
+        <button class="btn btn-ghost btn-sm" id="logoutBtn">退出</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="tabs">
+      <div class="tab active" data-tab="users">用户管理</div>
+      <div class="tab" data-tab="cards">授权码</div>
+      <div class="tab" data-tab="records">记录查看</div>
+    </div>
+
+    <!-- 用户 -->
+    <section id="tab-users" class="card">
+      <div class="toolbar">
+        <input id="userSearch" placeholder="搜索邮箱 / 卡密 / 设备号">
+        <button class="btn btn-primary btn-sm" id="refreshUsers">刷新</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>邮箱</th><th>状态</th><th>授权到期</th><th>卡密</th><th>设备号</th><th>注册时间</th><th>最后登录</th><th>操作</th>
+          </tr></thead>
+          <tbody id="userBody"></tbody>
+        </table>
+      </div>
+      <div class="empty hidden" id="userEmpty">暂无用户</div>
+    </section>
+
+    <!-- 卡密 -->
+    <section id="tab-cards" class="card hidden">
+      <div class="toolbar">
+        <select id="cardType">
+          <option value="day">天卡（1 天）</option>
+          <option value="week">周卡（7 天）</option>
+          <option value="month" selected>月卡（30 天）</option>
+          <option value="quarter">季卡（90 天）</option>
+          <option value="lifetime">永久卡</option>
+        </select>
+        <input id="cardCount" type="number" min="1" max="500" value="10" style="max-width:120px">
+        <button class="btn btn-primary btn-sm" id="genCards">批量生成</button>
+        <button class="btn btn-ghost btn-sm" id="refreshCards">刷新</button>
+      </div>
+      <div class="gen-result hidden" id="genResult"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>卡密</th><th>类型</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead>
+          <tbody id="cardBody"></tbody>
+        </table>
+      </div>
+      <div class="empty hidden" id="cardEmpty">暂无卡密</div>
+    </section>
+
+    <!-- 记录 -->
+    <section id="tab-records" class="card hidden">
+      <div class="toolbar">
+        <select id="recordType">
+          <option value="messages">留言消息</option>
+          <option value="chat_messages">聊天记录</option>
+          <option value="visits">设备访问</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" id="refreshRecords">刷新</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead id="recordHead"></thead>
+          <tbody id="recordBody"></tbody>
+        </table>
+      </div>
+      <div class="empty hidden" id="recordEmpty">暂无记录</div>
+    </section>
+  </div>
+</div>
+
+<!-- 重置密码弹窗 -->
+<div class="modal-mask" id="resetModal">
+  <div class="modal">
+    <h3>重置用户密码</h3>
+    <div class="field"><label>用户邮箱</label><div class="mono" id="resetEmail"></div></div>
+    <div class="field"><label>新密码（8 位及以上）</label><input id="resetPwd" type="password" placeholder="输入新密码"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="resetCancel">取消</button>
+      <button class="btn btn-primary" id="resetConfirm">确认重置</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+let currentTab = 'users';
+let resetTarget = null;
+
+const BASE = 'https://gngcducutevgllbaejec.supabase.co/functions/v1/admin-api';
+let token = localStorage.getItem('admin_token') || '';
+
+async function api(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  const res = await fetch(BASE + path, { ...opts, headers });
+  if (res.status === 401) {
+    token = ''; localStorage.removeItem('admin_token');
+    showLogin(); throw new Error('未登录');
+  }
+  return res.json();
+}
+
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._tm); t._tm = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ===== 登录 / 登出 =====
+function showLogin() {
+  $('loginView').classList.remove('hidden');
+  $('mainView').classList.add('hidden');
+}
+function showMain() {
+  $('loginView').classList.add('hidden');
+  $('mainView').classList.remove('hidden');
+  loadUsers();
+}
+
+$('loginBtn').onclick = async () => {
+  const user = $('loginUser').value.trim(), pass = $('loginPass').value;
+  if (!user || !pass) return toast('请输入账号和密码');
+  const j = await api('/login', { method: 'POST', body: JSON.stringify({ user, password: pass }) });
+  if (j.code === 0) {
+    token = j.data.token; localStorage.setItem('admin_token', token);
+    $('adminName').textContent = user; showMain();
+  }
+  else toast(j.msg || '登录失败');
+};
+$('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') $('loginBtn').click(); });
+
+$('logoutBtn').onclick = async () => {
+  await api('/logout', { method: 'POST' });
+  token = ''; localStorage.removeItem('admin_token');
+  showLogin();
+};
+
+// ===== Tab 切换 =====
+document.querySelectorAll('.tab').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    currentTab = t.dataset.tab;
+    ['users', 'cards', 'records'].forEach(k => $('tab-' + k).classList.toggle('hidden', k !== currentTab));
+    if (currentTab === 'cards') loadCards();
+    if (currentTab === 'records') loadRecords();
+  };
+});
+
+// ===== 用户 =====
+const STATUS = { active:['b-active','正常'], expired:['b-expired','已过期'], banned:['b-banned','已封禁'] };
+const TYPE_CN = { day:'天卡', week:'周卡', month:'月卡', quarter:'季卡', lifetime:'永久' };
+
+async function loadUsers() {
+  const q = $('userSearch').value.trim();
+  const j = await api('/users' + (q ? '?search=' + encodeURIComponent(q) : ''));
+  if (j.code !== 0) return toast(j.msg);
+  const list = j.data || [];
+  $('userBody').innerHTML = '';
+  $('userEmpty').classList.toggle('hidden', list.length > 0);
+  list.forEach(u => {
+    const [cls, txt] = STATUS[u.status] || STATUS.active;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="ell mono">${esc(u.email)}</td>
+      <td><span class="badge ${cls}">${txt}</span></td>
+      <td>${u.expires_at ? esc(u.expires_at.slice(0,10)) : '<span class="muted">-</span>'}</td>
+      <td class="mono">${u.card_key ? esc(u.card_key) : '<span class="muted">-</span>'}</td>
+      <td class="mono ell">${u.device_id ? esc(u.device_id) : '<span class="muted">-</span>'}</td>
+      <td class="muted">${u.created_at ? esc(u.created_at.slice(0,16).replace('T',' ')) : '-'}</td>
+      <td class="muted">${u.last_sign_in_at ? esc(u.last_sign_in_at.slice(0,16).replace('T',' ')) : '-'}</td>
+      <td><div class="row-actions">
+        <button class="btn btn-ghost btn-sm" data-act="reset" data-id="${u.id}" data-email="${esc(u.email)}">重置密码</button>
+        <button class="btn btn-ghost btn-sm" data-act="ban" data-id="${u.id}" data-ban="${u.status==='banned'?0:1}">${u.status==='banned'?'解封':'封禁'}</button>
+        <button class="btn btn-danger btn-sm" data-act="del" data-id="${u.id}">删除</button>
+      </div></td>`;
+    $('userBody').appendChild(tr);
+  });
+}
+
+$('userBody').addEventListener('click', async e => {
+  const btn = e.target.closest('button'); if (!btn) return;
+  const { act, id, email, ban } = btn.dataset;
+  if (act === 'reset') {
+    resetTarget = id; $('resetEmail').textContent = email; $('resetPwd').value = '';
+    $('resetModal').classList.add('show');
+  } else if (act === 'ban') {
+    const j = await api('/users/' + id + '/ban', { method: 'POST', body: JSON.stringify({ ban: ban === '1' }) });
+    toast(j.msg); if (j.code === 0) loadUsers();
+  } else if (act === 'del') {
+    if (!confirm('确认删除该用户？此操作不可恢复')) return;
+    const j = await api('/users/' + id, { method: 'DELETE' });
+    toast(j.msg); if (j.code === 0) loadUsers();
+  }
+});
+
+$('resetCancel').onclick = () => $('resetModal').classList.remove('show');
+$('resetConfirm').onclick = async () => {
+  const pwd = $('resetPwd').value;
+  if (pwd.length < 8) return toast('新密码需 8 位及以上');
+  const j = await api('/users/' + resetTarget + '/reset-password', { method: 'POST', body: JSON.stringify({ password: pwd }) });
+  toast(j.msg);
+  if (j.code === 0) $('resetModal').classList.remove('show');
+};
+
+$('refreshUsers').onclick = loadUsers;
+$('userSearch').addEventListener('keydown', e => { if (e.key === 'Enter') loadUsers(); });
+
+// ===== 卡密 =====
+async function loadCards() {
+  const j = await api('/cards');
+  if (j.code !== 0) return toast(j.msg);
+  const list = j.data || [];
+  $('cardBody').innerHTML = '';
+  $('cardEmpty').classList.toggle('hidden', list.length > 0);
+  list.forEach(c => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="mono">${esc(c.card_key)}</td>
+      <td>${TYPE_CN[c.type] || c.type}</td>
+      <td><span class="badge ${c.used ? 'b-used' : 'b-free'}">${c.used ? '已使用' : '未使用'}</span></td>
+      <td class="muted">${c.created_at ? esc(c.created_at.slice(0,16).replace('T',' ')) : '-'}</td>
+      <td>${c.used ? '-' : `<button class="btn btn-danger btn-sm" data-id="${c.id}">作废</button>`}</td>`;
+    $('cardBody').appendChild(tr);
+  });
+}
+
+$('cardBody').addEventListener('click', async e => {
+  const btn = e.target.closest('button'); if (!btn) return;
+  if (!confirm('确认作废该卡密？')) return;
+  const j = await api('/cards/' + btn.dataset.id + '/revoke', { method: 'POST' });
+  toast(j.msg); if (j.code === 0) loadCards();
+});
+
+$('genCards').onclick = async () => {
+  const type = $('cardType').value;
+  const count = parseInt($('cardCount').value, 10) || 10;
+  const j = await api('/cards/batch', { method: 'POST', body: JSON.stringify({ type, count }) });
+  toast(j.msg);
+  if (j.code === 0) {
+    const box = $('genResult');
+    box.classList.remove('hidden');
+    box.innerHTML = (j.data || []).map(c => `<div class="code">${esc(c)}</div>`).join('');
+    loadCards();
+  }
+};
+$('refreshCards').onclick = loadCards;
+
+// ===== 记录 =====
+const RECORD_COLS = {
+  messages: ['content', 'contact', 'device_id', 'created_at'],
+  chat_messages: ['content', 'user_id', 'created_at'],
+  visits: ['device_id', 'visited_at']
+};
+async function loadRecords() {
+  const type = $('recordType').value;
+  const j = await api('/records?type=' + type);
+  if (j.code !== 0) return toast(j.msg);
+  const list = j.data || [];
+  const cols = RECORD_COLS[type];
+  $('recordHead').innerHTML = '<tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
+  $('recordBody').innerHTML = '';
+  $('recordEmpty').classList.toggle('hidden', list.length > 0);
+  list.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = cols.map(c => `<td class="mono ell">${r[c] != null ? esc(String(r[c])) : '-'}</td>`).join('');
+    $('recordBody').appendChild(tr);
+  });
+}
+$('refreshRecords').onclick = loadRecords;
+$('recordType').onchange = loadRecords;
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+// 启动：校验现有会话
+(async () => {
+  try {
+    const j = await api('/me');
+    if (j.code === 0) { $('adminName').textContent = j.data.user; showMain(); }
+  } catch (e) { showLogin(); }
+})();
+</script>
+</body>
+</html>

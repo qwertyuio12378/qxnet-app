@@ -202,13 +202,17 @@ const $ = id => document.getElementById(id);
 let currentTab = 'users';
 let resetTarget = null;
 
+const BASE = 'https://gngcducutevgllbaejec.supabase.co/functions/v1/admin-api';
+let token = localStorage.getItem('admin_token') || '';
+
 async function api(path, opts = {}) {
-  const res = await fetch('/admin' + path, {
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'same-origin',
-    ...opts
-  });
-  if (res.status === 401) { showLogin(); throw new Error('未登录'); }
+  const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  const res = await fetch(BASE + path, { ...opts, headers });
+  if (res.status === 401) {
+    token = ''; localStorage.removeItem('admin_token');
+    showLogin(); throw new Error('未登录');
+  }
   return res.json();
 }
 
@@ -231,14 +235,18 @@ function showMain() {
 $('loginBtn').onclick = async () => {
   const user = $('loginUser').value.trim(), pass = $('loginPass').value;
   if (!user || !pass) return toast('请输入账号和密码');
-  const j = await api('/api/login', { method: 'POST', body: JSON.stringify({ user, password: pass }) });
-  if (j.code === 0) { $('adminName').textContent = user; showMain(); }
+  const j = await api('/login', { method: 'POST', body: JSON.stringify({ user, password: pass }) });
+  if (j.code === 0) {
+    token = j.data.token; localStorage.setItem('admin_token', token);
+    $('adminName').textContent = user; showMain();
+  }
   else toast(j.msg || '登录失败');
 };
 $('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') $('loginBtn').click(); });
 
 $('logoutBtn').onclick = async () => {
-  await api('/api/logout', { method: 'POST' });
+  await api('/logout', { method: 'POST' });
+  token = ''; localStorage.removeItem('admin_token');
   showLogin();
 };
 
@@ -260,7 +268,7 @@ const TYPE_CN = { day:'天卡', week:'周卡', month:'月卡', quarter:'季卡',
 
 async function loadUsers() {
   const q = $('userSearch').value.trim();
-  const j = await api('/api/users' + (q ? '?search=' + encodeURIComponent(q) : ''));
+  const j = await api('/users' + (q ? '?search=' + encodeURIComponent(q) : ''));
   if (j.code !== 0) return toast(j.msg);
   const list = j.data || [];
   $('userBody').innerHTML = '';
@@ -292,11 +300,11 @@ $('userBody').addEventListener('click', async e => {
     resetTarget = id; $('resetEmail').textContent = email; $('resetPwd').value = '';
     $('resetModal').classList.add('show');
   } else if (act === 'ban') {
-    const j = await api('/api/users/' + id + '/ban', { method: 'POST', body: JSON.stringify({ ban: ban === '1' }) });
+    const j = await api('/users/' + id + '/ban', { method: 'POST', body: JSON.stringify({ ban: ban === '1' }) });
     toast(j.msg); if (j.code === 0) loadUsers();
   } else if (act === 'del') {
     if (!confirm('确认删除该用户？此操作不可恢复')) return;
-    const j = await api('/api/users/' + id, { method: 'DELETE' });
+    const j = await api('/users/' + id, { method: 'DELETE' });
     toast(j.msg); if (j.code === 0) loadUsers();
   }
 });
@@ -305,7 +313,7 @@ $('resetCancel').onclick = () => $('resetModal').classList.remove('show');
 $('resetConfirm').onclick = async () => {
   const pwd = $('resetPwd').value;
   if (pwd.length < 8) return toast('新密码需 8 位及以上');
-  const j = await api('/api/users/' + resetTarget + '/reset-password', { method: 'POST', body: JSON.stringify({ password: pwd }) });
+  const j = await api('/users/' + resetTarget + '/reset-password', { method: 'POST', body: JSON.stringify({ password: pwd }) });
   toast(j.msg);
   if (j.code === 0) $('resetModal').classList.remove('show');
 };
@@ -315,7 +323,7 @@ $('userSearch').addEventListener('keydown', e => { if (e.key === 'Enter') loadUs
 
 // ===== 卡密 =====
 async function loadCards() {
-  const j = await api('/api/cards');
+  const j = await api('/cards');
   if (j.code !== 0) return toast(j.msg);
   const list = j.data || [];
   $('cardBody').innerHTML = '';
@@ -335,14 +343,14 @@ async function loadCards() {
 $('cardBody').addEventListener('click', async e => {
   const btn = e.target.closest('button'); if (!btn) return;
   if (!confirm('确认作废该卡密？')) return;
-  const j = await api('/api/cards/' + btn.dataset.id + '/revoke', { method: 'POST' });
+  const j = await api('/cards/' + btn.dataset.id + '/revoke', { method: 'POST' });
   toast(j.msg); if (j.code === 0) loadCards();
 });
 
 $('genCards').onclick = async () => {
   const type = $('cardType').value;
   const count = parseInt($('cardCount').value, 10) || 10;
-  const j = await api('/api/cards/batch', { method: 'POST', body: JSON.stringify({ type, count }) });
+  const j = await api('/cards/batch', { method: 'POST', body: JSON.stringify({ type, count }) });
   toast(j.msg);
   if (j.code === 0) {
     const box = $('genResult');
@@ -361,7 +369,7 @@ const RECORD_COLS = {
 };
 async function loadRecords() {
   const type = $('recordType').value;
-  const j = await api('/api/records?type=' + type);
+  const j = await api('/records?type=' + type);
   if (j.code !== 0) return toast(j.msg);
   const list = j.data || [];
   const cols = RECORD_COLS[type];
@@ -384,7 +392,7 @@ function esc(s) {
 // 启动：校验现有会话
 (async () => {
   try {
-    const j = await api('/api/me');
+    const j = await api('/me');
     if (j.code === 0) { $('adminName').textContent = j.data.user; showMain(); }
   } catch (e) { showLogin(); }
 })();
