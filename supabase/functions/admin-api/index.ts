@@ -241,15 +241,44 @@ async function handle(req: Request): Promise<Response> {
     return json({ code: 0, msg: `已生成 ${rows.length} 张 ${type} 卡密`, data: rows.map((r) => r.card_key) });
   }
 
-  // 作废卡密
+  // 作废 / 吊销卡密：未使用仅标记；已使用连带封禁用该卡注册的账号
   const revokeMatch = path.match(/^\/cards\/([^/]+)\/revoke$/);
   if (method === "POST" && revokeMatch) {
-    const { status } = await sbFetch(`/rest/v1/cards?id=eq.${revokeMatch[1]}`, {
+    const cardId = revokeMatch[1];
+    const { status: qs, body: qb } = await sbFetch(`/rest/v1/cards?id=eq.${cardId}&select=card_key,used`);
+    if (qs !== 200) return json({ code: -1, msg: "作废失败" }, 500);
+    const card = (qb as Record<string, unknown>[])[0];
+    const wasUsed = !!(card && card.used);
+    const cardKey = card ? String(card.card_key || "") : "";
+
+    const { status } = await sbFetch(`/rest/v1/cards?id=eq.${cardId}`, {
       method: "PATCH",
       body: JSON.stringify({ used: true }),
     });
     if (status !== 200 && status !== 204) return json({ code: -1, msg: "作废失败" }, 500);
-    return json({ code: 0, msg: "卡密已作废" });
+
+    // 已使用：连带封禁用这张卡注册的账号
+    let bannedCount = 0;
+    if (wasUsed && cardKey) {
+      const { status: us, body: ub } = await sbFetch("/auth/v1/admin/users?per_page=500");
+      if (us === 200) {
+        const users = ((ub as Record<string, { users: unknown[] }>).users || []) as Record<string, unknown>[];
+        const targets = users.filter((u) => {
+          const m = (u.user_metadata || {}) as Record<string, unknown>;
+          return String(m.card_key || "") === cardKey;
+        });
+        for (const t of targets) {
+          const { status: bs } = await sbFetch(`/auth/v1/admin/users/${t.id}`, {
+            method: "PUT",
+            body: JSON.stringify({ ban_duration: "876000h" }),
+          });
+          if (bs === 200 || bs === 204) bannedCount++;
+        }
+      }
+    }
+
+    if (!wasUsed) return json({ code: 0, msg: "卡密已作废" });
+    return json({ code: 0, msg: bannedCount > 0 ? `卡密已吊销，已封禁 ${bannedCount} 个对应账号` : "卡密已吊销（未找到对应账号）" });
   }
 
   // 记录查看
