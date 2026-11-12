@@ -516,6 +516,7 @@ async function loadCards() {
       <div class="item-actions">
         <button class="copy-btn" data-key="${esc(c.card_key)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制</button>
         <button class="btn btn-danger btn-sm" data-id="${c.id}" data-used="${c.used ? 1 : 0}">${c.used ? '吊销' : '作废'}</button>
+        <button class="btn btn-danger btn-sm" data-act="del-card" data-id="${c.id}">删除</button>
       </div>`;
     $('cardBody').appendChild(el);
   });
@@ -524,6 +525,12 @@ async function loadCards() {
 $('cardBody').addEventListener('click', async e => {
   const btn = e.target.closest('button'); if (!btn) return;
   if (btn.classList.contains('copy-btn')) { copyText(btn.dataset.key); return; }
+  if (btn.dataset.act === 'del-card') {
+    if (!confirm('确认删除该卡密？此操作不可恢复。')) return;
+    const j = await api('/cards/' + btn.dataset.id, { method: 'DELETE' });
+    toast(j.msg); if (j.code === 0) loadCards();
+    return;
+  }
   const used = btn.dataset.used === '1';
   const tip = used ? '确认吊销该卡密？将同时封禁使用它注册的账号，此操作不可恢复。' : '确认作废该卡密？';
   if (!confirm(tip)) return;

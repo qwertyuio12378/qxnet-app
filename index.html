@@ -3242,7 +3242,7 @@
         } else {
           await sb
             .from('cards')
-            .update({ used: true })
+            .update({ used: true, bound_email: acc, bound_user_id: data.user ? data.user.id : null })
             .eq('card_key', card);
           hideLoading();
           // 注册成功：自动保存账号密码，下次进入自动填写

@@ -246,7 +246,11 @@ async function handle(req: Request): Promise<Response> {
       const k = String(m.card_key || "");
       if (k && u.email) keyToEmail.set(k, String(u.email));
     }
-    const data = cards.map((c) => ({ ...c, bound_email: keyToEmail.get(String(c.card_key || "")) || "" }));
+    const data = cards.map((c) => {
+      const persisted = String(c.bound_email || "");
+      const email = persisted || keyToEmail.get(String(c.card_key || "")) || "";
+      return { ...c, bound_email: email };
+    });
     return json({ code: 0, data });
   }
 
@@ -320,6 +324,14 @@ async function handle(req: Request): Promise<Response> {
 
     if (!wasUsed) return json({ code: 0, msg: "卡密已作废" });
     return json({ code: 0, msg: bannedCount > 0 ? `卡密已吊销，已封禁 ${bannedCount} 个对应账号` : "卡密已吊销（未找到对应账号）" });
+  }
+
+  // 删除卡密（未使用 / 已使用均可）
+  const delCardMatch = path.match(/^\/cards\/([^/]+)$/);
+  if (method === "DELETE" && delCardMatch) {
+    const { status } = await sbFetch(`/rest/v1/cards?id=eq.${delCardMatch[1]}`, { method: "DELETE" });
+    if (status !== 200 && status !== 204) return json({ code: -1, msg: "删除失败" }, 500);
+    return json({ code: 0, msg: "卡密已删除" });
   }
 
   // 记录查看
