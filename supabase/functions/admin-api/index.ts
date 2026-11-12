@@ -236,7 +236,18 @@ async function handle(req: Request): Promise<Response> {
   if (method === "GET" && path === "/cards") {
     const { status, body } = await sbFetch("/rest/v1/cards?select=*&order=id.desc");
     if (status !== 200) return json({ code: -1, msg: "获取卡密失败" }, 500);
-    return json({ code: 0, data: body || [] });
+    const cards = (body || []) as Record<string, unknown>[];
+    // 建 card_key -> 邮箱映射，回显已使用卡密绑定的账号
+    const { body: ub } = await sbFetch("/auth/v1/admin/users?per_page=500");
+    const keyToEmail = new Map<string, string>();
+    const users = (((ub as Record<string, { users: unknown[] }>) || {}).users || []) as Record<string, unknown>[];
+    for (const u of users) {
+      const m = (u.user_metadata || {}) as Record<string, unknown>;
+      const k = String(m.card_key || "");
+      if (k && u.email) keyToEmail.set(k, String(u.email));
+    }
+    const data = cards.map((c) => ({ ...c, bound_email: keyToEmail.get(String(c.card_key || "")) || "" }));
+    return json({ code: 0, data });
   }
 
   // 批量生成卡密
