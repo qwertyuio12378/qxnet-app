@@ -378,8 +378,8 @@ async function loadUsers() {
         <div class="kv"><span class="k">授权到期</span><span class="v">${u.expires_at ? esc(u.expires_at.slice(0,10)) : '-'}</span></div>
         <div class="kv"><span class="k">卡密</span><span class="v mono">${u.card_key ? esc(u.card_key) : '-'}</span></div>
         <div class="kv"><span class="k">设备号</span><span class="v mono">${u.device_id ? esc(u.device_id) : '-'}</span></div>
-        <div class="kv"><span class="k">注册时间</span><span class="v">${u.created_at ? esc(u.created_at.slice(0,16).replace('T',' ')) : '-'}</span></div>
-        <div class="kv"><span class="k">最后登录</span><span class="v">${u.last_sign_in_at ? esc(u.last_sign_in_at.slice(0,16).replace('T',' ')) : '-'}</span></div>
+        <div class="kv"><span class="k">注册时间</span><span class="v">${esc(fmtTime(u.created_at))}</span></div>
+        <div class="kv"><span class="k">最后登录</span><span class="v">${esc(fmtTime(u.last_sign_in_at))}</span></div>
       </div>
       <div class="item-actions">
         <button class="btn btn-ghost btn-sm" data-act="reset" data-id="${u.id}" data-email="${esc(u.email)}">重置密码</button>
@@ -438,7 +438,7 @@ async function loadCards() {
       </div>
       <div class="item-grid">
         <div class="kv"><span class="k">类型</span><span class="v">${TYPE_CN[c.type] || c.type}</span></div>
-        <div class="kv"><span class="k">创建时间</span><span class="v">${c.created_at ? esc(c.created_at.slice(0,16).replace('T',' ')) : '-'}</span></div>
+        <div class="kv"><span class="k">创建时间</span><span class="v">${esc(fmtTime(c.created_at))}</span></div>
       </div>
       <div class="item-actions">
         <button class="copy-btn" data-key="${esc(c.card_key)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制</button>
@@ -492,7 +492,7 @@ async function loadRecords() {
     el.className = 'item';
     el.innerHTML = `<div class="item-grid">${cols.map(c => {
       let v = r[c] != null ? esc(String(r[c])) : '-';
-      if ((c === 'created_at' || c === 'visited_at') && r[c]) v = esc(String(r[c]).slice(0,16).replace('T',' '));
+      if (c === 'created_at' || c === 'visited_at') v = esc(fmtTime(r[c]));
       return `<div class="kv"><span class="k">${RECORD_LABEL[c] || c}</span><span class="v mono">${v}</span></div>`;
     }).join('')}</div>`;
     $('recordBody').appendChild(el);
@@ -511,6 +511,14 @@ function fallbackCopy(t, done) {
   const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select();
   try { document.execCommand('copy'); done(); } catch (_) { toast('复制失败，请手动复制'); }
   ta.remove();
+}
+
+function fmtTime(iso) {
+  if (!iso) return '-';
+  const d = new Date(String(iso));
+  if (isNaN(d.getTime())) return String(iso);
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
 function esc(s) {
