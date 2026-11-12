@@ -113,14 +113,24 @@
   .toolbar input:focus, .toolbar select:focus { border-color:var(--brand); background:rgba(255,255,255,.7); box-shadow:0 0 0 4px rgba(37,99,235,.12); }
   .toolbar input { flex:1; min-width:160px; }
 
-  table { width:100%; border-collapse:collapse; font-size:13.5px; }
-  th, td { text-align:left; padding:13px 12px; border-bottom:1px solid rgba(15,23,42,.06); vertical-align:middle; }
-  th { color:var(--faint); font-weight:600; font-size:11.5px; letter-spacing:.4px; text-transform:uppercase; }
-  tbody tr { transition:background .15s ease; }
-  tbody tr:hover { background:rgba(37,99,235,.045); }
-  .table-wrap { overflow-x:auto; }
+  /* 列表卡片 */
+  .list { display:flex; flex-direction:column; gap:12px; }
+  .item {
+    background:rgba(255,255,255,.42); backdrop-filter:blur(20px) saturate(1.6) contrast(1.03);
+    -webkit-backdrop-filter:blur(20px) saturate(1.6) contrast(1.03);
+    border:1px solid rgba(255,255,255,.6); border-radius:18px; padding:16px;
+    box-shadow:0 6px 20px rgba(30,41,59,.08), inset 0 1px 0 rgba(255,255,255,.6);
+    animation:rise .3s cubic-bezier(.22,1,.36,1);
+  }
+  .item-top { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+  .item-title { font-weight:700; font-size:14.5px; word-break:break-all; min-width:0; }
+  .item-side { display:flex; align-items:center; gap:6px; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end; }
+  .item-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px 16px; margin:2px 0 12px; }
+  .kv { display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .kv .k { font-size:11px; color:var(--faint); letter-spacing:.2px; }
+  .kv .v { font-size:13px; color:var(--ink); word-break:break-all; line-height:1.4; }
+  .item-actions { display:flex; gap:8px; flex-wrap:wrap; }
   .mono { font-family:ui-monospace,Menlo,Consolas,monospace; }
-  .ell { max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
   .badge { display:inline-flex; align-items:center; gap:6px; padding:4px 11px; border-radius:999px; font-size:12px; font-weight:600; white-space:nowrap; backdrop-filter:blur(8px); }
   .badge::before { content:""; width:6px; height:6px; border-radius:50%; background:currentColor; }
@@ -130,7 +140,6 @@
   .b-used { background:rgba(241,245,249,.6); color:#64748b; }
   .b-free { background:rgba(219,234,254,.6); color:#2563eb; }
 
-  .row-actions { display:flex; gap:7px; flex-wrap:wrap; }
   .muted { color:var(--faint); font-size:12px; }
   .empty { text-align:center; color:var(--faint); padding:48px 0; font-size:14px; }
 
@@ -154,13 +163,22 @@
   .gen-result { background:rgba(255,255,255,.4); border:1px solid rgba(255,255,255,.6); backdrop-filter:blur(12px); border-radius:16px; padding:16px; margin-top:16px; max-height:180px; overflow:auto; }
   .gen-result .code { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13px; padding:5px 0; color:#334155; }
 
-  .key-cell { display:flex; align-items:center; gap:8px; }
   .copy-btn { display:inline-flex; align-items:center; gap:5px; border:1px solid rgba(255,255,255,.5);
     background:rgba(255,255,255,.4); backdrop-filter:blur(8px); color:var(--brand); border-radius:8px;
     padding:4px 9px; font-size:12px; font-weight:600; cursor:pointer; transition:all .15s ease; }
   .copy-btn:hover { background:rgba(255,255,255,.65); }
   .copy-btn:active { transform:scale(.95); }
   .copy-btn svg { width:13px; height:13px; }
+
+  @media (min-width:720px){ .item-grid{ grid-template-columns:repeat(3,1fr); } }
+  @media (max-width:560px){
+    .wrap{ padding:0 14px; }
+    .card{ padding:16px; }
+    .toolbar{ gap:8px; }
+    .toolbar input{ min-width:120px; }
+    .item{ padding:14px; }
+    .item-title{ font-size:14px; }
+  }
 
   @keyframes rise { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
   @keyframes pop { from { opacity:0; transform:scale(.94) translateY(8px); } to { opacity:1; transform:scale(1) translateY(0); } }
@@ -217,14 +235,7 @@
         <input id="userSearch" placeholder="搜索邮箱 / 卡密 / 设备号">
         <button class="btn btn-primary btn-sm" id="refreshUsers">刷新</button>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr>
-            <th>邮箱</th><th>状态</th><th>授权到期</th><th>卡密</th><th>设备号</th><th>注册时间</th><th>最后登录</th><th>操作</th>
-          </tr></thead>
-          <tbody id="userBody"></tbody>
-        </table>
-      </div>
+      <div class="list" id="userBody"></div>
       <div class="empty hidden" id="userEmpty">暂无用户</div>
     </section>
 
@@ -243,12 +254,7 @@
         <button class="btn btn-ghost btn-sm" id="refreshCards">刷新</button>
       </div>
       <div class="gen-result hidden" id="genResult"></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>卡密</th><th>类型</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead>
-          <tbody id="cardBody"></tbody>
-        </table>
-      </div>
+      <div class="list" id="cardBody"></div>
       <div class="empty hidden" id="cardEmpty">暂无卡密</div>
     </section>
 
@@ -262,12 +268,7 @@
         </select>
         <button class="btn btn-ghost btn-sm" id="refreshRecords">刷新</button>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead id="recordHead"></thead>
-          <tbody id="recordBody"></tbody>
-        </table>
-      </div>
+      <div class="list" id="recordBody"></div>
       <div class="empty hidden" id="recordEmpty">暂无记录</div>
     </section>
   </div>
@@ -366,21 +367,26 @@ async function loadUsers() {
   $('userEmpty').classList.toggle('hidden', list.length > 0);
   list.forEach(u => {
     const [cls, txt] = STATUS[u.status] || STATUS.active;
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td class="ell mono">${esc(u.email)}</td>
-      <td><span class="badge ${cls}">${txt}</span></td>
-      <td>${u.expires_at ? esc(u.expires_at.slice(0,10)) : '<span class="muted">-</span>'}</td>
-      <td class="mono">${u.card_key ? esc(u.card_key) : '<span class="muted">-</span>'}</td>
-      <td class="mono ell">${u.device_id ? esc(u.device_id) : '<span class="muted">-</span>'}</td>
-      <td class="muted">${u.created_at ? esc(u.created_at.slice(0,16).replace('T',' ')) : '-'}</td>
-      <td class="muted">${u.last_sign_in_at ? esc(u.last_sign_in_at.slice(0,16).replace('T',' ')) : '-'}</td>
-      <td><div class="row-actions">
+    const el = document.createElement('div');
+    el.className = 'item';
+    el.innerHTML = `
+      <div class="item-top">
+        <div class="item-title mono">${esc(u.email)}</div>
+        <span class="badge ${cls}">${txt}</span>
+      </div>
+      <div class="item-grid">
+        <div class="kv"><span class="k">授权到期</span><span class="v">${u.expires_at ? esc(u.expires_at.slice(0,10)) : '-'}</span></div>
+        <div class="kv"><span class="k">卡密</span><span class="v mono">${u.card_key ? esc(u.card_key) : '-'}</span></div>
+        <div class="kv"><span class="k">设备号</span><span class="v mono">${u.device_id ? esc(u.device_id) : '-'}</span></div>
+        <div class="kv"><span class="k">注册时间</span><span class="v">${u.created_at ? esc(u.created_at.slice(0,16).replace('T',' ')) : '-'}</span></div>
+        <div class="kv"><span class="k">最后登录</span><span class="v">${u.last_sign_in_at ? esc(u.last_sign_in_at.slice(0,16).replace('T',' ')) : '-'}</span></div>
+      </div>
+      <div class="item-actions">
         <button class="btn btn-ghost btn-sm" data-act="reset" data-id="${u.id}" data-email="${esc(u.email)}">重置密码</button>
         <button class="btn btn-ghost btn-sm" data-act="ban" data-id="${u.id}" data-ban="${u.status==='banned'?0:1}">${u.status==='banned'?'解封':'封禁'}</button>
         <button class="btn btn-danger btn-sm" data-act="del" data-id="${u.id}">删除</button>
-      </div></td>`;
-    $('userBody').appendChild(tr);
+      </div>`;
+    $('userBody').appendChild(el);
   });
 }
 
@@ -420,14 +426,25 @@ async function loadCards() {
   $('cardBody').innerHTML = '';
   $('cardEmpty').classList.toggle('hidden', list.length > 0);
   list.forEach(c => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><div class="key-cell"><span class="mono">${esc(c.card_key)}</span><button class="copy-btn" data-key="${esc(c.card_key)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制</button></div></td>
-      <td>${TYPE_CN[c.type] || c.type}</td>
-      <td><span class="badge ${c.used ? 'b-used' : 'b-free'}">${c.used ? '已使用' : '未使用'}</span></td>
-      <td class="muted">${c.created_at ? esc(c.created_at.slice(0,16).replace('T',' ')) : '-'}</td>
-      <td>${c.used ? '-' : `<button class="btn btn-danger btn-sm" data-id="${c.id}">作废</button>`}</td>`;
-    $('cardBody').appendChild(tr);
+    const el = document.createElement('div');
+    el.className = 'item';
+    el.innerHTML = `
+      <div class="item-top">
+        <div class="item-title mono">${esc(c.card_key)}</div>
+        <div class="item-side">
+          <span class="badge b-free">${TYPE_CN[c.type] || c.type}</span>
+          <span class="badge ${c.used ? 'b-used' : 'b-active'}">${c.used ? '已使用' : '未使用'}</span>
+        </div>
+      </div>
+      <div class="item-grid">
+        <div class="kv"><span class="k">类型</span><span class="v">${TYPE_CN[c.type] || c.type}</span></div>
+        <div class="kv"><span class="k">创建时间</span><span class="v">${c.created_at ? esc(c.created_at.slice(0,16).replace('T',' ')) : '-'}</span></div>
+      </div>
+      <div class="item-actions">
+        <button class="copy-btn" data-key="${esc(c.card_key)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制</button>
+        ${c.used ? '' : `<button class="btn btn-danger btn-sm" data-id="${c.id}">作废</button>`}
+      </div>`;
+    $('cardBody').appendChild(el);
   });
 }
 
@@ -459,19 +476,24 @@ const RECORD_COLS = {
   chat_messages: ['content', 'user_id', 'created_at'],
   visits: ['device_id', 'visited_at']
 };
+const RECORD_LABEL = { content:'内容', contact:'联系方式', device_id:'设备号', created_at:'时间', user_id:'用户', visited_at:'访问时间' };
 async function loadRecords() {
   const type = $('recordType').value;
   const j = await api('/records?type=' + type);
   if (j.code !== 0) return toast(j.msg);
   const list = j.data || [];
   const cols = RECORD_COLS[type];
-  $('recordHead').innerHTML = '<tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
   $('recordBody').innerHTML = '';
   $('recordEmpty').classList.toggle('hidden', list.length > 0);
   list.forEach(r => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = cols.map(c => `<td class="mono ell">${r[c] != null ? esc(String(r[c])) : '-'}</td>`).join('');
-    $('recordBody').appendChild(tr);
+    const el = document.createElement('div');
+    el.className = 'item';
+    el.innerHTML = `<div class="item-grid">${cols.map(c => {
+      let v = r[c] != null ? esc(String(r[c])) : '-';
+      if ((c === 'created_at' || c === 'visited_at') && r[c]) v = esc(String(r[c]).slice(0,16).replace('T',' '));
+      return `<div class="kv"><span class="k">${RECORD_LABEL[c] || c}</span><span class="v mono">${v}</span></div>`;
+    }).join('')}</div>`;
+    $('recordBody').appendChild(el);
   });
 }
 $('refreshRecords').onclick = loadRecords;
