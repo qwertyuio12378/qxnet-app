@@ -15,7 +15,7 @@
   function tryInitSupabase() {
     if (sb) return true;
     if (window.supabase && window.supabase.createClient) {
-      try { sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); return true; }
+      try { sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } }); return true; }
       catch (e) { sb = null; }
     }
     return false;
@@ -1883,15 +1883,12 @@
           }
           if (result && result.success) {
             showToast('指纹验证成功');
-            // 用保存的账号密码自动登录
+            // 直接读取现有会话，不再用本地保存的密码重新登录
             try {
               showLoading('登录中...');
-              const { data, error } = await sb.auth.signInWithPassword({
-                email: saved.account,
-                password: saved.password
-              });
+              const { data, error } = await sb.auth.getSession();
               hideLoading();
-              if (!error) {
+              if (!error && data && data.session) {
                 if (window.qnetAndroidObj) {
                   try {
                     window.qnetAndroidObj.qxSetUid(saved.account);
@@ -1902,8 +1899,10 @@
                 setTimeout(() => goMainPage(), 500);
                 return;
               }
-            } catch(e) {}
-            setTimeout(() => { window.location.href = getSiteUrl(); }, 1000);
+              showToast('登录已过期，请重新输入密码');
+            } catch(e) {
+              showToast('登录已过期，请重新输入密码');
+            }
           } else {
             showToast('指纹验证失败，请重试');
           }
@@ -1917,21 +1916,20 @@
       }
     }
     
-    // 不在应用里，直接模拟指纹验证成功，自动登录
+    // 不在应用里：读取现有会话进入，会话过期则回密码登录
     showLoading('指纹验证成功...');
     try {
-      const { data, error } = await sb.auth.signInWithPassword({
-        email: saved.account,
-        password: saved.password
-      });
+      const { data, error } = await sb.auth.getSession();
       hideLoading();
-      if (!error) {
+      if (!error && data && data.session) {
         showToast('指纹验证成功');
         setTimeout(() => goMainPage(), 500);
         return;
       }
-    } catch(e) {}
-    setTimeout(() => { window.location.href = getSiteUrl(); }, 1000);
+      showToast('登录已过期，请重新输入密码');
+    } catch(e) {
+      showToast('登录已过期，请重新输入密码');
+    }
   }
   
   // 开启指纹登录（绑定指纹）
