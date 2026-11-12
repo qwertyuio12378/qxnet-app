@@ -195,18 +195,32 @@ async function handle(req: Request): Promise<Response> {
     return json({ code: 0, msg: "密码已重置" });
   }
 
-  // 封禁 / 解封（新版 GoTrue 用 ban_duration 时长：876000h 封 100 年，0s 解封；banned_until 由服务端计算）
+  // 封禁 / 解封（GoTrue 用 ban_duration 时长；0s 解封；banned_until 由服务端计算）
   const banMatch = path.match(/^\/users\/([^/]+)\/ban$/);
   if (method === "POST" && banMatch) {
     const body = await readBody();
     const ban = !!body.ban;
-    const banDuration = ban ? "876000h" : "0s";
+    let banDuration = "0s";
+    let banLabel = "已解封";
+    if (ban) {
+      const d = body.duration;
+      if (d === undefined || d === null || d === "" || d === "permanent") {
+        banDuration = "876000h";
+        banLabel = "已永久封禁";
+      } else {
+        const hours = Number(d);
+        if (!Number.isFinite(hours) || hours < 1 || hours > 876000) return json({ code: -1, msg: "封禁时长无效（1~876000 小时）" });
+        const h = Math.floor(hours);
+        banDuration = `${h}h`;
+        banLabel = `已封禁 ${h} 小时`;
+      }
+    }
     const { status } = await sbFetch(`/auth/v1/admin/users/${banMatch[1]}`, {
       method: "PUT",
       body: JSON.stringify({ ban_duration: banDuration }),
     });
     if (status !== 200 && status !== 204) return json({ code: -1, msg: "操作失败" }, 500);
-    return json({ code: 0, msg: ban ? "已封禁" : "已解封" });
+    return json({ code: 0, msg: banLabel });
   }
 
   // 删除用户
