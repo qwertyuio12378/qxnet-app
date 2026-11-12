@@ -437,7 +437,7 @@ async function loadUsers() {
       </div>
       <div class="item-actions">
         <button class="btn btn-ghost btn-sm" data-act="reset" data-id="${u.id}" data-email="${esc(u.email)}">重置密码</button>
-        <button class="btn btn-ghost btn-sm" data-act="ban" data-id="${u.id}" data-ban="${u.status==='banned'?0:1}">${u.status==='banned'?'解封':'封禁'}</button>
+        <button class="btn btn-ghost btn-sm" data-act="ban" data-id="${u.id}" data-email="${esc(u.email)}" data-ban="${u.status==='banned'?0:1}">${u.status==='banned'?'解封':'封禁'}</button>
         <button class="btn btn-danger btn-sm" data-act="del" data-id="${u.id}">删除</button>
       </div>`;
     $('userBody').appendChild(el);
