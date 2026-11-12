@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const Database = require('better-sqlite3');
 const path = require('path');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,6 +10,26 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
+
+// ===== 密码哈希（scrypt，内置 crypto，无外部依赖） =====
+function hashPassword(pw) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.scryptSync(pw, salt, 32).toString('hex');
+  return `${salt}:${hash}`;
+}
+
+function verifyPassword(pw, stored) {
+  if (!stored) return false;
+  if (stored.includes(':')) {
+    const idx = stored.indexOf(':');
+    const salt = stored.slice(0, idx);
+    const ref = Buffer.from(stored.slice(idx + 1), 'hex');
+    const buf = crypto.scryptSync(pw, salt, ref.length);
+    return buf.length === ref.length && crypto.timingSafeEqual(buf, ref);
+  }
+  // 兼容历史明文记录
+  return stored === pw;
+}
 
 // ===== 数据库初始化 =====
 const db = new Database(path.join(__dirname, 'data.db'));
@@ -50,7 +71,7 @@ app.post('/api/register', (req, res) => {
 
   try {
     const stmt = db.prepare('INSERT INTO users (account, password, card_key) VALUES (?, ?, ?)');
-    stmt.run(account, password, cardKey);
+    stmt.run(account, hashPassword(password), cardKey);
     db.prepare('UPDATE cards SET used = 1, used_by = ? WHERE code = ?').run(account, cardKey);
     res.json({ code: 0, msg: '注册成功', data: { account } });
   } catch (e) {
@@ -64,9 +85,13 @@ app.post('/api/login', (req, res) => {
   if (!account || !password) {
     return res.json({ code: -1, msg: '账号和密码不能为空' });
   }
-  const user = db.prepare('SELECT * FROM users WHERE account = ? AND password = ?').get(account, password);
-  if (!user) {
+  const user = db.prepare('SELECT * FROM users WHERE account = ?').get(account);
+  if (!user || !verifyPassword(password, user.password)) {
     return res.json({ code: -1, msg: '账号或密码错误' });
+  }
+  // 历史明文记录在本次登录成功后升级为哈希
+  if (!user.password.includes(':')) {
+    db.prepare('UPDATE users SET password = ? WHERE account = ?').run(hashPassword(password), account);
   }
   res.json({ code: 0, msg: '登录成功', data: { account: user.account, cardKey: user.card_key } });
 });
