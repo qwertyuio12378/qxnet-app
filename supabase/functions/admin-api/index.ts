@@ -195,15 +195,15 @@ async function handle(req: Request): Promise<Response> {
     return json({ code: 0, msg: "密码已重置" });
   }
 
-  // 封禁 / 解封
+  // 封禁 / 解封（新版 GoTrue 用 ban_duration 时长：876000h 封 100 年，0s 解封；banned_until 由服务端计算）
   const banMatch = path.match(/^\/users\/([^/]+)\/ban$/);
   if (method === "POST" && banMatch) {
     const body = await readBody();
     const ban = !!body.ban;
-    const banUntil = ban ? "2100-01-01T00:00:00.000Z" : null;
+    const banDuration = ban ? "876000h" : "0s";
     const { status } = await sbFetch(`/auth/v1/admin/users/${banMatch[1]}`, {
       method: "PUT",
-      body: JSON.stringify({ ban_until: banUntil }),
+      body: JSON.stringify({ ban_duration: banDuration }),
     });
     if (status !== 200 && status !== 204) return json({ code: -1, msg: "操作失败" }, 500);
     return json({ code: 0, msg: ban ? "已封禁" : "已解封" });
