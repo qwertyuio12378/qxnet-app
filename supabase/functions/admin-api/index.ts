@@ -241,6 +241,21 @@ async function handle(req: Request): Promise<Response> {
     return json({ code: 0, msg: `已生成 ${rows.length} 张 ${type} 卡密`, data: rows.map((r) => r.card_key) });
   }
 
+  // 自定义卡密：手动指定卡密 + 类型，查重后入库
+  if (method === "POST" && path === "/cards/custom") {
+    const body = await readBody();
+    const type = String(body.type || "");
+    const cardKey = String(body.card_key || "").trim();
+    if (!CARD_TYPES.includes(type)) return json({ code: -1, msg: "卡密类型无效" });
+    if (!cardKey) return json({ code: -1, msg: "卡密不能为空" });
+    const { status: qs, body: qb } = await sbFetch(`/rest/v1/cards?card_key=eq.${encodeURIComponent(cardKey)}&select=id`);
+    if (qs === 200 && Array.isArray(qb) && qb.length > 0) return json({ code: -1, msg: "该卡密已存在，不能重复添加" });
+    const row = { card_key: cardKey, type, used: false, created_at: new Date().toISOString() };
+    const { status } = await sbFetch("/rest/v1/cards", { method: "POST", body: JSON.stringify([row]) });
+    if (status !== 201 && status !== 200) return json({ code: -1, msg: "添加失败" }, 500);
+    return json({ code: 0, msg: "自定义卡密已添加", data: [cardKey] });
+  }
+
   // 作废 / 吊销卡密：未使用仅标记；已使用连带封禁用该卡注册的账号
   const revokeMatch = path.match(/^\/cards\/([^/]+)\/revoke$/);
   if (method === "POST" && revokeMatch) {

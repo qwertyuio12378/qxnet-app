@@ -85,6 +85,11 @@
     background:rgba(255,255,255,.45); backdrop-filter:blur(10px); transition:border-color .2s, box-shadow .2s, background .2s;
   }
   .field input:focus { border-color:var(--brand); background:rgba(255,255,255,.7); box-shadow:0 0 0 4px rgba(37,99,235,.12); }
+  .field select {
+    width:100%; padding:13px 15px; border:1px solid rgba(255,255,255,.6); border-radius:14px; font-size:15px; outline:none;
+    background:rgba(255,255,255,.45); backdrop-filter:blur(10px); color:var(--ink);
+  }
+  .field select:focus { border-color:var(--brand); background:rgba(255,255,255,.7); }
 
   /* Tabs 液态玻璃分段控件 */
   .tabs {
@@ -251,6 +256,7 @@
         </select>
         <input id="cardCount" type="number" min="1" max="500" value="10" style="max-width:120px">
         <button class="btn btn-primary btn-sm" id="genCards">批量生成</button>
+        <button class="btn btn-ghost btn-sm" id="customCardBtn">自定义卡密</button>
         <button class="btn btn-ghost btn-sm" id="refreshCards">刷新</button>
       </div>
       <div class="gen-result hidden" id="genResult"></div>
@@ -283,6 +289,27 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" id="resetCancel">取消</button>
       <button class="btn btn-primary" id="resetConfirm">确认重置</button>
+    </div>
+  </div>
+</div>
+
+<!-- 自定义卡密弹窗 -->
+<div class="modal-mask" id="customModal">
+  <div class="modal">
+    <h3>添加自定义卡密</h3>
+    <div class="field"><label>卡密</label><input id="customKey" placeholder="例如 QXNET-C18E8EAL" autocomplete="off"></div>
+    <div class="field"><label>类型</label>
+      <select id="customType">
+        <option value="day">天卡（1 天）</option>
+        <option value="week">周卡（7 天）</option>
+        <option value="month" selected>月卡（30 天）</option>
+        <option value="quarter">季卡（90 天）</option>
+        <option value="lifetime">永久卡</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="customCancel">取消</button>
+      <button class="btn btn-primary" id="customConfirm">添加</button>
     </div>
   </div>
 </div>
@@ -471,6 +498,17 @@ $('genCards').onclick = async () => {
   }
 };
 $('refreshCards').onclick = loadCards;
+
+$('customCardBtn').onclick = () => { $('customKey').value = ''; $('customModal').classList.add('show'); };
+$('customCancel').onclick = () => $('customModal').classList.remove('show');
+$('customConfirm').onclick = async () => {
+  const card_key = $('customKey').value.trim();
+  const type = $('customType').value;
+  if (!card_key) return toast('请输入卡密');
+  const j = await api('/cards/custom', { method: 'POST', body: JSON.stringify({ card_key, type }) });
+  toast(j.msg);
+  if (j.code === 0) { $('customModal').classList.remove('show'); loadCards(); }
+};
 
 // ===== 记录 =====
 const RECORD_COLS = {
