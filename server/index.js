@@ -2,7 +2,19 @@ const express = require('express');
 const cors = require('cors');
 const Database = require('better-sqlite3');
 const path = require('path');
+const fs = require('fs');
 const crypto = require('crypto');
+
+// 本地开发：读取 .env（生产环境由托管平台注入环境变量，此文件不入库）
+(function loadEnv() {
+  const envFile = path.join(__dirname, '..', '.env');
+  if (fs.existsSync(envFile)) {
+    fs.readFileSync(envFile, 'utf8').split(/\r?\n/).forEach(line => {
+      const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
+      if (m && !(m[1] in process.env)) process.env[m[1]] = m[2].replace(/^["']|["']$/g, '');
+    });
+  }
+})();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,6 +22,9 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
+
+// 管理台 BFF（/admin/api/* + 静态页 public/admin）
+app.use('/admin', require('./admin'));
 
 // ===== 密码哈希（scrypt，内置 crypto，无外部依赖） =====
 function hashPassword(pw) {
