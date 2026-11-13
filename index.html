@@ -2320,23 +2320,9 @@
     if (!acc) return showToast('请输入账号');
     if (!acc.includes('@')) return showToast('请输入正确的邮箱账号');
     
-    // 验证账号是否存在
-    if (sb) {
-      showLoading('验证账号中…');
-      try {
-        const { data: faces, error } = await sb.from('user_faces').select('email').eq('email', acc);
-        if (error) throw error;
-        if (!faces || faces.length === 0) {
-          hideLoading();
-          return showToast('账号不存在，请先注册');
-        }
-      } catch(e) {
-        hideLoading();
-        // 查询失败不阻塞，继续走
-      }
-      hideLoading();
-    }
-    
+    // 账号是否存在、是否封禁由后续登录接口判定；这里不再用人脸表预检，
+    // 否则未录人脸或被封禁的账号会被误判成“账号不存在”。
+
     state.loginStep = 2;
     gAccountDisplay.textContent = acc;
     // 整页切换：Step1 向左滑出，Step2 从右滑入；顶部卡片整体隐藏，Step2 自带新页面头部
@@ -3134,7 +3120,8 @@
           });
           if (error) {
             hideLoading();
-            if (error.message.includes('Invalid login credentials')) showToast('账号或密码错误');
+            if (error.code === 'user_banned' || /banned/i.test(error.message || '')) showToast('账号已被封禁，请联系管理员');
+            else if (error.message.includes('Invalid login credentials')) showToast('账号或密码错误');
             else if (error.message.includes('Email not confirmed')) showToast('请先验证邮箱');
             else showToast('登录失败，请重试');
           } else {
