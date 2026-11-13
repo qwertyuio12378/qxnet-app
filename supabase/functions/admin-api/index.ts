@@ -6,6 +6,8 @@ const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const ADMIN_USER = Deno.env.get("ADMIN_USER") || "admin";
 const ADMIN_PASSWORD = Deno.env.get("ADMIN_PASSWORD") || "";
 const SESSION_TTL = 2 * 60 * 60 * 1000;
+const LOGIN_MAX_FAIL = 5;
+const LOGIN_LOCK_MS = 15 * 60 * 1000;
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -76,6 +78,47 @@ function timingEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
+function clientIp(req: Request): string {
+  const xff = req.headers.get("x-forwarded-for") || "";
+  const first = xff.split(",")[0]?.trim();
+  return first || req.headers.get("x-real-ip") || "unknown";
+}
+
+function ip4ToNum(ip: string): number {
+  return ip.split(".").reduce((acc, p) => ((acc << 8) + Number(p)) >>> 0, 0);
+}
+function ip6Expand(ip: string): string {
+  const parts = ip.split(":");
+  const idx = parts.indexOf("");
+  if (idx >= 0) {
+    const fill = 8 - (parts.length - 1);
+    parts.splice(idx, 1, ...Array(fill).fill("0"));
+  }
+  return parts.map((p) => p.padStart(4, "0")).join("");
+}
+// 白名单条目支持精确 IP 或 CIDR（如 113.12.105.122/32、240e:350:1784:a00::/64）
+function ipInList(ip: string, list: string[]): boolean {
+  const isV6 = ip.includes(":");
+  for (const entry of list) {
+    const [base, prefixStr] = entry.split("/");
+    if (!prefixStr) { if (base === ip) return true; continue; }
+    if (base.includes(":") !== isV6) continue;
+    const prefix = Number(prefixStr);
+    if (isV6) {
+      const a = BigInt("0x" + ip6Expand(ip));
+      const b = BigInt("0x" + ip6Expand(base));
+      const bits = BigInt(prefix);
+      const mask = bits >= 128n ? (1n << 128n) - 1n : (((1n << 128n) - 1n) << (128n - bits));
+      if ((a & mask) === (b & mask)) return true;
+    } else {
+      const a = ip4ToNum(ip), b = ip4ToNum(base);
+      const mask = prefix >= 32 ? 0xffffffff : (~((1 << (32 - prefix)) - 1)) >>> 0;
+      if ((a & mask) === (b & mask)) return true;
+    }
+  }
+  return false;
+}
+
 // ===== Supabase 服务端调用 =====
 async function sbFetch(path: string, options: RequestInit = {}) {
   const headers: Record<string, string> = {
@@ -142,9 +185,64 @@ async function handle(req: Request): Promise<Response> {
     const user = String(body.user || "");
     const password = String(body.password || "");
     if (!user || !password) return json({ code: -1, msg: "账号和密码不能为空" });
-    if (!timingEqual(user, ADMIN_USER) || !timingEqual(password, ADMIN_PASSWORD)) {
-      return json({ code: -1, msg: "管理员账号或密码错误" });
+
+    const ip = clientIp(req);
+    const nowIso = new Date().toISOString();
+
+    // 可选 IP 白名单：Secret ADMIN_IP_ALLOWLIST 逗号分隔，留空不限制
+    const allowList = (Deno.env.get("ADMIN_IP_ALLOWLIST") || "").split(",").map((s) => s.trim()).filter(Boolean);
+    if (allowList.length > 0 && !ipInList(ip, allowList)) {
+      return json({ code: -1, msg: "当前网络环境无权登录" });
     }
+
+    // 读取该 IP 的登录记录（失败计数 / 锁定状态）
+    const encIp = encodeURIComponent(ip);
+    const { body: lb } = await sbFetch(`/rest/v1/admin_login_log?ip=eq.${encIp}&select=*`);
+    const rec = Array.isArray(lb) && lb.length > 0 ? (lb[0] as Record<string, unknown>) : null;
+    const lockedUntil = rec && rec.locked_until ? new Date(String(rec.locked_until)).getTime() : 0;
+    if (lockedUntil > Date.now()) {
+      const mins = Math.ceil((lockedUntil - Date.now()) / 60000);
+      return json({ code: -1, msg: `失败次数过多，请 ${mins} 分钟后再试` });
+    }
+
+    const ok = timingEqual(user, ADMIN_USER) && timingEqual(password, ADMIN_PASSWORD);
+    if (!ok) {
+      const failCount = ((rec && Number(rec.fail_count)) || 0) + 1;
+      const locked = failCount >= LOGIN_MAX_FAIL;
+      const lockUntil = locked ? new Date(Date.now() + LOGIN_LOCK_MS).toISOString() : null;
+      const row = {
+        ip,
+        fail_count: failCount,
+        locked_until: lockUntil,
+        last_user: user,
+        last_fail_at: nowIso,
+        last_success_at: rec?.last_success_at || null,
+        updated_at: nowIso,
+      };
+      await sbFetch(`/rest/v1/admin_login_log?ip=eq.${encIp}`, {
+        method: rec ? "PATCH" : "POST",
+        body: JSON.stringify(rec ? row : [row]),
+      });
+      if (locked) return json({ code: -1, msg: `连续失败 ${LOGIN_MAX_FAIL} 次，账号已锁定 15 分钟` });
+      const left = LOGIN_MAX_FAIL - failCount;
+      return json({ code: -1, msg: `账号或密码错误（还可尝试 ${left} 次）` });
+    }
+
+    // 登录成功：清零失败计数与锁定时间，记录成功时间
+    const successRow = {
+      ip,
+      fail_count: 0,
+      locked_until: null,
+      last_user: user,
+      last_success_at: nowIso,
+      last_fail_at: rec?.last_fail_at || null,
+      updated_at: nowIso,
+    };
+    await sbFetch(`/rest/v1/admin_login_log?ip=eq.${encIp}`, {
+      method: rec ? "PATCH" : "POST",
+      body: JSON.stringify(rec ? successRow : [successRow]),
+    });
+
     const token = await issueTokenAsync();
     return json({ code: 0, msg: "登录成功", data: { token } });
   }
@@ -158,6 +256,13 @@ async function handle(req: Request): Promise<Response> {
 
   if (method === "GET" && path === "/me") {
     return json({ code: 0, data: { user: ADMIN_USER } });
+  }
+
+  // 登录审计记录
+  if (method === "GET" && path === "/login-log") {
+    const { status, body } = await sbFetch("/rest/v1/admin_login_log?select=*&order=updated_at.desc&limit=50");
+    if (status !== 200) return json({ code: -1, msg: "获取登录记录失败" }, 500);
+    return json({ code: 0, data: body || [] });
   }
 
   if (method === "POST" && path === "/logout") {
