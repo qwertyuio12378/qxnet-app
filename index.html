@@ -1660,11 +1660,23 @@
       setCookie('qxnet_device_id', id, 3650);
     } catch (e) {}
   }
+  // 原生桥下发的个体硬标识（Android ID）；桥未提供时返回 null，回退网页指纹
+  function getNativeDeviceId() {
+    try {
+      if (window.qnetAndroidObj && typeof window.qnetAndroidObj.qxGetAndroidId === 'function') {
+        const v = window.qnetAndroidObj.qxGetAndroidId();
+        if (v) return String(v);
+      }
+    } catch (e) {}
+    return null;
+  }
   function genDeviceId() {
-    // 用基础ID + 浏览器指纹生成设备ID，尽量稳定
+    // 用基础ID + 原生标识 + 浏览器指纹生成设备ID，尽量稳定
     const baseId = 'qxnet_base_2024';
+    const nativeId = getNativeDeviceId() || '';
     const fingerprint = [
       baseId,
+      nativeId,
       navigator.userAgent,
       screen.width + 'x' + screen.height,
       screen.colorDepth,
@@ -1684,22 +1696,28 @@
     return 'dev_' + Math.abs(hash).toString(36);
   }
   function reportVisit(did) { if (sb) sb.from('visits').insert({ device_id: did }).then(() => {}).catch(() => {}); }
-  // 登录后：账号绑定设备 ID；账号里已有设备 ID 则优先恢复（换环境/清存储后登录即找回）
+  // 绑机硬拦开关：原生 Android ID 桥上线后置 true，换机即拦截；当前 Web 指纹阶段先软模式（跟随账号恢复，不误伤老用户）
+  const BIND_ENFORCE = false;
+  // 登录后绑机：返回 { ok, metaDev }。账号已绑设备且与当前不一致 → 硬拦模式下拒绝进入；首绑写入当前设备号
   function bindDeviceIdToAccount(user) {
     const metaDev = user && user.user_metadata && user.user_metadata.device_id;
     if (metaDev && metaDev !== deviceId) {
+      if (BIND_ENFORCE) return { ok: false, metaDev };
+      // 软模式：以账号已绑设备号为准恢复本地，避免清存储/换网络后误判
       deviceId = metaDev;
       writeLocalDeviceId(deviceId);
       const lbl = document.getElementById('deviceIdLabel');
       if (lbl) lbl.textContent = '设备ID: ' + deviceId;
+      return { ok: true, metaDev };
     }
     if (sb) sb.auth.updateUser({ data: { device_id: deviceId } }).then(() => {}).catch(() => {});
+    return { ok: true, metaDev };
   }
 
   let deviceId = readLocalDeviceId();
   const hadLocal = !!deviceId;
   const idLabel = document.getElementById('deviceIdLabel');
-  idLabel.textContent = hadLocal ? '设备ID: ' + deviceId + ' v12' : '设备ID: 识别中… v12';
+  idLabel.textContent = hadLocal ? '设备ID: ' + deviceId + ' v16' : '设备ID: 识别中… v16';
   if (hadLocal) reportVisit(deviceId);
 
   // 异步向后端注册/恢复：本地有→保活并确认；本地无→按 IP+设备特征找回旧 ID，找不到才新建
@@ -3127,7 +3145,13 @@
           } else {
             // 登录成功：自动记录账号密码，下次进入自动填写
             saveLogin(acc, pwd);
-            bindDeviceIdToAccount(data.user);
+            const bind = bindDeviceIdToAccount(data.user);
+            if (!bind.ok) {
+              await sb.auth.signOut();
+              hideLoading();
+              showToast('该账号已在其他设备登录，如需换机请联系管理员解绑');
+              return;
+            }
             const expiresAt = data.user.user_metadata?.expires_at ? new Date(data.user.user_metadata.expires_at) : null;
             if (expiresAt && expiresAt < new Date()) {
               hideLoading();
@@ -3171,7 +3195,13 @@
             }
             // 验证码登录成功：记录账号（无密码），下次自动填账号
             saveLogin(acc, '');
-            bindDeviceIdToAccount(data.user);
+            const bind = bindDeviceIdToAccount(data.user);
+            if (!bind.ok) {
+              await sb.auth.signOut();
+              hideLoading();
+              showToast('该账号已在其他设备登录，如需换机请联系管理员解绑');
+              return;
+            }
             const expiresAt = data.user.user_metadata?.expires_at ? new Date(data.user.user_metadata.expires_at) : null;
             if (expiresAt && expiresAt < new Date()) {
               hideLoading();

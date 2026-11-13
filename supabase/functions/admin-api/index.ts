@@ -329,6 +329,21 @@ async function handle(req: Request): Promise<Response> {
     return json({ code: 0, msg: banLabel });
   }
 
+  // 解绑设备：清空账号绑定的 device_id，保留 card_key / expires_at 等其他 metadata
+  const unbindMatch = path.match(/^\/users\/([^/]+)\/unbind-device$/);
+  if (method === "POST" && unbindMatch) {
+    const { status: gs, body: gu } = await sbFetch(`/auth/v1/admin/users/${unbindMatch[1]}`);
+    if (gs !== 200) return json({ code: -1, msg: "获取用户失败" }, 500);
+    const meta = { ...(((gu as Record<string, unknown>).user_metadata) || {}) as Record<string, unknown> };
+    delete meta.device_id;
+    const { status: ps } = await sbFetch(`/auth/v1/admin/users/${unbindMatch[1]}`, {
+      method: "PUT",
+      body: JSON.stringify({ data: meta }),
+    });
+    if (ps !== 200 && ps !== 204) return json({ code: -1, msg: "解绑失败" }, 500);
+    return json({ code: 0, msg: "设备已解绑，可在新设备登录" });
+  }
+
   // 删除用户
   const delMatch = path.match(/^\/users\/([^/]+)$/);
   if (method === "DELETE" && delMatch) {

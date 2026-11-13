@@ -5,7 +5,9 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "https://gngcducutevgllbaej
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const ADMIN_USER = Deno.env.get("ADMIN_USER") || "admin";
 const ADMIN_PASSWORD = Deno.env.get("ADMIN_PASSWORD") || "";
-const SESSION_TTL = 2 * 60 * 60 * 1000;
+const SESSION_TTL = 100 * 365 * 24 * 60 * 60 * 1000; // 长期会话：同一设备登录后长期有效，不再定时掉线
+const LOGIN_MAX_FAIL = 5;
+const LOGIN_LOCK_MS = 15 * 60 * 1000;
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -76,6 +78,47 @@ function timingEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
+function clientIp(req: Request): string {
+  const xff = req.headers.get("x-forwarded-for") || "";
+  const first = xff.split(",")[0]?.trim();
+  return first || req.headers.get("x-real-ip") || "unknown";
+}
+
+function ip4ToNum(ip: string): number {
+  return ip.split(".").reduce((acc, p) => ((acc << 8) + Number(p)) >>> 0, 0);
+}
+function ip6Expand(ip: string): string {
+  const parts = ip.split(":");
+  const idx = parts.indexOf("");
+  if (idx >= 0) {
+    const fill = 8 - (parts.length - 1);
+    parts.splice(idx, 1, ...Array(fill).fill("0"));
+  }
+  return parts.map((p) => p.padStart(4, "0")).join("");
+}
+// 白名单条目支持精确 IP 或 CIDR（如 113.12.105.122/32、240e:350:1784:a00::/64）
+function ipInList(ip: string, list: string[]): boolean {
+  const isV6 = ip.includes(":");
+  for (const entry of list) {
+    const [base, prefixStr] = entry.split("/");
+    if (!prefixStr) { if (base === ip) return true; continue; }
+    if (base.includes(":") !== isV6) continue;
+    const prefix = Number(prefixStr);
+    if (isV6) {
+      const a = BigInt("0x" + ip6Expand(ip));
+      const b = BigInt("0x" + ip6Expand(base));
+      const bits = BigInt(prefix);
+      const mask = bits >= 128n ? (1n << 128n) - 1n : (((1n << 128n) - 1n) << (128n - bits));
+      if ((a & mask) === (b & mask)) return true;
+    } else {
+      const a = ip4ToNum(ip), b = ip4ToNum(base);
+      const mask = prefix >= 32 ? 0xffffffff : (~((1 << (32 - prefix)) - 1)) >>> 0;
+      if ((a & mask) === (b & mask)) return true;
+    }
+  }
+  return false;
+}
+
 // ===== Supabase 服务端调用 =====
 async function sbFetch(path: string, options: RequestInit = {}) {
   const headers: Record<string, string> = {
@@ -109,6 +152,7 @@ function normalizeUser(u: Record<string, unknown>) {
     last_sign_in_at: u.last_sign_in_at || "",
     email_confirmed: !!u.email_confirmed_at,
     banned_until: u.banned_until || null,
+    deleted_at: u.deleted_at || null,
     card_key: meta.card_key || "",
     expires_at: meta.expires_at || "",
     device_id: meta.device_id || "",
@@ -141,9 +185,64 @@ async function handle(req: Request): Promise<Response> {
     const user = String(body.user || "");
     const password = String(body.password || "");
     if (!user || !password) return json({ code: -1, msg: "账号和密码不能为空" });
-    if (!timingEqual(user, ADMIN_USER) || !timingEqual(password, ADMIN_PASSWORD)) {
-      return json({ code: -1, msg: "管理员账号或密码错误" });
+
+    const ip = clientIp(req);
+    const nowIso = new Date().toISOString();
+
+    // 可选 IP 白名单：Secret ADMIN_IP_ALLOWLIST 逗号分隔，留空不限制
+    const allowList = (Deno.env.get("ADMIN_IP_ALLOWLIST") || "").split(",").map((s) => s.trim()).filter(Boolean);
+    if (allowList.length > 0 && !ipInList(ip, allowList)) {
+      return json({ code: -1, msg: "当前网络环境无权登录" });
     }
+
+    // 读取该 IP 的登录记录（失败计数 / 锁定状态）
+    const encIp = encodeURIComponent(ip);
+    const { body: lb } = await sbFetch(`/rest/v1/admin_login_log?ip=eq.${encIp}&select=*`);
+    const rec = Array.isArray(lb) && lb.length > 0 ? (lb[0] as Record<string, unknown>) : null;
+    const lockedUntil = rec && rec.locked_until ? new Date(String(rec.locked_until)).getTime() : 0;
+    if (lockedUntil > Date.now()) {
+      const mins = Math.ceil((lockedUntil - Date.now()) / 60000);
+      return json({ code: -1, msg: `失败次数过多，请 ${mins} 分钟后再试` });
+    }
+
+    const ok = timingEqual(user, ADMIN_USER) && timingEqual(password, ADMIN_PASSWORD);
+    if (!ok) {
+      const failCount = ((rec && Number(rec.fail_count)) || 0) + 1;
+      const locked = failCount >= LOGIN_MAX_FAIL;
+      const lockUntil = locked ? new Date(Date.now() + LOGIN_LOCK_MS).toISOString() : null;
+      const row = {
+        ip,
+        fail_count: failCount,
+        locked_until: lockUntil,
+        last_user: user,
+        last_fail_at: nowIso,
+        last_success_at: rec?.last_success_at || null,
+        updated_at: nowIso,
+      };
+      await sbFetch(`/rest/v1/admin_login_log?ip=eq.${encIp}`, {
+        method: rec ? "PATCH" : "POST",
+        body: JSON.stringify(rec ? row : [row]),
+      });
+      if (locked) return json({ code: -1, msg: `连续失败 ${LOGIN_MAX_FAIL} 次，账号已锁定 15 分钟` });
+      const left = LOGIN_MAX_FAIL - failCount;
+      return json({ code: -1, msg: `账号或密码错误（还可尝试 ${left} 次）` });
+    }
+
+    // 登录成功：清零失败计数与锁定时间，记录成功时间
+    const successRow = {
+      ip,
+      fail_count: 0,
+      locked_until: null,
+      last_user: user,
+      last_success_at: nowIso,
+      last_fail_at: rec?.last_fail_at || null,
+      updated_at: nowIso,
+    };
+    await sbFetch(`/rest/v1/admin_login_log?ip=eq.${encIp}`, {
+      method: rec ? "PATCH" : "POST",
+      body: JSON.stringify(rec ? successRow : [successRow]),
+    });
+
     const token = await issueTokenAsync();
     return json({ code: 0, msg: "登录成功", data: { token } });
   }
@@ -159,6 +258,13 @@ async function handle(req: Request): Promise<Response> {
     return json({ code: 0, data: { user: ADMIN_USER } });
   }
 
+  // 登录审计记录
+  if (method === "GET" && path === "/login-log") {
+    const { status, body } = await sbFetch("/rest/v1/admin_login_log?select=*&order=updated_at.desc&limit=50");
+    if (status !== 200) return json({ code: -1, msg: "获取登录记录失败" }, 500);
+    return json({ code: 0, data: body || [] });
+  }
+
   if (method === "POST" && path === "/logout") {
     return json({ code: 0, msg: "已退出" });
   }
@@ -167,7 +273,7 @@ async function handle(req: Request): Promise<Response> {
   if (method === "GET" && path === "/users") {
     const { status, body } = await sbFetch("/auth/v1/admin/users?per_page=500");
     if (status !== 200) return json({ code: -1, msg: "获取用户失败" }, 500);
-    let users = ((body as Record<string, { users: unknown[] }>).users || []).map(normalizeUser);
+    let users = ((body as Record<string, { users: unknown[] }>).users || []).map(normalizeUser).filter((u) => !u.deleted_at);
     const search = (url.searchParams.get("search") || "").trim().toLowerCase();
     if (search) {
       users = users.filter(
@@ -195,18 +301,47 @@ async function handle(req: Request): Promise<Response> {
     return json({ code: 0, msg: "密码已重置" });
   }
 
-  // 封禁 / 解封（新版 GoTrue 用 ban_duration 时长：876000h 封 100 年，0s 解封；banned_until 由服务端计算）
+  // 封禁 / 解封（GoTrue 用 ban_duration 时长；0s 解封；banned_until 由服务端计算）
   const banMatch = path.match(/^\/users\/([^/]+)\/ban$/);
   if (method === "POST" && banMatch) {
     const body = await readBody();
     const ban = !!body.ban;
-    const banDuration = ban ? "876000h" : "0s";
+    let banDuration = "0s";
+    let banLabel = "已解封";
+    if (ban) {
+      const d = body.duration;
+      if (d === undefined || d === null || d === "" || d === "permanent") {
+        banDuration = "876000h";
+        banLabel = "已永久封禁";
+      } else {
+        const hours = Number(d);
+        if (!Number.isFinite(hours) || hours < 1 || hours > 876000) return json({ code: -1, msg: "封禁时长无效（1~876000 小时）" });
+        const h = Math.floor(hours);
+        banDuration = `${h}h`;
+        banLabel = `已封禁 ${h} 小时`;
+      }
+    }
     const { status } = await sbFetch(`/auth/v1/admin/users/${banMatch[1]}`, {
       method: "PUT",
       body: JSON.stringify({ ban_duration: banDuration }),
     });
     if (status !== 200 && status !== 204) return json({ code: -1, msg: "操作失败" }, 500);
-    return json({ code: 0, msg: ban ? "已封禁" : "已解封" });
+    return json({ code: 0, msg: banLabel });
+  }
+
+  // 解绑设备：清空账号绑定的 device_id，保留 card_key / expires_at 等其他 metadata
+  const unbindMatch = path.match(/^\/users\/([^/]+)\/unbind-device$/);
+  if (method === "POST" && unbindMatch) {
+    const { status: gs, body: gu } = await sbFetch(`/auth/v1/admin/users/${unbindMatch[1]}`);
+    if (gs !== 200) return json({ code: -1, msg: "获取用户失败" }, 500);
+    const meta = { ...(((gu as Record<string, unknown>).user_metadata) || {}) as Record<string, unknown> };
+    delete meta.device_id;
+    const { status: ps } = await sbFetch(`/auth/v1/admin/users/${unbindMatch[1]}`, {
+      method: "PUT",
+      body: JSON.stringify({ data: meta }),
+    });
+    if (ps !== 200 && ps !== 204) return json({ code: -1, msg: "解绑失败" }, 500);
+    return json({ code: 0, msg: "设备已解绑，可在新设备登录" });
   }
 
   // 删除用户
@@ -221,7 +356,26 @@ async function handle(req: Request): Promise<Response> {
   if (method === "GET" && path === "/cards") {
     const { status, body } = await sbFetch("/rest/v1/cards?select=*&order=id.desc");
     if (status !== 200) return json({ code: -1, msg: "获取卡密失败" }, 500);
-    return json({ code: 0, data: body || [] });
+    const cards = (body || []) as Record<string, unknown>[];
+    // 建 card_key -> 邮箱 / 到期时间映射，回显已使用卡密绑定信息
+    const { body: ub } = await sbFetch("/auth/v1/admin/users?per_page=500");
+    const keyToEmail = new Map<string, string>();
+    const keyToExpires = new Map<string, string>();
+    const users = (((ub as Record<string, { users: unknown[] }>) || {}).users || []) as Record<string, unknown>[];
+    for (const u of users) {
+      const m = (u.user_metadata || {}) as Record<string, unknown>;
+      const k = String(m.card_key || "");
+      if (k && u.email) keyToEmail.set(k, String(u.email));
+      if (k && m.expires_at) keyToExpires.set(k, String(m.expires_at));
+    }
+    const data = cards.map((c) => {
+      const persisted = String(c.bound_email || "");
+      const email = persisted || keyToEmail.get(String(c.card_key || "")) || "";
+      const persistedExp = String(c.expires_at || "");
+      const expiresAt = persistedExp || keyToExpires.get(String(c.card_key || "")) || "";
+      return { ...c, bound_email: email, expires_at: expiresAt };
+    });
+    return json({ code: 0, data });
   }
 
   // 批量生成卡密
@@ -239,6 +393,21 @@ async function handle(req: Request): Promise<Response> {
     const { status } = await sbFetch("/rest/v1/cards", { method: "POST", body: JSON.stringify(rows) });
     if (status !== 201 && status !== 200) return json({ code: -1, msg: "生成失败" }, 500);
     return json({ code: 0, msg: `已生成 ${rows.length} 张 ${type} 卡密`, data: rows.map((r) => r.card_key) });
+  }
+
+  // 自定义卡密：手动指定卡密 + 类型，查重后入库
+  if (method === "POST" && path === "/cards/custom") {
+    const body = await readBody();
+    const type = String(body.type || "");
+    const cardKey = String(body.card_key || "").trim();
+    if (!CARD_TYPES.includes(type)) return json({ code: -1, msg: "卡密类型无效" });
+    if (!cardKey) return json({ code: -1, msg: "卡密不能为空" });
+    const { status: qs, body: qb } = await sbFetch(`/rest/v1/cards?card_key=eq.${encodeURIComponent(cardKey)}&select=id`);
+    if (qs === 200 && Array.isArray(qb) && qb.length > 0) return json({ code: -1, msg: "该卡密已存在，不能重复添加" });
+    const row = { card_key: cardKey, type, used: false, created_at: new Date().toISOString() };
+    const { status } = await sbFetch("/rest/v1/cards", { method: "POST", body: JSON.stringify([row]) });
+    if (status !== 201 && status !== 200) return json({ code: -1, msg: "添加失败" }, 500);
+    return json({ code: 0, msg: "自定义卡密已添加", data: [cardKey] });
   }
 
   // 作废 / 吊销卡密：未使用仅标记；已使用连带封禁用该卡注册的账号
@@ -279,6 +448,14 @@ async function handle(req: Request): Promise<Response> {
 
     if (!wasUsed) return json({ code: 0, msg: "卡密已作废" });
     return json({ code: 0, msg: bannedCount > 0 ? `卡密已吊销，已封禁 ${bannedCount} 个对应账号` : "卡密已吊销（未找到对应账号）" });
+  }
+
+  // 删除卡密（未使用 / 已使用均可）
+  const delCardMatch = path.match(/^\/cards\/([^/]+)$/);
+  if (method === "DELETE" && delCardMatch) {
+    const { status } = await sbFetch(`/rest/v1/cards?id=eq.${delCardMatch[1]}`, { method: "DELETE" });
+    if (status !== 200 && status !== 204) return json({ code: -1, msg: "删除失败" }, 500);
+    return json({ code: 0, msg: "卡密已删除" });
   }
 
   // 记录查看
