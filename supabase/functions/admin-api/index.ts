@@ -119,6 +119,9 @@ function ipInList(ip: string, list: string[]): boolean {
   return false;
 }
 
+// 列表短缓存：同一边缘实例 4 秒内复用，避免连点刷新反复打 GoTrue
+let usersCache: { t: number; data: unknown[] } | null = null;
+
 // ===== Supabase 服务端调用 =====
 async function sbFetch(path: string, options: RequestInit = {}) {
   const headers: Record<string, string> = {
@@ -144,6 +147,7 @@ function normalizeUser(u: Record<string, unknown>) {
   const now = new Date();
   let status = "active";
   if (u.banned_until) status = "banned";
+  else if (!meta.card_key && !meta.expires_at) status = "unlicensed";
   else if (expiresAt && expiresAt < now) status = "expired";
   return {
     id: u.id,
@@ -269,8 +273,38 @@ async function handle(req: Request): Promise<Response> {
     return json({ code: 0, msg: "已退出" });
   }
 
+  // 一次性预取：用户 + 卡密 + 记录，减少外部请求次数
+  if (method === "GET" && path === "/bootstrap") {
+    const t0 = Date.now();
+    const [uRes, cRes, rRes] = await Promise.all([
+      sbFetch("/auth/v1/admin/users?per_page=500"),
+      sbFetch("/rest/v1/cards?select=*&order=id.desc"),
+      sbFetch("/rest/v1/messages?select=*&order=created_at.desc&limit=200"),
+    ]);
+    let users: unknown[] = [];
+    if (uRes.status === 200) {
+      const list = ((uRes.body as Record<string, { users: Record<string, unknown>[] }>).users || []);
+      users = list.map(normalizeUser).filter((u) => !u.deleted_at)
+        .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+      usersCache = { t: Date.now(), data: users };
+    }
+    return json({
+      code: 0,
+      data: {
+        users,
+        cards: cRes.status === 200 ? (cRes.body || []) : [],
+        records: rRes.status === 200 ? (rRes.body || []) : [],
+      },
+      ms: Date.now() - t0,
+    });
+  }
+
   // 用户列表
   if (method === "GET" && path === "/users") {
+    const rawSearch = (url.searchParams.get("search") || "").trim().toLowerCase();
+    if (!rawSearch && usersCache && Date.now() - usersCache.t < 4000) {
+      return json({ code: 0, data: usersCache.data });
+    }
     const { status, body } = await sbFetch("/auth/v1/admin/users?per_page=500");
     if (status !== 200) return json({ code: -1, msg: "获取用户失败" }, 500);
     let users = ((body as Record<string, { users: unknown[] }>).users || []).map(normalizeUser).filter((u) => !u.deleted_at);
@@ -284,6 +318,7 @@ async function handle(req: Request): Promise<Response> {
       );
     }
     users.sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+    if (!rawSearch) usersCache = { t: Date.now(), data: users };
     return json({ code: 0, data: users });
   }
 
