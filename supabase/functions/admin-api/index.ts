@@ -5,7 +5,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "https://gngcducutevgllbaej
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const ADMIN_USER = Deno.env.get("ADMIN_USER") || "admin";
 const ADMIN_PASSWORD = Deno.env.get("ADMIN_PASSWORD") || "";
-const SESSION_TTL = 2 * 60 * 60 * 1000;
+const SESSION_TTL = 100 * 365 * 24 * 60 * 60 * 1000; // 长期会话：同一设备登录后长期有效，不再定时掉线
 const LOGIN_MAX_FAIL = 5;
 const LOGIN_LOCK_MS = 15 * 60 * 1000;
 
