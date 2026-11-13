@@ -330,15 +330,16 @@ async function handle(req: Request): Promise<Response> {
   }
 
   // 解绑设备：清空账号绑定的 device_id，保留 card_key / expires_at 等其他 metadata
+  // GoTrue admin 更新 user_metadata 为深合并，删键不生效，必须显式置 null 才能剔除；字段名是 user_metadata
   const unbindMatch = path.match(/^\/users\/([^/]+)\/unbind-device$/);
   if (method === "POST" && unbindMatch) {
     const { status: gs, body: gu } = await sbFetch(`/auth/v1/admin/users/${unbindMatch[1]}`);
     if (gs !== 200) return json({ code: -1, msg: "获取用户失败" }, 500);
     const meta = { ...(((gu as Record<string, unknown>).user_metadata) || {}) as Record<string, unknown> };
-    delete meta.device_id;
+    meta.device_id = null;
     const { status: ps } = await sbFetch(`/auth/v1/admin/users/${unbindMatch[1]}`, {
       method: "PUT",
-      body: JSON.stringify({ data: meta }),
+      body: JSON.stringify({ user_metadata: meta }),
     });
     if (ps !== 200 && ps !== 204) return json({ code: -1, msg: "解绑失败" }, 500);
     return json({ code: 0, msg: "设备已解绑，可在新设备登录" });
