@@ -275,6 +275,7 @@
           <option value="messages">留言消息</option>
           <option value="chat_messages">聊天记录</option>
           <option value="visits">设备访问</option>
+          <option value="login_log">登录审计</option>
         </select>
         <button class="btn btn-ghost btn-sm" id="refreshRecords">刷新</button>
       </div>
@@ -568,12 +569,13 @@ $('customConfirm').onclick = async () => {
 const RECORD_COLS = {
   messages: ['content', 'contact', 'device_id', 'created_at'],
   chat_messages: ['content', 'user_id', 'created_at'],
-  visits: ['device_id', 'visited_at']
+  visits: ['device_id', 'visited_at'],
+  login_log: ['ip', 'last_user', 'fail_count', 'locked_until', 'last_success_at', 'last_fail_at']
 };
-const RECORD_LABEL = { content:'内容', contact:'联系方式', device_id:'设备号', created_at:'时间', user_id:'用户', visited_at:'访问时间' };
+const RECORD_LABEL = { content:'内容', contact:'联系方式', device_id:'设备号', created_at:'时间', user_id:'用户', visited_at:'访问时间', ip:'IP', last_user:'账号', fail_count:'失败次数', locked_until:'锁定至', last_success_at:'最近成功', last_fail_at:'最近失败' };
 async function loadRecords() {
   const type = $('recordType').value;
-  const j = await api('/records?type=' + type);
+  const j = type === 'login_log' ? await api('/login-log') : await api('/records?type=' + type);
   if (j.code !== 0) return toast(j.msg);
   const list = j.data || [];
   const cols = RECORD_COLS[type];
@@ -584,7 +586,7 @@ async function loadRecords() {
     el.className = 'item';
     el.innerHTML = `<div class="item-grid">${cols.map(c => {
       let v = r[c] != null ? esc(String(r[c])) : '-';
-      if (c === 'created_at' || c === 'visited_at') v = esc(fmtTime(r[c]));
+      if (['created_at', 'visited_at', 'locked_until', 'last_success_at', 'last_fail_at'].includes(c)) v = r[c] ? esc(fmtTime(r[c])) : '-';
       return `<div class="kv"><span class="k">${RECORD_LABEL[c] || c}</span><span class="v mono">${v}</span></div>`;
     }).join('')}</div>`;
     $('recordBody').appendChild(el);
