@@ -3795,5 +3795,29 @@
 })();
 </script>
 
+<script>
+/* QXNET 访问统计 · 认证页；定位仅在本机已授权时附加，不弹窗打扰 */
+(function(){try{
+  var EP='https://gngcducutevgllbaejec.supabase.co/functions/v1/admin-api/track', K='sb_publishable_i5npxDKfL83UBEDBBPm57A_WqqYeh-P';
+  if(/^(localhost|127\.0\.0\.1|file:)$/.test(location.hostname)||location.protocol==='file:')return;
+  var base={site:'auth',path:(location.pathname+location.search).slice(0,180),referrer:(document.referrer||'direct').slice(0,200)};
+  var send=function(extra){ fetch(EP,{method:'POST',keepalive:true,headers:{'content-type':'application/json','apikey':K,'authorization':'Bearer '+K},body:JSON.stringify(extra?Object.assign({},base,extra):base)}).catch(function(){}); };
+  var geoOnce=function(done){
+    var called=false; var finish=function(e){ if(called)return; called=true; done(e); };
+    try{
+      if(!navigator.geolocation||!navigator.permissions||!navigator.permissions.query){ finish(null); return; }
+      navigator.permissions.query({name:'geolocation'}).then(function(st){
+        if(st.state!=='granted'){ finish(null); return; }
+        var to=setTimeout(function(){ finish(null); },6000);
+        navigator.geolocation.getCurrentPosition(function(pos){
+          clearTimeout(to);
+          if(pos&&pos.coords) finish({self_lat:pos.coords.latitude,self_lon:pos.coords.longitude}); else finish(null);
+        },function(){ clearTimeout(to); finish(null); },{enableHighAccuracy:false,timeout:5000,maximumAge:300000});
+      }).catch(function(){ finish(null); });
+    }catch(e){ finish(null); }
+  };
+  geoOnce(function(extra){ send(extra); });
+}catch(e){}})();
+</script>
 </body>
 </html>
