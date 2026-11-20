@@ -2452,7 +2452,7 @@
   }
 
   let loadingOpenAt = 0, loadingHideTimer = 0, bootSplash = false, loadingCloseCbs = [];
-  let loadingMinMs = 1400; // loading 最短展示；关键认证流程放到 6.3s（完整播完一轮启动动画）
+  let loadingMinMs = 1400; // loading 最短展示；关键认证流程 4s（加速播完整轮启动动画）
 
   function showLoading(text = '加载中…', speed, full) {
     if (!loadingModal) return;
@@ -2462,9 +2462,9 @@
     if (tEl) tEl.textContent = text;
     if (!bootOpen) {
       loadingOpenAt = performance.now();
-      loadingMinMs = full ? 6300 : 1400;
+      loadingMinMs = full ? 4000 : 1400;
     } else if (full) {
-      loadingMinMs = 6300; // 串联流程中出现关键认证，同样补足完整一轮
+      loadingMinMs = 4000; // 串联流程中出现关键认证，同样补足完整一轮
     }
     loadingModal.classList.add('show');
     if (!bootOpen) { bootOpen = true; bootRestart(speed); }
@@ -2732,7 +2732,7 @@
     
     // 验证账号是否存在
     if (sb) {
-      showLoading('验证账号中…', 1.0, true);
+      showLoading('验证账号中…', 1.6, true);
       try {
         const { data: faces, error } = await sb.from('user_faces').select('email').eq('email', acc);
         if (error) throw error;
@@ -2892,7 +2892,7 @@
       if (!password) return showToast('请输入密码');
       if (!otp || otp.length !== 6) return showToast('请输入6位验证码');
       if (!sb) return showToast('云端服务暂不可用');
-      showLoading('验证身份中…', 1.0, true);
+      showLoading('验证身份中…', 1.6, true);
       const { error } = await sb.auth.signInWithPassword({ email, password });
       if (error) {
         hideLoading();
@@ -3535,7 +3535,7 @@
           const pwd = $('passwordInput').value.trim();
           if (!pwd) return showToast('请输入密码');
           if (!sb) { hideLoading(); return showToast('云端服务暂不可用，请刷新重试'); }
-          showLoading('登录中…', 1.0, true);
+          showLoading('登录中…', 1.6, true);
           let email = acc;
           if (!email.includes('@')) email = acc + '@qxnet.com';
           const { data, error } = await sb.auth.signInWithPassword({
@@ -3561,7 +3561,7 @@
           }
         } else if (state.loginType === 'face') {
           // 人脸识别登录
-          showLoading('人脸识别中…', 1.0, true);
+          showLoading('人脸识别中…', 1.6, true);
           setTimeout(() => {
             hideLoading(showLoginSuccess);
           }, 1500);
@@ -3571,7 +3571,7 @@
           if (!acc.includes('@')) return showToast('验证码登录请输入邮箱');
           if (!token || token.length !== 6) return showToast('请输入6位验证码');
           if (!sb) { hideLoading(); return showToast('云端服务暂不可用，请刷新重试'); }
-          showLoading('登录中…', 1.0, true);
+          showLoading('登录中…', 1.6, true);
           const { data, error } = await sb.auth.verifyOtp({
             email: acc,
             token: token,
