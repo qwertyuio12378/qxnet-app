@@ -2232,17 +2232,25 @@
     };
 
     // 三块几何：左半环 / 右半环+尾巴（Q 形）/ 蓝球（外径、环厚、蓝球与原标志完全一致）
-    // Q 形：左半环 / 右半环（两半在顶部底部各重叠 4°，拼成完整环）
-    const OV = 4 * Math.PI / 180;
+    // Q 形：左右两半环在 slotL / slotR 处竖直切开，中间留 15.83 宽的缝（与 D 的 split 结构一致）
     const RR = G.dR, RI = G.hR, CX = G.dcx, CY = G.cy;
+    const xL = G.slotL, xR = G.slotR;
+    const hyO = Math.sqrt(Math.max(0, RR * RR - (xL - CX) * (xL - CX)));
+    const hyI = Math.sqrt(Math.max(0, RI * RI - (xL - G.hcx) * (xL - G.hcx)));
+    const hyOD = Math.sqrt(Math.max(0, RR * RR - (xR - CX) * (xR - CX)));
+    const hyID = Math.sqrt(Math.max(0, RI * RI - (xR - G.hcx) * (xR - G.hcx)));
     const arch = new Path2D();
-    arch.arc(CX, CY, RR, Math.PI / 2 - OV, -Math.PI / 2, false);
-    arch.arc(G.hcx, CY, RI, -Math.PI / 2, Math.PI / 2 - OV, true);
+    arch.moveTo(xL, CY - hyO);
+    arch.arc(CX, CY, RR, Math.atan2(-hyO, xL - CX), Math.atan2(hyO, xL - CX), true);
+    arch.lineTo(xL, CY + hyI);
+    arch.arc(G.hcx, CY, RI, Math.atan2(hyI, xL - G.hcx), Math.atan2(-hyI, xL - G.hcx), false);
     arch.closePath();
 
     const dome = new Path2D();
-    dome.arc(CX, CY, RR, Math.PI / 2 + OV, -Math.PI / 2, true);
-    dome.arc(G.hcx, CY, RI, -Math.PI / 2, Math.PI / 2 + OV, false);
+    dome.moveTo(xR, CY - hyOD);
+    dome.arc(CX, CY, RR, Math.atan2(-hyOD, xR - CX), Math.atan2(hyOD, xR - CX), false);
+    dome.lineTo(xR, CY + hyID);
+    dome.arc(G.hcx, CY, RI, Math.atan2(hyID, xR - G.hcx), Math.atan2(-hyID, xR - G.hcx), true);
     dome.closePath();
     // Q 的尾巴：从右半环 45° 处斜伸，末端圆头（圆 + 矩形分两次填充，避免方向抵消）
     function drawTail(ctx) {
@@ -2516,9 +2524,9 @@
       }
       ctx.fillStyle = TH.ink; ctx.strokeStyle = TH.ink;
       ctx.setTransform.apply(ctx, mul(base, p.arch));
-      ctx.fill(arch); ctx.lineWidth = 2.0; ctx.lineJoin = 'miter'; ctx.stroke(arch);
+      ctx.fill(arch);
       ctx.setTransform.apply(ctx, mul(base, p.dome));
-      ctx.fillStyle = TH.ink; drawTail(ctx); ctx.fill(dome); ctx.strokeStyle = TH.ink; ctx.lineWidth = 2.0; ctx.stroke(dome);
+      ctx.fillStyle = TH.ink; drawTail(ctx); ctx.fill(dome);
       ctx.setTransform.apply(ctx, mul(base, p.ball));
       // 两套主题都用原版纯色球（#1A9FFF），不做渐变/高光，保持 K 标志的扁平语言
       ctx.fillStyle = ORB;
