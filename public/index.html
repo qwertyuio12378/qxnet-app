@@ -2451,7 +2451,7 @@
     if (bootRaf) { cancelAnimationFrame(bootRaf); bootRaf = 0; }
   }
 
-  let loadingOpenAt = 0, loadingHideTimer = 0, bootSplash = false;
+  let loadingOpenAt = 0, loadingHideTimer = 0, bootSplash = false, loadingCloseCbs = [];
   let loadingMinMs = 1400; // loading 最短展示；关键认证流程放到 6.3s（完整播完一轮启动动画）
 
   function showLoading(text = '加载中…', speed, full) {
@@ -2469,23 +2469,30 @@
     loadingModal.classList.add('show');
     if (!bootOpen) { bootOpen = true; bootRestart(speed); }
   }
-  function hideLoading(now) {
+  // 真正收起 loading：动画播满后再隐藏，并执行等待中的回调
+  function closeLoadingNow() {
     if (!loadingModal) return;
-    if (bootSplash && !now) return; // 启动屏必须播满一轮才关
-    if (loadingHideTimer) { clearTimeout(loadingHideTimer); loadingHideTimer = 0; }
-    const remain = loadingMinMs - (performance.now() - loadingOpenAt);
-    if (!now && bootOpen && remain > 0) {
-      loadingHideTimer = setTimeout(() => {
-        loadingHideTimer = 0;
-        loadingModal.classList.remove('show');
-        bootOpen = false;
-        bootStop();
-      }, remain);
-      return;
-    }
     loadingModal.classList.remove('show');
     bootOpen = false;
     bootStop();
+    const cbs = loadingCloseCbs; loadingCloseCbs = [];
+    cbs.forEach(function (fn) { try { fn(); } catch (e) {} });
+  }
+  function hideLoading(now, cb) {
+    if (typeof now === 'function') { cb = now; now = false; }
+    if (!loadingModal) return;
+    if (bootSplash && !now) return; // 启动屏必须播满一轮才关
+    if (cb) loadingCloseCbs.push(cb);
+    if (loadingHideTimer) { clearTimeout(loadingHideTimer); loadingHideTimer = 0; }
+    const remain = loadingMinMs - (performance.now() - loadingOpenAt);
+    if (!now && bootOpen && remain > 0) {
+      loadingHideTimer = setTimeout(function () {
+        loadingHideTimer = 0;
+        closeLoadingNow();
+      }, remain);
+      return;
+    }
+    closeLoadingNow();
   }
 
   // 主站地址加密存储，运行时解密后再跳转（源码中不出现明文域名）
@@ -3549,16 +3556,14 @@
               hideLoading();
               showToast('授权已过期');
             } else {
-              hideLoading();
-              showLoginSuccess();
+              hideLoading(showLoginSuccess);
             }
           }
         } else if (state.loginType === 'face') {
           // 人脸识别登录
           showLoading('人脸识别中…', 1.0, true);
           setTimeout(() => {
-            hideLoading();
-            showLoginSuccess();
+            hideLoading(showLoginSuccess);
           }, 1500);
         } else {
           // 验证码登录
@@ -3593,8 +3598,7 @@
               hideLoading();
               showToast('授权已过期');
             } else {
-              hideLoading();
-              showLoginSuccess();
+              hideLoading(showLoginSuccess);
             }
           }
         }
