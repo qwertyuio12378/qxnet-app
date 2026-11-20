@@ -1067,6 +1067,7 @@
     -webkit-backdrop-filter: blur(18px) !important;
     backdrop-filter: blur(18px) !important;
     z-index: 999999 !important;
+    padding-top: 30vh !important;
     display: none;
     align-items: center;
     justify-content: center;
@@ -1089,11 +1090,35 @@
   }
   /* DroidDeck 真实启动动画画布（几何与时序取自 upstream artwork/boot-animation-source） */
   .dd-canvas {
-    width: 200px;
-    height: 200px;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
     display: block;
-    margin: 0 auto -18px;
+    margin: 0;
+    z-index: 0;
+    pointer-events: none;
   }
+
+  /* 浅色舞台（取自 upstream light 主题）：整屏径向渐变 + 颗粒噪点，标志转深墨迹 */
+  .loading-modal[data-theme="light"] {
+    background: #E7EEF5 !important;
+  }
+  .loading-modal[data-theme="light"] .loading-text { color: #14181d; }
+  .loading-modal[data-theme="light"] .loading-sub { color: rgba(20, 24, 29, 0.46); }
+  .loading-modal[data-theme="light"] .dd-bar {
+    background: rgba(20, 24, 29, 0.10);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.55), inset 0 -1px 1px rgba(20, 24, 29, 0.06);
+  }
+  .loading-modal[data-theme="light"] .dd-bar::before {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0));
+  }
+  .loading-modal[data-theme="light"] #cancelFpBtn {
+    border-color: rgba(20, 24, 29, 0.18) !important;
+    background: rgba(20, 24, 29, 0.05) !important;
+    color: rgba(20, 24, 29, 0.78) !important;
+  }
+
   .loading-text {
     font-size: 19px;
     font-weight: 700;
@@ -1385,6 +1410,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 11c0 4-2 7-2 10"/><path d="M8 7C6 9 5 12 5 15c0 3 1 6 1 9"/><path d="M16 7c2 2 3 5 3 8 0 3-1 6-1 9"/><path d="M12 7V5"/><path d="M12 15c0 3-1 6-1 9"/></svg>
           <span>指纹识别</span>
         </div>
+        <div class="drawer-item" id="bootThemeItem">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>
+          <span>加载动画：<b id="bootThemeLabel">浅色舞台</b></span>
+        </div>
         <div class="drawer-item" data-page="enable-fp">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 11c0 4-2 7-2 10"/><path d="M8 7C6 9 5 12 5 15c0 3 1 6 1 9"/><path d="M16 7c2 2 3 5 3 8 0 3-1 6-1 9"/><path d="M12 7V5"/><path d="M12 15c0 3-1 6-1 9"/><path d="M20 6L9 17l-5-5"/></svg>
           <span>开启指纹登录</span>
@@ -1674,8 +1703,8 @@
 
 <!-- 加载弹窗（DroidDeck 风格） -->
 <div class="loading-modal" id="loadingModal">
+  <canvas class="dd-canvas" id="ddCanvas"></canvas>
   <div class="loading-box">
-    <canvas class="dd-canvas" id="ddCanvas" width="400" height="400"></canvas>
     <div class="loading-text">加载中…</div>
     <div class="loading-sub">QNET · 安全认证环境</div>
     <div class="dd-bar"></div>
@@ -2027,7 +2056,6 @@
       const box = loadingModal.querySelector('.loading-box');
       box.style.cssText = '';
       box.innerHTML = `
-        <canvas class="dd-canvas" id="ddCanvas" width="400" height="400"></canvas>
         <div class="loading-text">请验证指纹以绑定…</div>
         <div class="loading-sub">QNET · 安全认证环境</div>
         <div class="dd-bar"></div>
@@ -2157,6 +2185,45 @@
     const G = { L: -31.98, B: 223.72, slotL: 56.055, slotR: 71.885, cy: 111.86, dcx: 63.97, dR: 111.86, hcx: 63.98, hR: 71.81, ocx: 63.98, oR: 55.98 };
     const ORB = '#1A9FFF', INK = '#FFFFFF';
     const DUR = 6.30, T_L = 4.00, FLOOR = 150, GRAV = 6500, VIEW_H = 690, CYCLE = 2.6;
+
+    // 主题（取自 upstream artwork/boot-animation-source）：light = 浅色舞台 + 深墨迹 + 接地投影 + 颗粒噪点；dark = 纯黑 + 白光 + 蓝色辉光
+    const THEMES = {
+      light: { ink: '#1b1b1b', bg: ['#EDF3F8', '#DCE6EE', '#B6C7D6'], shadow: '22,40,58', shadowK: 1, ringA: .8, ringGlow: 0, glow: 0, noise: 3 },
+      dark:  { ink: '#FFFFFF', bg: ['#080A0F', '#080A0F', '#080A0F'], shadow: '0,0,0', shadowK: 2.3, ringA: 1.5, ringGlow: 14, glow: .34, noise: 0 }
+    };
+    let THN = 'dark', TH = THEMES.dark;
+    function setTheme(n) { THN = THEMES[n] ? n : 'dark'; TH = THEMES[THN]; bgCache = null; bgKey = ''; }
+    let bgCache = null, bgKey = '';
+    function makeBG(W, H) {
+      const key = W + 'x' + H + ':' + THN;
+      if (bgCache && bgKey === key) return bgCache;
+      const c = document.createElement('canvas'); c.width = W; c.height = H;
+      const g = c.getContext('2d');
+      const cx = W / 2, cy = H * .47, R = Math.hypot(W, H) * .6;
+      const gr = g.createRadialGradient(cx, cy, 0, cx, cy, R);
+      gr.addColorStop(0, TH.bg[0]); gr.addColorStop(.42, TH.bg[1]); gr.addColorStop(1, TH.bg[2]);
+      g.fillStyle = gr; g.fillRect(0, 0, W, H);
+      if (TH.noise) {
+        const ncan = document.createElement('canvas'); ncan.width = ncan.height = 64;
+        const ng = ncan.getContext('2d'); const nd = ng.createImageData(64, 64); const d = nd.data;
+        let sd = 1337;
+        for (let i = 0; i < d.length; i += 4) {
+          sd = (sd * 1664525 + 1013904223) >>> 0;
+          const n = ((sd >>> 24) / 255 - .5) * 255;
+          d[i] = 128 + n; d[i + 1] = 128 + n; d[i + 2] = 128 + n; d[i + 3] = 255;
+        }
+        ng.putImageData(nd, 0, 0);
+        const pat = g.createPattern(ncan, 'repeat');
+        g.globalCompositeOperation = 'overlay';
+        g.globalAlpha = Math.min(.5, TH.noise / 8);
+        g.fillStyle = pat; g.fillRect(0, 0, W, H);
+        g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+      }
+      bgCache = c; bgKey = key;
+      return c;
+    }
+    const FEET = [{ x: G.slotL, y: 20.24 }, { x: G.slotL, y: G.B - 20.24 }];
+    const ap = (m, q) => ({ x: m[0] * q.x + m[2] * q.y + m[4], y: m[1] * q.x + m[3] * q.y + m[5] });
     const CEN = { arch: { x: 2.60002221487, y: 111.86 }, dome: { x: 126.67591638938, y: 111.86 } };
     const H0 = {
       O: { x: 25.75072697197, y: 5.93712034158 },
@@ -2184,7 +2251,7 @@
       const r0 = RR - 56, r1 = 152;
       const sx = CX + r0 * tx, sy = CY + r0 * ty;
       const ex = CX + r1 * tx, ey = CY + r1 * ty;
-      ctx.fillStyle = INK; ctx.strokeStyle = INK; ctx.lineWidth = 1.2; ctx.lineJoin = 'round';
+      ctx.fillStyle = TH.ink; ctx.strokeStyle = TH.ink; ctx.lineWidth = 1.2; ctx.lineJoin = 'round';
       ctx.beginPath(); ctx.arc(ex, ey, half, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       ctx.beginPath();
       ctx.moveTo(sx - nx * half, sy - ny * half);
@@ -2376,6 +2443,18 @@
       t = clamp(t, 0, DUR);
       const p = t < T_L ? standPose(t) : flightPose(t);
       const sC = t - (T_L + FL.TC);
+      const fade = t < T_L ? 1 : 1 - smooth(0, .2, t - T_L);
+      const sh = [];
+      if (fade > 0) {
+        let lowest = Infinity, ccx = 0;
+        for (const f of FEET) {
+          const w = ap(p.arch, f), hf = Math.max(0, FLOOR - w.y);
+          lowest = Math.min(lowest, hf); ccx += w.x / 2;
+          sh.push({ x: w.x, rx: 30 + hf * .35, ry: 5.5 + hf * .05, a: .34 * Math.exp(-hf / 22) * fade });
+        }
+        sh.unshift({ x: ccx, rx: 150 + lowest * .35, ry: 15 + lowest * .03, a: .17 * Math.exp(-lowest / 210) * fade });
+      }
+      p.shadows = sh;
       p.sC = sC;
       p.ring = (sC > 0 && sC < .8)
         ? { O: p.O, r: 118 + 210 * eOutC(sC / .8), a: .34 * Math.pow(1 - sC / .8, 2), w: 4 * (1 - .7 * sC / .8) }
@@ -2383,10 +2462,14 @@
       return p;
     }
 
-    function draw(ctx, W, H, t) {
-      const px = H / VIEW_H, base = [px, 0, 0, px, W / 2, H / 2];
+    function draw(ctx, W, H, t, o) {
+      o = o || {};
+      const px = o.px || (H / VIEW_H);
+      const ccy = (typeof o.cy === 'number') ? o.cy : H / 2;
+      const base = [px, 0, 0, px, W / 2, ccy];
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.clearRect(0, 0, W, H);
+      if (o.bg) ctx.drawImage(makeBG(W, H), 0, 0, W, H);
+      else ctx.clearRect(0, 0, W, H);
       const p = pose(t);
       // 主时间线播完后：标志保持锁定态，光环按周期持续扩散（加载期间不会静止）
       let ring = p.ring, glowT = p.sC;
@@ -2394,20 +2477,34 @@
         const c = (t - DUR) % CYCLE;
         glowT = -1;
         ring = c < 1.9
-          ? { O: p.O, r: 118 + 210 * eOutC(c / 1.9), a: .30 * Math.pow(1 - c / 1.9, 2), w: 4 * (1 - .7 * c / 1.9) }
+          ? { O: p.O, r: 118 + 168 * eOutC(c / 1.9), a: .30 * Math.pow(1 - c / 1.9, 2), w: 4 * (1 - .7 * c / 1.9) }
           : null;
+      }
+      // 接地投影（原版 FEET：两个落脚点 + 底部整体投影）
+      if (p.shadows) for (const s of p.shadows) {
+        if (s.a < .003) continue;
+        const a = Math.min(.9, s.a * TH.shadowK), c = TH.shadow;
+        const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+        g.addColorStop(0, 'rgba(' + c + ',' + a.toFixed(3) + ')');
+        g.addColorStop(.55, 'rgba(' + c + ',' + (a * .45).toFixed(3) + ')');
+        g.addColorStop(1, 'rgba(' + c + ',0)');
+        ctx.setTransform.apply(ctx, mul(base, [s.rx, 0, 0, s.ry, s.x, FLOOR]));
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(0, 0, 1, 0, Math.PI * 2); ctx.fill();
       }
       if (ring) {
         ctx.setTransform.apply(ctx, base);
-        ctx.strokeStyle = 'rgba(26,159,255,' + Math.min(1, ring.a * 1.5).toFixed(3) + ')';
+        ctx.strokeStyle = 'rgba(26,159,255,' + Math.min(1, ring.a * TH.ringA).toFixed(3) + ')';
         ctx.lineWidth = ring.w;
-        ctx.shadowColor = 'rgba(26,159,255,' + Math.min(1, ring.a * 2).toFixed(3) + ')';
-        ctx.shadowBlur = 14 * px;
+        if (TH.ringGlow) {
+          ctx.shadowColor = 'rgba(26,159,255,' + Math.min(1, ring.a * 2).toFixed(3) + ')';
+          ctx.shadowBlur = TH.ringGlow * px;
+        }
         ctx.beginPath(); ctx.arc(ring.O.x, ring.O.y, ring.r, 0, Math.PI * 2); ctx.stroke();
         ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
       }
-      if (glowT > 0 && glowT < 1.4) {
-        const ga = .34 * Math.min(1, glowT / .03) * Math.exp(-glowT / .32) * (1 - smooth(1.0, 1.4, glowT));
+      if (TH.glow && glowT > 0 && glowT < 1.4) {
+        const ga = TH.glow * Math.min(1, glowT / .03) * Math.exp(-glowT / .32) * (1 - smooth(1.0, 1.4, glowT));
         ctx.setTransform.apply(ctx, base);
         const g = ctx.createRadialGradient(p.O.x, p.O.y, G.oR * .9, p.O.x, p.O.y, G.oR * 2.6);
         g.addColorStop(0, 'rgba(26,159,255,' + ga.toFixed(3) + ')');
@@ -2416,28 +2513,59 @@
         ctx.fillStyle = g;
         ctx.beginPath(); ctx.arc(p.O.x, p.O.y, G.oR * 2.6, 0, Math.PI * 2); ctx.fill();
       }
-      ctx.fillStyle = INK;
+      ctx.fillStyle = TH.ink; ctx.strokeStyle = TH.ink;
       ctx.setTransform.apply(ctx, mul(base, p.arch));
-      ctx.fill(arch); ctx.strokeStyle = INK; ctx.lineWidth = .8; ctx.stroke(arch);
+      ctx.fill(arch); ctx.lineWidth = 2.0; ctx.lineJoin = 'miter'; ctx.stroke(arch);
       ctx.setTransform.apply(ctx, mul(base, p.dome));
-      ctx.fillStyle = INK; drawTail(ctx); ctx.fill(dome); ctx.strokeStyle = INK; ctx.stroke(dome);
+      ctx.fillStyle = TH.ink; drawTail(ctx); ctx.fill(dome); ctx.strokeStyle = TH.ink; ctx.lineWidth = 2.0; ctx.stroke(dome);
       ctx.setTransform.apply(ctx, mul(base, p.ball));
-      const og = ctx.createRadialGradient(G.ocx - G.oR * .30, G.cy - G.oR * .34, G.oR * .05, G.ocx, G.cy, G.oR * 1.05);
-      og.addColorStop(0, '#6FD2FF');
-      og.addColorStop(.45, '#1A9FFF');
-      og.addColorStop(1, '#0A6FC4');
-      ctx.fillStyle = og;
-      ctx.fill(orb);
-      const hl = ctx.createRadialGradient(G.ocx - G.oR * .34, G.cy - G.oR * .38, 0, G.ocx - G.oR * .34, G.cy - G.oR * .38, G.oR * .62);
-      hl.addColorStop(0, 'rgba(255,255,255,0.50)');
-      hl.addColorStop(.55, 'rgba(255,255,255,0.10)');
-      hl.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = hl;
-      ctx.fill(orb);
+      if (THN === 'light') {
+        ctx.fillStyle = ORB; ctx.fill(orb);
+      } else {
+        const og = ctx.createRadialGradient(G.ocx - G.oR * .30, G.cy - G.oR * .34, G.oR * .05, G.ocx, G.cy, G.oR * 1.05);
+        og.addColorStop(0, '#6FD2FF');
+        og.addColorStop(.45, '#1A9FFF');
+        og.addColorStop(1, '#0A6FC4');
+        ctx.fillStyle = og;
+        ctx.fill(orb);
+        const hl = ctx.createRadialGradient(G.ocx - G.oR * .34, G.cy - G.oR * .38, 0, G.ocx - G.oR * .34, G.cy - G.oR * .38, G.oR * .62);
+        hl.addColorStop(0, 'rgba(255,255,255,0.50)');
+        hl.addColorStop(.55, 'rgba(255,255,255,0.10)');
+        hl.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = hl;
+        ctx.fill(orb);
+      }
       ctx.setTransform(1, 0, 0, 1, 0, 0);
     }
 
-    return { DUR, CYCLE, draw, pose };
+    return { DUR, CYCLE, draw, pose, setTheme, makeBG, get theme() { return THN; } };
+  })();
+
+  // 加载动画主题：light = 原版浅色舞台（径向渐变 + 颗粒 + 接地投影），dark = 纯黑 + 蓝色辉光
+  const BOOT_THEME_KEY = 'qxnet_boot_theme';
+  let bootTheme = 'light';
+  try {
+    const v = localStorage.getItem(BOOT_THEME_KEY);
+    if (v === 'dark' || v === 'light') bootTheme = v;
+    const q = (location.search.match(/[?&]boot=(light|dark)/) || [])[1];
+    if (q) bootTheme = q;
+  } catch (e) {}
+  function applyBootTheme(n, save) {
+    bootTheme = (n === 'dark') ? 'dark' : 'light';
+    if (save) { try { localStorage.setItem(BOOT_THEME_KEY, bootTheme); } catch (e) {} }
+    QXBoot.setTheme(bootTheme);
+    if (loadingModal) loadingModal.setAttribute('data-theme', bootTheme);
+    const lb = document.getElementById('bootThemeLabel');
+    if (lb) lb.textContent = bootTheme === 'dark' ? '纯黑舞台' : '浅色舞台';
+  }
+  applyBootTheme(bootTheme, false);
+  (function bindBootThemeItem() {
+    const item = document.getElementById('bootThemeItem');
+    if (item) item.addEventListener('click', function () {
+      applyBootTheme(bootTheme === 'dark' ? 'light' : 'dark', true);
+      showLoading('已切换为' + (bootTheme === 'dark' ? '纯黑舞台' : '浅色舞台'), 1.2, false);
+      hideLoading();
+    });
   })();
 
   // 启动动画驱动：弹窗打开时从头播放，播完停在锁定态
@@ -2445,19 +2573,29 @@
   function bootRestart(speed) {
     const cv = document.getElementById('ddCanvas');
     if (!cv) return;
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    const size = Math.round(200 * dpr);
-    if (cv.width !== size) { cv.width = size; cv.height = size; }
+    let W = 0, H = 0, px = 0, ccy = 0;
+    function fit() {
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const w = Math.round((cv.clientWidth || window.innerWidth) * dpr);
+      const h = Math.round((cv.clientHeight || window.innerHeight) * dpr);
+      if (w === W && h === H) return;
+      W = cv.width = w; H = cv.height = h;
+      px = Math.min(W * .46, H * .20) / 223.72;
+      ccy = H * .38;
+    }
+    fit();
     bootT = 0; bootLast = 0;
     if (bootRaf) { cancelAnimationFrame(bootRaf); bootRaf = 0; }
     const ctx = cv.getContext('2d');
     // 启动屏按 1.0 速完整播一轮（真实 6.3s）；操作型 loading 用 0.55 速放慢
     const sp = (typeof speed === 'number' && speed > 0) ? speed : 0.55;
+    let fc = 0;
     const loop = now => {
       if (!bootLast) bootLast = now;
       const dt = Math.min(.05, (now - bootLast) / 1000); bootLast = now;
       bootT += dt * sp;
-      QXBoot.draw(ctx, cv.width, cv.height, bootT);
+      if ((++fc % 20) === 0) fit();
+      QXBoot.draw(ctx, W, H, bootT, { bg: true, px: px, cy: ccy });
       bootRaf = requestAnimationFrame(loop);
     };
     bootRaf = requestAnimationFrame(loop);
