@@ -2165,30 +2165,34 @@
     };
 
     // 三块几何：左半环 / 右半环+尾巴（Q 形）/ 蓝球（外径、环厚、蓝球与原标志完全一致）
-    const OV = 4 * Math.PI / 180; // 两半环在顶部/底部各重叠一点，拼接不留缝
+    // Q 形：左半环 / 右半环（两半在顶部底部各重叠 4°，拼成完整环）
+    const OV = 4 * Math.PI / 180;
+    const RR = G.dR, RI = G.hR, CX = G.dcx, CY = G.cy;
     const arch = new Path2D();
-    arch.arc(G.dcx, G.cy, G.dR, Math.PI / 2 - OV, -Math.PI / 2, false);
-    arch.arc(G.hcx, G.cy, G.hR, -Math.PI / 2, Math.PI / 2 - OV, true);
+    arch.arc(CX, CY, RR, Math.PI / 2 - OV, -Math.PI / 2, false);
+    arch.arc(G.hcx, CY, RI, -Math.PI / 2, Math.PI / 2 - OV, true);
     arch.closePath();
 
     const dome = new Path2D();
-    dome.arc(G.dcx, G.cy, G.dR, Math.PI / 2 + OV, -Math.PI / 2, true);
-    dome.arc(G.hcx, G.cy, G.hR, -Math.PI / 2, Math.PI / 2 + OV, false);
+    dome.arc(CX, CY, RR, Math.PI / 2 + OV, -Math.PI / 2, true);
+    dome.arc(G.hcx, CY, RI, -Math.PI / 2, Math.PI / 2 + OV, false);
     dome.closePath();
-    // Q 的尾巴：从环右下 45° 处斜向伸出（圆头），独立成形状，避免与外环拼接处出现缝隙
-    const tail = new Path2D();
-    {
+    // Q 的尾巴：从右半环 45° 处斜伸，末端圆头（圆 + 矩形分两次填充，避免方向抵消）
+    function drawTail(ctx) {
       const a = Math.PI / 4, tx = Math.cos(a), ty = Math.sin(a);
-      const nx = -ty, ny = tx, half = 11.5;
-      const sx = G.dcx + (G.dR - 22) * tx, sy = G.cy + (G.dR - 22) * ty;
-      const ex = sx + tx * 58, ey = sy + ty * 58;
-      tail.moveTo(sx - nx * half, sy - ny * half);
-      tail.lineTo(ex - nx * half, ey - ny * half);
-      tail.arc(ex, ey, half, Math.atan2(-ny, -nx), Math.atan2(ny, nx), false);
-      tail.lineTo(sx + nx * half, sy + ny * half);
-      tail.closePath();
+      const nx = -ty, ny = tx, half = 14;
+      const r0 = RR - 56, r1 = 152;
+      const sx = CX + r0 * tx, sy = CY + r0 * ty;
+      const ex = CX + r1 * tx, ey = CY + r1 * ty;
+      ctx.fillStyle = INK; ctx.strokeStyle = INK; ctx.lineWidth = 1.2; ctx.lineJoin = 'round';
+      ctx.beginPath(); ctx.arc(ex, ey, half, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(sx - nx * half, sy - ny * half);
+      ctx.lineTo(ex - nx * half, ey - ny * half);
+      ctx.lineTo(ex + nx * half, ey + ny * half);
+      ctx.lineTo(sx + nx * half, sy + ny * half);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
     }
-
     const orb = new Path2D();
     orb.arc(G.ocx, G.cy, G.oR, 0, Math.PI * 2);
 
@@ -2414,11 +2418,22 @@
       }
       ctx.fillStyle = INK;
       ctx.setTransform.apply(ctx, mul(base, p.arch));
-      ctx.fill(arch); ctx.strokeStyle = INK; ctx.lineWidth = 1.8; ctx.stroke(arch);
+      ctx.fill(arch); ctx.strokeStyle = INK; ctx.lineWidth = .8; ctx.stroke(arch);
       ctx.setTransform.apply(ctx, mul(base, p.dome));
-      ctx.fill(dome); ctx.fill(tail); ctx.stroke(dome); ctx.stroke(tail);
-      ctx.fillStyle = ORB;
-      ctx.setTransform.apply(ctx, mul(base, p.ball)); ctx.fill(orb);
+      ctx.fillStyle = INK; drawTail(ctx); ctx.fill(dome); ctx.strokeStyle = INK; ctx.stroke(dome);
+      ctx.setTransform.apply(ctx, mul(base, p.ball));
+      const og = ctx.createRadialGradient(G.ocx - G.oR * .30, G.cy - G.oR * .34, G.oR * .05, G.ocx, G.cy, G.oR * 1.05);
+      og.addColorStop(0, '#6FD2FF');
+      og.addColorStop(.45, '#1A9FFF');
+      og.addColorStop(1, '#0A6FC4');
+      ctx.fillStyle = og;
+      ctx.fill(orb);
+      const hl = ctx.createRadialGradient(G.ocx - G.oR * .34, G.cy - G.oR * .38, 0, G.ocx - G.oR * .34, G.cy - G.oR * .38, G.oR * .62);
+      hl.addColorStop(0, 'rgba(255,255,255,0.50)');
+      hl.addColorStop(.55, 'rgba(255,255,255,0.10)');
+      hl.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = hl;
+      ctx.fill(orb);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
     }
 
