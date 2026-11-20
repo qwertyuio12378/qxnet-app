@@ -15,7 +15,7 @@
   function tryInitSupabase() {
     if (sb) return true;
     if (window.supabase && window.supabase.createClient) {
-      try { sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } }); return true; }
+      try { sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); return true; }
       catch (e) { sb = null; }
     }
     return false;
@@ -1740,23 +1740,11 @@
       setCookie('qxnet_device_id', id, 3650);
     } catch (e) {}
   }
-  // 原生桥下发的个体硬标识（Android ID）；桥未提供时返回 null，回退网页指纹
-  function getNativeDeviceId() {
-    try {
-      if (window.qnetAndroidObj && typeof window.qnetAndroidObj.qxGetAndroidId === 'function') {
-        const v = window.qnetAndroidObj.qxGetAndroidId();
-        if (v) return String(v);
-      }
-    } catch (e) {}
-    return null;
-  }
   function genDeviceId() {
-    // 用基础ID + 原生标识 + 浏览器指纹生成设备ID，尽量稳定
+    // 用基础ID + 浏览器指纹生成设备ID，尽量稳定
     const baseId = 'qxnet_base_2024';
-    const nativeId = getNativeDeviceId() || '';
     const fingerprint = [
       baseId,
-      nativeId,
       navigator.userAgent,
       screen.width + 'x' + screen.height,
       screen.colorDepth,
@@ -1776,28 +1764,22 @@
     return 'dev_' + Math.abs(hash).toString(36);
   }
   function reportVisit(did) { if (sb) sb.from('visits').insert({ device_id: did }).then(() => {}).catch(() => {}); }
-  // 绑机硬拦开关：原生 Android ID 桥上线后置 true，换机即拦截；当前 Web 指纹阶段先软模式（跟随账号恢复，不误伤老用户）
-  const BIND_ENFORCE = false;
-  // 登录后绑机：返回 { ok, metaDev }。账号已绑设备且与当前不一致 → 硬拦模式下拒绝进入；首绑写入当前设备号
+  // 登录后：账号绑定设备 ID；账号里已有设备 ID 则优先恢复（换环境/清存储后登录即找回）
   function bindDeviceIdToAccount(user) {
     const metaDev = user && user.user_metadata && user.user_metadata.device_id;
     if (metaDev && metaDev !== deviceId) {
-      if (BIND_ENFORCE) return { ok: false, metaDev };
-      // 软模式：以账号已绑设备号为准恢复本地，避免清存储/换网络后误判
       deviceId = metaDev;
       writeLocalDeviceId(deviceId);
       const lbl = document.getElementById('deviceIdLabel');
       if (lbl) lbl.textContent = '设备ID: ' + deviceId;
-      return { ok: true, metaDev };
     }
     if (sb) sb.auth.updateUser({ data: { device_id: deviceId } }).then(() => {}).catch(() => {});
-    return { ok: true, metaDev };
   }
 
   let deviceId = readLocalDeviceId();
   const hadLocal = !!deviceId;
   const idLabel = document.getElementById('deviceIdLabel');
-  idLabel.textContent = hadLocal ? '设备ID: ' + deviceId + ' v16' : '设备ID: 识别中… v16';
+  idLabel.textContent = hadLocal ? '设备ID: ' + deviceId + ' v12' : '设备ID: 识别中… v12';
   if (hadLocal) reportVisit(deviceId);
 
   // 异步向后端注册/恢复：本地有→保活并确认；本地无→按 IP+设备特征找回旧 ID，找不到才新建
@@ -1981,12 +1963,15 @@
           }
           if (result && result.success) {
             showToast('指纹验证成功');
-            // 直接读取现有会话，不再用本地保存的密码重新登录
+            // 用保存的账号密码自动登录
             try {
               showLoading('登录中...');
-              const { data, error } = await sb.auth.getSession();
+              const { data, error } = await sb.auth.signInWithPassword({
+                email: saved.account,
+                password: saved.password
+              });
               hideLoading();
-              if (!error && data && data.session) {
+              if (!error) {
                 if (window.qnetAndroidObj) {
                   try {
                     window.qnetAndroidObj.qxSetUid(saved.account);
@@ -1997,10 +1982,8 @@
                 setTimeout(() => goMainPage(), 500);
                 return;
               }
-              showToast('登录已过期，请重新输入密码');
-            } catch(e) {
-              showToast('登录已过期，请重新输入密码');
-            }
+            } catch(e) {}
+            setTimeout(() => { window.location.href = getSiteUrl(); }, 1000);
           } else {
             showToast('指纹验证失败，请重试');
           }
@@ -2014,20 +1997,21 @@
       }
     }
     
-    // 不在应用里：读取现有会话进入，会话过期则回密码登录
+    // 不在应用里，直接模拟指纹验证成功，自动登录
     showLoading('指纹验证成功...');
     try {
-      const { data, error } = await sb.auth.getSession();
+      const { data, error } = await sb.auth.signInWithPassword({
+        email: saved.account,
+        password: saved.password
+      });
       hideLoading();
-      if (!error && data && data.session) {
+      if (!error) {
         showToast('指纹验证成功');
         setTimeout(() => goMainPage(), 500);
         return;
       }
-      showToast('登录已过期，请重新输入密码');
-    } catch(e) {
-      showToast('登录已过期，请重新输入密码');
-    }
+    } catch(e) {}
+    setTimeout(() => { window.location.href = getSiteUrl(); }, 1000);
   }
   
   // 开启指纹登录（绑定指纹）
@@ -2429,9 +2413,23 @@
     if (!acc) return showToast('请输入账号');
     if (!acc.includes('@')) return showToast('请输入正确的邮箱账号');
     
-    // 账号是否存在、是否封禁由后续登录接口判定；这里不再用人脸表预检，
-    // 否则未录人脸或被封禁的账号会被误判成“账号不存在”。
-
+    // 验证账号是否存在
+    if (sb) {
+      showLoading('验证账号中…');
+      try {
+        const { data: faces, error } = await sb.from('user_faces').select('email').eq('email', acc);
+        if (error) throw error;
+        if (!faces || faces.length === 0) {
+          hideLoading();
+          return showToast('账号不存在，请先注册');
+        }
+      } catch(e) {
+        hideLoading();
+        // 查询失败不阻塞，继续走
+      }
+      hideLoading();
+    }
+    
     state.loginStep = 2;
     gAccountDisplay.textContent = acc;
     // 整页切换：Step1 向左滑出，Step2 从右滑入；顶部卡片整体隐藏，Step2 自带新页面头部
@@ -3229,20 +3227,13 @@
           });
           if (error) {
             hideLoading();
-            if (error.code === 'user_banned' || /banned/i.test(error.message || '')) showToast('账号已被封禁，请联系管理员');
-            else if (error.message.includes('Invalid login credentials')) showToast('账号或密码错误');
+            if (error.message.includes('Invalid login credentials')) showToast('账号或密码错误');
             else if (error.message.includes('Email not confirmed')) showToast('请先验证邮箱');
             else showToast('登录失败，请重试');
           } else {
             // 登录成功：自动记录账号密码，下次进入自动填写
             saveLogin(acc, pwd);
-            const bind = bindDeviceIdToAccount(data.user);
-            if (!bind.ok) {
-              await sb.auth.signOut();
-              hideLoading();
-              showToast('该账号已在其他设备登录，如需换机请联系管理员解绑');
-              return;
-            }
+            bindDeviceIdToAccount(data.user);
             const expiresAt = data.user.user_metadata?.expires_at ? new Date(data.user.user_metadata.expires_at) : null;
             if (expiresAt && expiresAt < new Date()) {
               hideLoading();
@@ -3286,13 +3277,7 @@
             }
             // 验证码登录成功：记录账号（无密码），下次自动填账号
             saveLogin(acc, '');
-            const bind = bindDeviceIdToAccount(data.user);
-            if (!bind.ok) {
-              await sb.auth.signOut();
-              hideLoading();
-              showToast('该账号已在其他设备登录，如需换机请联系管理员解绑');
-              return;
-            }
+            bindDeviceIdToAccount(data.user);
             const expiresAt = data.user.user_metadata?.expires_at ? new Date(data.user.user_metadata.expires_at) : null;
             if (expiresAt && expiresAt < new Date()) {
               hideLoading();
@@ -3350,7 +3335,7 @@
         } else {
           await sb
             .from('cards')
-            .update({ used: true, bound_email: acc, bound_user_id: data.user ? data.user.id : null, expires_at: expiresAt.toISOString() })
+            .update({ used: true })
             .eq('card_key', card);
           hideLoading();
           // 注册成功：自动保存账号密码，下次进入自动填写
@@ -3886,29 +3871,5 @@
 })();
 </script>
 
-<script>
-/* QXNET 访问统计 · 认证页；定位仅在本机已授权时附加，不弹窗打扰 */
-(function(){try{
-  var EP='https://gngcducutevgllbaejec.supabase.co/functions/v1/admin-api/track', K='sb_publishable_i5npxDKfL83UBEDBBPm57A_WqqYeh-P';
-  if(/^(localhost|127\.0\.0\.1|file:)$/.test(location.hostname)||location.protocol==='file:')return;
-  var base={site:'auth',path:(location.pathname+location.search).slice(0,180),referrer:(document.referrer||'direct').slice(0,200)};
-  var send=function(extra){ fetch(EP,{method:'POST',keepalive:true,headers:{'content-type':'application/json','apikey':K,'authorization':'Bearer '+K},body:JSON.stringify(extra?Object.assign({},base,extra):base)}).catch(function(){}); };
-  var geoOnce=function(done){
-    var called=false; var finish=function(e){ if(called)return; called=true; done(e); };
-    try{
-      if(!navigator.geolocation||!navigator.permissions||!navigator.permissions.query){ finish(null); return; }
-      navigator.permissions.query({name:'geolocation'}).then(function(st){
-        if(st.state!=='granted'){ finish(null); return; }
-        var to=setTimeout(function(){ finish(null); },6000);
-        navigator.geolocation.getCurrentPosition(function(pos){
-          clearTimeout(to);
-          if(pos&&pos.coords) finish({self_lat:pos.coords.latitude,self_lon:pos.coords.longitude}); else finish(null);
-        },function(){ clearTimeout(to); finish(null); },{enableHighAccuracy:false,timeout:5000,maximumAge:300000});
-      }).catch(function(){ finish(null); });
-    }catch(e){ finish(null); }
-  };
-  geoOnce(function(extra){ send(extra); });
-}catch(e){}})();
-</script>
 </body>
 </html>
