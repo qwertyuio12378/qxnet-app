@@ -2520,28 +2520,9 @@
       ctx.setTransform.apply(ctx, mul(base, p.dome));
       ctx.fillStyle = TH.ink; drawTail(ctx); ctx.fill(dome); ctx.strokeStyle = TH.ink; ctx.lineWidth = 2.0; ctx.stroke(dome);
       ctx.setTransform.apply(ctx, mul(base, p.ball));
-      if (THN === 'light') {
-        ctx.fillStyle = ORB; ctx.fill(orb);
-      } else {
-        const og = ctx.createRadialGradient(G.ocx - G.oR * .30, G.cy - G.oR * .34, G.oR * .05, G.ocx, G.cy, G.oR * 1.05);
-        og.addColorStop(0, '#6FD2FF');
-        og.addColorStop(.45, '#1A9FFF');
-        og.addColorStop(1, '#0A6FC4');
-        ctx.fillStyle = og;
-        ctx.fill(orb);
-        const hl = ctx.createRadialGradient(G.ocx - G.oR * .30, G.cy - G.oR * .34, 0, G.ocx - G.oR * .30, G.cy - G.oR * .34, G.oR * .44);
-        hl.addColorStop(0, 'rgba(255,255,255,0.34)');
-        hl.addColorStop(.6, 'rgba(255,255,255,0.05)');
-        hl.addColorStop(1, 'rgba(255,255,255,0)');
-        ctx.fillStyle = hl;
-        ctx.fill(orb);
-        const vg = ctx.createRadialGradient(G.ocx - G.oR * .10, G.cy - G.oR * .12, G.oR * .45, G.ocx, G.cy, G.oR * 1.02);
-        vg.addColorStop(0, 'rgba(2,26,48,0)');
-        vg.addColorStop(.72, 'rgba(2,26,48,0.06)');
-        vg.addColorStop(1, 'rgba(2,26,48,0.26)');
-        ctx.fillStyle = vg;
-        ctx.fill(orb);
-      }
+      // 两套主题都用原版纯色球（#1A9FFF），不做渐变/高光，保持 K 标志的扁平语言
+      ctx.fillStyle = ORB;
+      ctx.fill(orb);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
     }
 
