@@ -1092,7 +1092,7 @@
     width: 200px;
     height: 200px;
     display: block;
-    margin: 0 auto -38px;
+    margin: 0 auto -18px;
   }
   .loading-text {
     font-size: 19px;
@@ -1108,6 +1108,50 @@
     text-align: center;
     margin-bottom: 0;
     letter-spacing: 0.04em;
+  }
+  /* 加载指示：液态玻璃条 + 一束蓝光扫过 */
+  .dd-bar {
+    width: 200px;
+    height: 6px;
+    margin: 26px auto 0;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.07);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.10);
+    overflow: hidden;
+    position: relative;
+  }
+  .dd-bar::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 50% 0;
+    border-radius: 6px 6px 0 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0));
+    pointer-events: none;
+    z-index: 2;
+  }
+  .dd-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 46%;
+    height: 100%;
+    border-radius: 6px;
+    background: linear-gradient(90deg,
+      rgba(26, 159, 255, 0) 0%,
+      rgba(26, 159, 255, 0.92) 22%,
+      #9FE4FF 50%,
+      rgba(26, 159, 255, 0.92) 78%,
+      rgba(26, 159, 255, 0) 100%);
+    box-shadow: 0 0 18px rgba(26, 159, 255, 0.7);
+    animation: ddFlow 2.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+    will-change: transform, opacity;
+  }
+  @keyframes ddFlow {
+    0%   { transform: translateX(-100%); opacity: 0; }
+    14%  { opacity: 1; }
+    86%  { opacity: 1; }
+    100% { transform: translateX(310%); opacity: 0; }
   }
   /* 邮箱后缀联想下拉：输入 @ 时自动弹出可选后缀（fixed 挂 body，不受卡片裁剪影响） */
   .email-suggest {
@@ -1634,6 +1678,7 @@
     <canvas class="dd-canvas" id="ddCanvas" width="400" height="400"></canvas>
     <div class="loading-text">加载中…</div>
     <div class="loading-sub">QNET · 安全认证环境</div>
+    <div class="dd-bar"></div>
   </div>
 </div>
 
@@ -1985,6 +2030,7 @@
         <canvas class="dd-canvas" id="ddCanvas" width="400" height="400"></canvas>
         <div class="loading-text">请验证指纹以绑定…</div>
         <div class="loading-sub">QNET · 安全认证环境</div>
+        <div class="dd-bar"></div>
             <button id="cancelFpBtn" style="margin-top:26px;padding:10px 30px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.08);font-size:14px;color:rgba(255,255,255,0.82);cursor:pointer;">取消</button>
       `;
       loadingModal.classList.add('show');
