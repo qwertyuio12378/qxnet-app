@@ -2182,7 +2182,7 @@
     const rv = (a, x, y) => { const c = Math.cos(a), s = Math.sin(a); return { x: c * x - s * y, y: s * x + c * y }; };
 
     // upstream 标志几何（单位与 artwork/droiddeck-mark.svg 一致）
-    const G = { L: -31.98, B: 223.72, slotL: 56.055, slotR: 71.885, cy: 111.86, dcx: 63.97, dR: 111.86, hcx: 63.98, hR: 71.81, ocx: 63.98, oR: 55.98 };
+    const G = { L: -31.98, B: 223.72, slotL: 56.055, slotR: 71.885, cy: 111.86, dcx: 63.97, dR: 111.86, hcx: 63.98, hR: 85, ocx: 63.98, oR: 62 };
     const ORB = '#1A9FFF', INK = '#FFFFFF';
     const DUR = 6.30, T_L = 4.00, FLOOR = 150, GRAV = 6500, VIEW_H = 690, CYCLE = 2.6;
 
@@ -2246,19 +2246,20 @@
     dome.closePath();
     // Q 的尾巴：从右半环 45° 处斜伸，末端圆头（圆 + 矩形分两次填充，避免方向抵消）
     function drawTail(ctx) {
-      const a = Math.PI / 4, tx = Math.cos(a), ty = Math.sin(a);
-      const nx = -ty, ny = tx, half = 14;
-      const r0 = RR - 56, r1 = 152;
+      // 贯穿式尾巴：从环内侧穿出环带再延伸到外侧，末端收细，像字母 Q 的撇
+      const a = 51 * Math.PI / 180, tx = Math.cos(a), ty = Math.sin(a);
+      const nx = -ty, ny = tx, h0 = 14, h1 = 10;
+      const r0 = RI + 3, r1 = RR + 82;
       const sx = CX + r0 * tx, sy = CY + r0 * ty;
       const ex = CX + r1 * tx, ey = CY + r1 * ty;
-      ctx.fillStyle = TH.ink; ctx.strokeStyle = TH.ink; ctx.lineWidth = 1.2; ctx.lineJoin = 'round';
-      ctx.beginPath(); ctx.arc(ex, ey, half, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = TH.ink; ctx.strokeStyle = TH.ink;
+      ctx.beginPath(); ctx.arc(ex, ey, h1, 0, Math.PI * 2); ctx.fill();
       ctx.beginPath();
-      ctx.moveTo(sx - nx * half, sy - ny * half);
-      ctx.lineTo(ex - nx * half, ey - ny * half);
-      ctx.lineTo(ex + nx * half, ey + ny * half);
-      ctx.lineTo(sx + nx * half, sy + ny * half);
-      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.moveTo(sx - nx * h0, sy - ny * h0);
+      ctx.lineTo(ex - nx * h1, ey - ny * h1);
+      ctx.lineTo(ex + nx * h1, ey + ny * h1);
+      ctx.lineTo(sx + nx * h0, sy + ny * h0);
+      ctx.closePath(); ctx.fill();
     }
     const orb = new Path2D();
     orb.arc(G.ocx, G.cy, G.oR, 0, Math.PI * 2);
@@ -2528,11 +2529,17 @@
         og.addColorStop(1, '#0A6FC4');
         ctx.fillStyle = og;
         ctx.fill(orb);
-        const hl = ctx.createRadialGradient(G.ocx - G.oR * .34, G.cy - G.oR * .38, 0, G.ocx - G.oR * .34, G.cy - G.oR * .38, G.oR * .62);
-        hl.addColorStop(0, 'rgba(255,255,255,0.50)');
-        hl.addColorStop(.55, 'rgba(255,255,255,0.10)');
+        const hl = ctx.createRadialGradient(G.ocx - G.oR * .30, G.cy - G.oR * .34, 0, G.ocx - G.oR * .30, G.cy - G.oR * .34, G.oR * .44);
+        hl.addColorStop(0, 'rgba(255,255,255,0.34)');
+        hl.addColorStop(.6, 'rgba(255,255,255,0.05)');
         hl.addColorStop(1, 'rgba(255,255,255,0)');
         ctx.fillStyle = hl;
+        ctx.fill(orb);
+        const vg = ctx.createRadialGradient(G.ocx - G.oR * .10, G.cy - G.oR * .12, G.oR * .45, G.ocx, G.cy, G.oR * 1.02);
+        vg.addColorStop(0, 'rgba(2,26,48,0)');
+        vg.addColorStop(.72, 'rgba(2,26,48,0.06)');
+        vg.addColorStop(1, 'rgba(2,26,48,0.26)');
+        ctx.fillStyle = vg;
         ctx.fill(orb);
       }
       ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -2580,7 +2587,7 @@
       const h = Math.round((cv.clientHeight || window.innerHeight) * dpr);
       if (w === W && h === H) return;
       W = cv.width = w; H = cv.height = h;
-      px = Math.min(W * .46, H * .20) / 223.72;
+      px = Math.min(W * .52, H * .24) / 223.72;
       ccy = H * .38;
     }
     fit();
