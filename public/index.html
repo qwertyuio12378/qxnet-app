@@ -1054,7 +1054,7 @@
     transform: translateX(-50%) translateY(0);
   }
 
-  /* 加载弹窗 */
+  /* 加载弹窗：DroidDeck 风格（深色底 + 圆环 logo + 分段进度条） */
   .loading-modal {
     position: fixed !important;
     top: 0 !important;
@@ -1063,7 +1063,9 @@
     bottom: 0 !important;
     width: 100% !important;
     height: 100% !important;
-    background: rgba(0, 0, 0, 0.5) !important;
+    background: rgba(7, 9, 13, 0.96) !important;
+    -webkit-backdrop-filter: blur(18px) !important;
+    backdrop-filter: blur(18px) !important;
     z-index: 999999 !important;
     display: none;
     align-items: center;
@@ -1073,31 +1075,98 @@
     display: flex !important;
   }
   .loading-box {
-    background: #fff !important;
-    border-radius: 16px;
-    padding: 30px 40px;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    gap: 0;
+    box-shadow: none !important;
     position: relative !important;
     z-index: 1000000 !important;
   }
-  .loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid #E2E8F0;
-    border-top-color: #3B82F6;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+  /* DroidDeck 式圆环 logo：白色环 + 旋转高光弧 + 蓝色芯 + Q 尾巴 */
+  .dd-logo {
+    position: relative;
+    width: 96px;
+    height: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 26px;
+    animation: ddLogoIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
-  @keyframes spin {
+  .dd-logo svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+  .dd-ring-spin {
+    transform-origin: 50% 50%;
+    animation: ddSpin 2.2s linear infinite;
+  }
+  @keyframes ddSpin {
     to { transform: rotate(360deg); }
   }
+  @keyframes ddLogoIn {
+    from { opacity: 0; transform: scale(0.86); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .dd-core {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #1A9FFF;
+    box-shadow: 0 0 0 4px rgba(26, 159, 255, 0.16), 0 0 30px rgba(26, 159, 255, 0.35);
+    animation: ddCore 2.2s ease-in-out infinite;
+  }
+  @keyframes ddCore {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
   .loading-text {
-    font-size: 15px;
-    color: #64748B;
+    font-size: 19px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.02em;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .loading-sub {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.42);
+    text-align: center;
+    margin-bottom: 26px;
+    letter-spacing: 0.04em;
+  }
+  /* DroidDeck 特征：分段式进度条，蓝色光块循环推进 */
+  .dd-seg {
+    display: flex;
+    gap: 6px;
+    width: 216px;
+  }
+  .dd-seg span {
+    flex: 1;
+    height: 5px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.12);
+    animation: ddSeg 1.8s ease-in-out infinite;
+  }
+  .dd-seg span:nth-child(1) { animation-delay: 0s; }
+  .dd-seg span:nth-child(2) { animation-delay: 0.15s; }
+  .dd-seg span:nth-child(3) { animation-delay: 0.3s; }
+  .dd-seg span:nth-child(4) { animation-delay: 0.45s; }
+  .dd-seg span:nth-child(5) { animation-delay: 0.6s; }
+  .dd-seg span:nth-child(6) { animation-delay: 0.75s; }
+  .dd-seg span:nth-child(7) { animation-delay: 0.9s; }
+  .dd-seg span:nth-child(8) { animation-delay: 1.05s; }
+  @keyframes ddSeg {
+    0%, 100% { background: rgba(255, 255, 255, 0.12); box-shadow: none; }
+    35% { background: #1A9FFF; box-shadow: 0 0 10px rgba(26, 159, 255, 0.7); }
   }
   /* 邮箱后缀联想下拉：输入 @ 时自动弹出可选后缀（fixed 挂 body，不受卡片裁剪影响） */
   .email-suggest {
@@ -1618,11 +1687,22 @@
 
 <div class="toast" id="toastEl"></div>
 
-<!-- 加载弹窗 -->
-<div class="loading-modal" id="loadingModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:999999;display:none;align-items:center;justify-content:center;">
-  <div class="loading-box" style="background:#fff;border-radius:16px;padding:30px 40px;display:flex;flex-direction:column;align-items:center;gap:16px;box-shadow:0 12px 40px rgba(0,0,0,0.2);">
-    <div class="loading-spinner"></div>
+<!-- 加载弹窗（DroidDeck 风格） -->
+<div class="loading-modal" id="loadingModal">
+  <div class="loading-box">
+    <div class="dd-logo">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="50" cy="50" r="38" fill="none" stroke="#ffffff" stroke-width="15"></circle>
+        <path d="M73 73 L91 91" stroke="#ffffff" stroke-width="12" stroke-linecap="round"></path>
+      </svg>
+      <svg class="dd-ring-spin" viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="50" cy="50" r="38" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="15" stroke-dasharray="46 193" stroke-linecap="round" transform="rotate(-90 50 50)"></circle>
+      </svg>
+      <div class="dd-core"></div>
+    </div>
     <div class="loading-text">加载中…</div>
+    <div class="loading-sub">QNET · 安全认证环境</div>
+    <div class="dd-seg"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
   </div>
 </div>
 
@@ -1971,9 +2051,20 @@
       const box = loadingModal.querySelector('.loading-box');
       box.style.cssText = '';
       box.innerHTML = `
-        <div class="loading-spinner"></div>
-        <div class="loading-text">请验证指纹以绑定...</div>
-        <button id="cancelFpBtn" style="margin-top:16px;padding:8px 20px;border-radius:12px;border:none;background:rgba(0,0,0,0.05);font-size:14px;color:#666;cursor:pointer;">取消</button>
+        <div class="dd-logo">
+          <svg viewBox="0 0 100 100" aria-hidden="true">
+            <circle cx="50" cy="50" r="38" fill="none" stroke="#ffffff" stroke-width="15"></circle>
+            <path d="M73 73 L91 91" stroke="#ffffff" stroke-width="12" stroke-linecap="round"></path>
+          </svg>
+          <svg class="dd-ring-spin" viewBox="0 0 100 100" aria-hidden="true">
+            <circle cx="50" cy="50" r="38" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="15" stroke-dasharray="46 193" stroke-linecap="round" transform="rotate(-90 50 50)"></circle>
+          </svg>
+          <div class="dd-core"></div>
+        </div>
+        <div class="loading-text">请验证指纹以绑定…</div>
+        <div class="loading-sub">QNET · 安全认证环境</div>
+        <div class="dd-seg"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <button id="cancelFpBtn" style="margin-top:26px;padding:10px 30px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.08);font-size:14px;color:rgba(255,255,255,0.82);cursor:pointer;">取消</button>
       `;
       loadingModal.classList.add('show');
       
