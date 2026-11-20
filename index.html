@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>QXNet 认证</title>
+<title>QXNET 认证</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232563EB'/><text x='50' y='68' font-size='52' font-weight='bold' text-anchor='middle' fill='white' font-family='sans-serif'>Q</text></svg>">
 <link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Zhi+Mang+Xing&family=Ma+Shan+Zheng&family=Dancing+Script:wght@500;700&family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
@@ -1362,10 +1362,10 @@
       </div>
       <div class="hero-badge" id="heroBadge">登录</div>
     </div>
-    <div class="hero-title" id="heroTitle">QXNet 智能弱网控制台</div>
+    <div class="hero-title" id="heroTitle">QXNET 智能弱网控制台</div>
     <div class="hero-sub" id="heroSub">登录后畅享最完美的2.1.5</div>
     <div class="hero-tip">
-      <span class="hero-tip-inner" id="heroTip">原汁原味的QNET2.1.5版本，实现了原版的地区延迟计算。&nbsp;&nbsp;&nbsp;&nbsp;原汁原味的QNET2.1.5版本，实现了原版的地区延迟计算。</span>
+      <span class="hero-tip-inner" id="heroTip">原汁原味的QXNET2.1.5版本，实现了原版的地区延迟计算。&nbsp;&nbsp;&nbsp;&nbsp;原汁原味的QXNET2.1.5版本，实现了原版的地区延迟计算。</span>
     </div>
     <!-- 波形横线：不停起伏 -->
     <div class="hero-wave">
@@ -1624,7 +1624,7 @@
       </div>
     </div>
 
-    <button class="submit-btn" id="submitBtn">进入 QNET</button>
+    <button class="submit-btn" id="submitBtn">进入 QXNET</button>
 
     <div style="text-align:center;font-size:11px;color:#94A3B8;margin-top:12px;" id="deviceIdLabel"></div>
   </div>
@@ -1706,7 +1706,7 @@
   <canvas class="dd-canvas" id="ddCanvas"></canvas>
   <div class="loading-box">
     <div class="loading-text">加载中…</div>
-    <div class="loading-sub">QNET · 安全认证环境</div>
+    <div class="loading-sub">QXNET · 安全认证环境</div>
     <div class="dd-bar"></div>
   </div>
 </div>
@@ -2057,7 +2057,7 @@
       box.style.cssText = '';
       box.innerHTML = `
         <div class="loading-text">请验证指纹以绑定…</div>
-        <div class="loading-sub">QNET · 安全认证环境</div>
+        <div class="loading-sub">QXNET · 安全认证环境</div>
         <div class="dd-bar"></div>
             <button id="cancelFpBtn" style="margin-top:26px;padding:10px 30px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.08);font-size:14px;color:rgba(255,255,255,0.82);cursor:pointer;">取消</button>
       `;
@@ -2133,7 +2133,7 @@
       const credential = await navigator.credentials.create({
         publicKey: {
           challenge: new Uint8Array(32),
-          rp: { name: 'QXNet' },
+          rp: { name: 'QXNET' },
           user: user,
           pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
           authenticatorSelection: {
@@ -3844,13 +3844,13 @@
   });
 
   // Tab 切换
-  const MARQUEE_TEXT = '原汁原味的QNET2.1.5版本，实现了原版的地区延迟计算。';
+  const MARQUEE_TEXT = '原汁原味的QXNET2.1.5版本，实现了原版的地区延迟计算。';
   const tabConfig = {
     login: {
       badge: '登录',
-      title: 'QXNet 智能弱网控制台',
+      title: 'QXNET 智能弱网控制台',
       tip: MARQUEE_TEXT,
-      submit: '进入 QNET',
+      submit: '进入 QXNET',
       showAccount: true,
       showCardKey: false,
       showRemember: true,
@@ -4314,7 +4314,7 @@
   (function launchBootScreen() {
     try {
       bootSplash = true;
-      showLoading('正在启动 QNET', 1.0);
+      showLoading('正在启动 QXNET', 1.0);
       setTimeout(function () { bootSplash = false; hideLoading(true); }, 6500);
     } catch (e) { bootSplash = false; }
   })();
