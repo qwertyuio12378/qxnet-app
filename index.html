@@ -2248,8 +2248,8 @@
     function drawTail(ctx) {
       // 贯穿式尾巴：从环内侧穿出环带再延伸到外侧，末端收细，像字母 Q 的撇
       const a = 51 * Math.PI / 180, tx = Math.cos(a), ty = Math.sin(a);
-      const nx = -ty, ny = tx, h0 = 14, h1 = 10;
-      const r0 = RI + 3, r1 = RR + 82;
+      const nx = -ty, ny = tx, h0 = 15, h1 = 12;
+      const r0 = RI + 3, r1 = RR + 70;
       const sx = CX + r0 * tx, sy = CY + r0 * ty;
       const ex = CX + r1 * tx, ey = CY + r1 * ty;
       ctx.fillStyle = TH.ink; ctx.strokeStyle = TH.ink;
