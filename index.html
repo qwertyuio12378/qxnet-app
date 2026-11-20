@@ -1046,7 +1046,7 @@
     opacity: 0;
     transition: all 0.3s;
     pointer-events: none;
-    z-index: 999;
+    z-index: 1000001;
     white-space: nowrap;
   }
   .toast.show {
@@ -2422,15 +2422,20 @@
   }
 
   let loadingOpenAt = 0, loadingHideTimer = 0, bootSplash = false;
-  const LOADING_MIN_MS = 1400; // loading 最短展示，避免一闪而过看不到动画
+  let loadingMinMs = 1400; // loading 最短展示；关键认证流程放到 6.3s（完整播完一轮启动动画）
 
-  function showLoading(text = '加载中…', speed) {
+  function showLoading(text = '加载中…', speed, full) {
     if (!loadingModal) return;
     if (bootSplash && !speed) return; // 启动屏播放期间，忽略其他流程的 loading 请求
     if (loadingHideTimer) { clearTimeout(loadingHideTimer); loadingHideTimer = 0; }
     const tEl = loadingModal.querySelector('.loading-text');
     if (tEl) tEl.textContent = text;
-    if (!bootOpen) loadingOpenAt = performance.now();
+    if (!bootOpen) {
+      loadingOpenAt = performance.now();
+      loadingMinMs = full ? 6300 : 1400;
+    } else if (full) {
+      loadingMinMs = 6300; // 串联流程中出现关键认证，同样补足完整一轮
+    }
     loadingModal.classList.add('show');
     if (!bootOpen) { bootOpen = true; bootRestart(speed); }
   }
@@ -2438,7 +2443,7 @@
     if (!loadingModal) return;
     if (bootSplash && !now) return; // 启动屏必须播满一轮才关
     if (loadingHideTimer) { clearTimeout(loadingHideTimer); loadingHideTimer = 0; }
-    const remain = LOADING_MIN_MS - (performance.now() - loadingOpenAt);
+    const remain = loadingMinMs - (performance.now() - loadingOpenAt);
     if (!now && bootOpen && remain > 0) {
       loadingHideTimer = setTimeout(() => {
         loadingHideTimer = 0;
@@ -2690,7 +2695,7 @@
     
     // 验证账号是否存在
     if (sb) {
-      showLoading('验证账号中…');
+      showLoading('验证账号中…', 1.0, true);
       try {
         const { data: faces, error } = await sb.from('user_faces').select('email').eq('email', acc);
         if (error) throw error;
@@ -2850,7 +2855,7 @@
       if (!password) return showToast('请输入密码');
       if (!otp || otp.length !== 6) return showToast('请输入6位验证码');
       if (!sb) return showToast('云端服务暂不可用');
-      showLoading('验证身份中…');
+      showLoading('验证身份中…', 1.0, true);
       const { error } = await sb.auth.signInWithPassword({ email, password });
       if (error) {
         hideLoading();
@@ -3493,7 +3498,7 @@
           const pwd = $('passwordInput').value.trim();
           if (!pwd) return showToast('请输入密码');
           if (!sb) { hideLoading(); return showToast('云端服务暂不可用，请刷新重试'); }
-          showLoading('登录中…');
+          showLoading('登录中…', 1.0, true);
           let email = acc;
           if (!email.includes('@')) email = acc + '@qxnet.com';
           const { data, error } = await sb.auth.signInWithPassword({
@@ -3520,7 +3525,7 @@
           }
         } else if (state.loginType === 'face') {
           // 人脸识别登录
-          showLoading('人脸识别中…');
+          showLoading('人脸识别中…', 1.0, true);
           setTimeout(() => {
             hideLoading();
             showLoginSuccess();
@@ -3531,7 +3536,7 @@
           if (!acc.includes('@')) return showToast('验证码登录请输入邮箱');
           if (!token || token.length !== 6) return showToast('请输入6位验证码');
           if (!sb) { hideLoading(); return showToast('云端服务暂不可用，请刷新重试'); }
-          showLoading('登录中…');
+          showLoading('登录中…', 1.0, true);
           const { data, error } = await sb.auth.verifyOtp({
             email: acc,
             token: token,
