@@ -1087,46 +1087,12 @@
     position: relative !important;
     z-index: 1000000 !important;
   }
-  /* DroidDeck 式圆环 logo：白色环 + 旋转高光弧 + 蓝色芯 + Q 尾巴 */
-  .dd-logo {
-    position: relative;
-    width: 96px;
-    height: 96px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 26px;
-    animation: ddLogoIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
-  .dd-logo svg {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    overflow: visible;
-  }
-  .dd-ring-spin {
-    transform-origin: 50% 50%;
-    animation: ddSpin 2.2s linear infinite;
-  }
-  @keyframes ddSpin {
-    to { transform: rotate(360deg); }
-  }
-  @keyframes ddLogoIn {
-    from { opacity: 0; transform: scale(0.86); }
-    to { opacity: 1; transform: scale(1); }
-  }
-  .dd-core {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: #1A9FFF;
-    box-shadow: 0 0 0 4px rgba(26, 159, 255, 0.16), 0 0 30px rgba(26, 159, 255, 0.35);
-    animation: ddCore 2.2s ease-in-out infinite;
-  }
-  @keyframes ddCore {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.08); }
+  /* DroidDeck 真实启动动画画布（几何与时序取自 upstream artwork/boot-animation-source） */
+  .dd-canvas {
+    width: 200px;
+    height: 200px;
+    display: block;
+    margin: 0 auto 2px;
   }
   .loading-text {
     font-size: 19px;
@@ -1690,16 +1656,7 @@
 <!-- 加载弹窗（DroidDeck 风格） -->
 <div class="loading-modal" id="loadingModal">
   <div class="loading-box">
-    <div class="dd-logo">
-      <svg viewBox="0 0 100 100" aria-hidden="true">
-        <circle cx="50" cy="50" r="38" fill="none" stroke="#ffffff" stroke-width="15"></circle>
-        <path d="M73 73 L91 91" stroke="#ffffff" stroke-width="12" stroke-linecap="round"></path>
-      </svg>
-      <svg class="dd-ring-spin" viewBox="0 0 100 100" aria-hidden="true">
-        <circle cx="50" cy="50" r="38" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="15" stroke-dasharray="46 193" stroke-linecap="round" transform="rotate(-90 50 50)"></circle>
-      </svg>
-      <div class="dd-core"></div>
-    </div>
+    <canvas class="dd-canvas" id="ddCanvas" width="400" height="400"></canvas>
     <div class="loading-text">加载中…</div>
     <div class="loading-sub">QNET · 安全认证环境</div>
     <div class="dd-seg"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
@@ -2051,22 +2008,15 @@
       const box = loadingModal.querySelector('.loading-box');
       box.style.cssText = '';
       box.innerHTML = `
-        <div class="dd-logo">
-          <svg viewBox="0 0 100 100" aria-hidden="true">
-            <circle cx="50" cy="50" r="38" fill="none" stroke="#ffffff" stroke-width="15"></circle>
-            <path d="M73 73 L91 91" stroke="#ffffff" stroke-width="12" stroke-linecap="round"></path>
-          </svg>
-          <svg class="dd-ring-spin" viewBox="0 0 100 100" aria-hidden="true">
-            <circle cx="50" cy="50" r="38" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="15" stroke-dasharray="46 193" stroke-linecap="round" transform="rotate(-90 50 50)"></circle>
-          </svg>
-          <div class="dd-core"></div>
-        </div>
+        <canvas class="dd-canvas" id="ddCanvas" width="400" height="400"></canvas>
         <div class="loading-text">请验证指纹以绑定…</div>
         <div class="loading-sub">QNET · 安全认证环境</div>
         <div class="dd-seg"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
         <button id="cancelFpBtn" style="margin-top:26px;padding:10px 30px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.08);font-size:14px;color:rgba(255,255,255,0.82);cursor:pointer;">取消</button>
       `;
       loadingModal.classList.add('show');
+      bootOpen = true;
+      bootRestart();
       
       // 取消按钮
       const cancelBtn = document.getElementById('cancelFpBtn');
@@ -2168,14 +2118,310 @@
 
   // Loading 弹窗（提前定义）
   const loadingModal = $('loadingModal');
+
+  // ===== DroidDeck 启动动画移植（真实几何 + 真实时序，源: upstream artwork/boot-animation-source）=====
+  const QXBoot = (function () {
+    const deg = Math.PI / 180;
+    const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+    const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
+    const eio = t => { t = clamp(t); return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
+    const eInQ = t => { t = clamp(t); return t * t; };
+    const eOutC = t => { t = clamp(t); return 1 - Math.pow(1 - t, 3); };
+    const mul = (m, n) => [m[0]*n[0]+m[2]*n[1], m[1]*n[0]+m[3]*n[1], m[0]*n[2]+m[2]*n[3], m[1]*n[2]+m[3]*n[3], m[0]*n[4]+m[2]*n[5]+m[4], m[1]*n[4]+m[3]*n[5]+m[5]];
+    const T = (x, y) => [1, 0, 0, 1, x, y];
+    const R = a => { const c = Math.cos(a), s = Math.sin(a); return [c, s, -s, c, 0, 0]; };
+    const S = (x, y) => [x, 0, 0, y, 0, 0];
+    const chain = (...ms) => ms.reduce(mul);
+    const rv = (a, x, y) => { const c = Math.cos(a), s = Math.sin(a); return { x: c * x - s * y, y: s * x + c * y }; };
+
+    // upstream 标志几何（单位与 artwork/droiddeck-mark.svg 一致）
+    const G = { L: -31.98, B: 223.72, slotL: 56.055, slotR: 71.885, cy: 111.86, dcx: 63.97, dR: 111.86, hcx: 63.98, hR: 71.81, ocx: 63.98, oR: 55.98 };
+    const ORB = '#1A9FFF', INK = '#FFFFFF';
+    const DUR = 6.30, T_L = 4.00, FLOOR = 150, GRAV = 6500, VIEW_H = 690;
+    const CEN = { arch: { x: 2.60002221487, y: 111.86 }, dome: { x: 126.67591638938, y: 111.86 } };
+    const H0 = {
+      O: { x: 25.75072697197, y: 5.93712034158 },
+      arch: { a0: 1.56829639025, r0: 90.56033287982, th0: 1.57036852863, aF: Math.PI, rF: 61.37997778513 },
+      dome: { a0: -1.54858559350, r0: 105.14724938260, th0: 1.618786196996, aF: 0, rF: 62.69591638938 }
+    };
+
+    // 三块几何：左块 / 右环 / 蓝球
+    const dxA = G.slotL - G.hcx, hyA = Math.sqrt(G.hR * G.hR - dxA * dxA);
+    const arch = new Path2D();
+    arch.moveTo(G.L, 0); arch.lineTo(G.slotL, 0); arch.lineTo(G.slotL, G.cy - hyA);
+    arch.arc(G.hcx, G.cy, G.hR, Math.atan2(-hyA, dxA), Math.atan2(hyA, dxA), true);
+    arch.lineTo(G.slotL, G.B); arch.lineTo(G.L, G.B); arch.closePath();
+
+    const dxO = G.slotR - G.dcx, hyO = Math.sqrt(G.dR * G.dR - dxO * dxO);
+    const dxI = G.slotR - G.hcx, hyI = Math.sqrt(G.hR * G.hR - dxI * dxI);
+    const dome = new Path2D();
+    dome.moveTo(G.slotR, G.cy - hyO);
+    dome.arc(G.dcx, G.cy, G.dR, Math.atan2(-hyO, dxO), Math.atan2(hyO, dxO), false);
+    dome.lineTo(G.slotR, G.cy + hyI);
+    dome.arc(G.hcx, G.cy, G.hR, Math.atan2(hyI, dxI), Math.atan2(-hyI, dxI), true);
+    dome.closePath();
+
+    const orb = new Path2D();
+    orb.arc(G.ocx, G.cy, G.oR, 0, Math.PI * 2);
+
+    const ANC = { arch: { x: G.slotL, y: G.cy }, ball: { x: G.ocx, y: G.cy + G.oR }, dome: { x: G.hcx + G.hR, y: G.cy } };
+    const HA = G.slotL - G.L, WA = G.cy;
+
+    function drop(o) {
+      const g = GRAV, segs = [], impacts = [];
+      let t = o.t0, v = o.v0;
+      const tau = (-v + Math.sqrt(v * v + 2 * g * o.h0)) / g;
+      segs.push({ ts: t, te: t + tau, h0: o.h0, vu: -v });
+      t += tau; v = v + g * tau; impacts.push({ t, v });
+      for (;;) {
+        const vu = o.e * v; if (vu < o.minV) break;
+        const d = 2 * vu / g; segs.push({ ts: t, te: t + d, h0: 0, vu });
+        t += d; v = vu; impacts.push({ t, v });
+      }
+      const rest = t;
+      const seg = tt => { for (const s of segs) if (tt < s.te) return s; return null; };
+      return {
+        o, impacts, rest, land: impacts[0].t,
+        h(tt) { if (tt <= o.t0) return o.h0; const s = seg(tt); if (!s) return 0; const u = tt - s.ts; return Math.max(0, s.h0 + s.vu * u - .5 * g * u * u); },
+        v(tt) { if (tt <= o.t0 || tt >= rest) return 0; const s = seg(tt); return s ? s.vu - g * (tt - s.ts) : 0; },
+        air(tt) { return tt > o.t0 && tt < rest; }
+      };
+    }
+    const archDrop = drop({ t0: 0.10, h0: 520, v0: 250, e: 0.20, minV: 300 });
+    const ballDrop = drop({ t0: 0.50, h0: 440, v0: 250, e: 0.45, minV: 170 });
+    const domeDrop = drop({ t0: 1.15, h0: 330, v0: 250, e: 0.24, minV: 250 });
+
+    const SWAY = [[1.60, 0], [1.90, .42], [2.24, -.70], [2.62, .95], [2.82, 1.10], [3.08, -.44], [3.30, .16], [3.50, 0]];
+    function sway(t) {
+      if (t <= SWAY[0][0] || t >= SWAY[SWAY.length - 1][0]) return 0;
+      for (let i = 0; i < SWAY.length - 1; i++) {
+        const ta = SWAY[i][0], va = SWAY[i][1], tb = SWAY[i + 1][0], vb = SWAY[i + 1][1];
+        if (t < tb) { const p = (t - ta) / (tb - ta); return va + (vb - va) * (.5 - .5 * Math.cos(Math.PI * p)); }
+      }
+      return 0;
+    }
+    const HOP = { t: 2.70, d: .19, dx: 26, h: 16 };
+    const hopX = t => HOP.dx * eio((t - HOP.t) / HOP.d);
+    const hopH = t => (t > HOP.t && t < HOP.t + HOP.d) ? HOP.h * Math.sin(Math.PI * (t - HOP.t) / HOP.d) : 0;
+    function crouch(t, amt, a, b, hold) {
+      if (t < a || t >= T_L) return 0;
+      if (t < b) return amt * eio((t - a) / (b - a));
+      if (t < hold) return amt;
+      return amt * (1 - eInQ((t - hold) / (T_L - hold)));
+    }
+    const crouchA = t => crouch(t, .17, 3.56, 3.84, 3.91);
+    const crouchB = t => crouch(t, .12, 3.60, 3.86, 3.91);
+    const crouchD = t => crouch(t, .09, 3.64, 3.88, 3.91);
+
+    const PHI_FALL = 5 * deg, PSI_FALL = -6 * deg, U0 = 12, ROLL = G.oR / G.dR;
+    const DT = 1 / 1200, N = Math.ceil((DUR + .2) / DT);
+    const SIG = { phi: new Float32Array(N), u: new Float32Array(N), psi: new Float32Array(N), qA: new Float32Array(N), qB: new Float32Array(N), qD: new Float32Array(N) };
+    const sig = (name, t) => {
+      const x = clamp(t / DT, 0, N - 1.001), i = Math.floor(x), f = x - i, a = SIG[name];
+      return a[i] + (a[i + 1] - a[i]) * f;
+    };
+    function peakFactor(w, z) {
+      const wd = w * Math.sqrt(1 - z * z), ts = Math.atan(wd / (z * w)) / wd;
+      return Math.exp(-z * w * ts) * Math.sin(wd * ts) / wd;
+    }
+    const SPR = { A: [40, .32], B: [34, .28], D: [36, .34] };
+    const kick = (k, peak) => peak / peakFactor(SPR[k][0], SPR[k][1]);
+
+    (function simulate() {
+      const K = [];
+      const v1a = archDrop.impacts[0].v, v1b = ballDrop.impacts[0].v, v1d = domeDrop.impacts[0].v;
+      archDrop.impacts.forEach(i => K.push({ t: i.t, k: 'A', dv: kick('A', .13 * i.v / v1a) }));
+      ballDrop.impacts.forEach(i => {
+        const r = i.v / v1b;
+        K.push({ t: i.t, k: 'B', dv: kick('B', .24 * r) });
+        K.push({ t: i.t, k: 'A', dv: kick('A', .06 * r) });
+        K.push({ t: i.t, k: 'phi', dv: .55 * r });
+      });
+      domeDrop.impacts.forEach(i => {
+        const r = i.v / v1d;
+        K.push({ t: i.t, k: 'D', dv: kick('D', .11 * r) });
+        K.push({ t: i.t, k: 'B', dv: kick('B', .17 * r) });
+        K.push({ t: i.t, k: 'A', dv: kick('A', .07 * r) });
+      });
+      K.push({ t: HOP.t + HOP.d, k: 'A', dv: kick('A', .07) });
+      K.push({ t: HOP.t + HOP.d, k: 'B', dv: kick('B', .06) });
+      K.push({ t: HOP.t + HOP.d, k: 'D', dv: kick('D', .04) });
+      K.sort((a, b) => a.t - b.t);
+
+      let phi = PHI_FALL, phiV = 0, phiA = 0, u = U0, uV = 0, psi = PSI_FALL, psiV = 0;
+      const q = { A: [0, 0], B: [0, 0], D: [0, 0] };
+      let ki = 0, crossings = 0, lastSign = 1;
+      for (let i = 0; i < N; i++) {
+        const t = i * DT;
+        while (ki < K.length && K[ki].t <= t) {
+          const k = K[ki++];
+          if (k.k === 'phi') phiV += k.dv; else q[k.k][1] += k.dv;
+        }
+        const s = sway(t);
+        if (t < archDrop.land) { phi = PHI_FALL; phiV = 0; phiA = 0; }
+        else {
+          const w = 20, z = .38, tgt = 5.6 * deg * sway(t - .10);
+          phiA = -w * w * (phi - tgt) - 2 * z * w * phiV; phiV += phiA * DT; phi += phiV * DT;
+          const sg = Math.sign(phi) || lastSign;
+          if (sg !== lastSign && crossings < 2 && t < 1.0) { q.A[1] += kick('A', .035); crossings++; }
+          lastSign = sg;
+        }
+        if (t < ballDrop.rest) { u = U0; uV = 0; }
+        else { const w = 13, z = .5, tgt = 24 * sway(t - .12); const a = -w * w * (u - tgt) - 2 * z * w * uV; uV += a * DT; u += uV * DT; }
+        if (t < domeDrop.land) { psi = PSI_FALL; psiV = 0; }
+        else { const w = 13, z = .22, tgt = 11 * deg * s; const a = -w * w * (psi - tgt) - 2 * z * w * psiV - .6 * phiA; psiV += a * DT; psi += psiV * DT; }
+        const tgA = archDrop.air(t) ? -Math.min(.12, Math.abs(archDrop.v(t)) * 4.6e-5) : 0;
+        const tgB = ballDrop.air(t) ? -Math.min(.14, Math.abs(ballDrop.v(t)) * 6.5e-5) : 0;
+        const tgD = domeDrop.air(t) ? -Math.min(.10, Math.abs(domeDrop.v(t)) * 4.0e-5) : 0;
+        const tg = { A: tgA, B: tgB, D: tgD };
+        for (const k of ['A', 'B', 'D']) {
+          const w = SPR[k][0], z = SPR[k][1], st = q[k];
+          const a = -w * w * (st[0] - tg[k]) - 2 * z * w * st[1]; st[1] += a * DT; st[0] += st[1] * DT;
+        }
+        SIG.phi[i] = phi; SIG.u[i] = u; SIG.psi[i] = psi;
+        SIG.qA[i] = q.A[0]; SIG.qB[i] = q.B[0]; SIG.qD[i] = q.D[0];
+      }
+    })();
+
+    function standPose(t) {
+      const hA = archDrop.h(t) + hopH(t), hx = hopX(t);
+      const phi = sig('phi', t), u = sig('u', t), psi = sig('psi', t);
+      const qA = sig('qA', t) + crouchA(t), qB = sig('qB', t) + crouchB(t), qD = sig('qD', t) + crouchD(t);
+      const hB = ballDrop.h(t), hD = domeDrop.h(t);
+      const sxA = 1 + .55 * qA, syA = 1 - qA;
+      const side = phi >= 0 ? 1 : -1;
+      const piv = { x: hx + side * WA * sxA, y: FLOOR - hA };
+      const off = rv(phi, -side * WA * sxA, 0);
+      const A = { x: piv.x + off.x, y: piv.y + off.y };
+      const mA = chain(T(A.x, A.y), R(phi), S(sxA, syA), R(90 * deg), T(-ANC.arch.x, -ANC.arch.y));
+      const top = rv(phi, u, -HA * syA);
+      const cB = { x: A.x + top.x, y: A.y + top.y - hB };
+      const sxB = 1 + .8 * qB, syB = 1 - qB;
+      const mB = chain(T(cB.x, cB.y), R(phi), S(sxB, syB), T(-ANC.ball.x, -ANC.ball.y));
+      const bc = rv(phi, 0, -G.oR * syB);
+      const O = { x: cB.x + bc.x, y: cB.y + bc.y };
+      const ang = phi + psi, dd = rv(ang, 0, -G.oR * syB);
+      const cD = { x: O.x + dd.x, y: O.y + dd.y - hD };
+      const sxD = 1 + .6 * qD, syD = 1 - qD;
+      const mD = chain(T(cD.x, cD.y), R(ang), S(sxD, syD), T(0, -G.dR), R(psi * ROLL), R(90 * deg), T(-G.dcx, -G.cy));
+      return { arch: mA, ball: mB, dome: mD, O, hA };
+    }
+
+    const FL = { TR: .34, APEX: -108, TC: .44, X: 48, ROT: .40 };
+    function fromRest(x0, s, w, z) {
+      const wd = w * Math.sqrt(1 - z * z);
+      return Math.exp(-z * w * s) * (x0 * Math.cos(wd * s) + (z * w * x0 / wd) * Math.sin(wd * s));
+    }
+    function flightPose(t) {
+      const tau = t - T_L, sC = tau - FL.TC;
+      const done = tau > 1.7;
+      let Oy = tau < FL.TR ? H0.O.y + (FL.APEX - H0.O.y) * (1 - Math.pow(1 - tau / FL.TR, 2))
+                           : fromRest(FL.APEX, tau - FL.TR, 9.5, .75);
+      let Ox = H0.O.x * (1 - eio(tau / .4));
+      if (done) { Ox = 0; Oy = 0; }
+      const O = { x: Ox, y: Oy };
+      const st = -Math.sin(Math.PI * clamp(tau / .30)) * .085;
+      const gs = (sC > 0 && !done) ? 1 + .05 * Math.exp(-6 * sC) * Math.sin(20 * sC) : 1;
+      const Gm = chain(T(O.x, O.y), S(gs, gs), T(-O.x, -O.y));
+      const piece = k => {
+        const h = H0[k];
+        const a = h.a0 + (h.aF - h.a0) * eio(tau / FL.ROT);
+        let r = h.rF + (h.r0 - h.rF) * (1 - smooth(0, .30, tau));
+        r += FL.X * smooth(0, .22, tau) * (1 - eInQ((tau - .30) / (FL.TC - .30)));
+        if (sC > 0 && !done) r += 3.6 * Math.exp(-14 * sC) * Math.abs(Math.sin(38 * sC));
+        let th = h.th0 + (0 - h.th0) * eio((tau - .02) / FL.ROT);
+        if (done) { r = h.rF; th = 0; }
+        const q = st * .8, c = CEN[k];
+        const C = { x: O.x + r * Math.cos(done ? h.aF : a), y: O.y + r * Math.sin(done ? h.aF : a) };
+        return mul(Gm, chain(T(C.x, C.y), S(1 + .6 * q, 1 - q), R(th), T(-c.x, -c.y)));
+      };
+      const qb = st * 1.1;
+      const ball = mul(Gm, chain(T(O.x, O.y), S(1 + .8 * qb, 1 - qb), T(-G.ocx, -G.cy)));
+      return { arch: piece('arch'), dome: piece('dome'), ball, O, tau };
+    }
+
+    function pose(t) {
+      t = clamp(t, 0, DUR);
+      const p = t < T_L ? standPose(t) : flightPose(t);
+      const sC = t - (T_L + FL.TC);
+      p.sC = sC;
+      p.ring = (sC > 0 && sC < .8)
+        ? { O: p.O, r: 118 + 210 * eOutC(sC / .8), a: .34 * Math.pow(1 - sC / .8, 2), w: 4 * (1 - .7 * sC / .8) }
+        : null;
+      return p;
+    }
+
+    function draw(ctx, W, H, t) {
+      const px = H / VIEW_H, base = [px, 0, 0, px, W / 2, H / 2];
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+      const p = pose(t);
+      if (p.ring) {
+        ctx.setTransform.apply(ctx, base);
+        ctx.strokeStyle = 'rgba(26,159,255,' + Math.min(1, p.ring.a * 1.5).toFixed(3) + ')';
+        ctx.lineWidth = p.ring.w;
+        ctx.shadowColor = 'rgba(26,159,255,' + Math.min(1, p.ring.a * 2).toFixed(3) + ')';
+        ctx.shadowBlur = 14 * px;
+        ctx.beginPath(); ctx.arc(p.ring.O.x, p.ring.O.y, p.ring.r, 0, Math.PI * 2); ctx.stroke();
+        ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+      }
+      if (p.sC > 0 && p.sC < 1.4) {
+        const ga = .34 * Math.min(1, p.sC / .03) * Math.exp(-p.sC / .32) * (1 - smooth(1.0, 1.4, p.sC));
+        ctx.setTransform.apply(ctx, base);
+        const g = ctx.createRadialGradient(p.O.x, p.O.y, G.oR * .9, p.O.x, p.O.y, G.oR * 2.6);
+        g.addColorStop(0, 'rgba(26,159,255,' + ga.toFixed(3) + ')');
+        g.addColorStop(.35, 'rgba(26,159,255,' + (ga * .45).toFixed(3) + ')');
+        g.addColorStop(1, 'rgba(26,159,255,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(p.O.x, p.O.y, G.oR * 2.6, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.fillStyle = INK;
+      ctx.setTransform.apply(ctx, mul(base, p.arch)); ctx.fill(arch);
+      ctx.setTransform.apply(ctx, mul(base, p.dome)); ctx.fill(dome);
+      ctx.fillStyle = ORB;
+      ctx.setTransform.apply(ctx, mul(base, p.ball)); ctx.fill(orb);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
+
+    return { DUR, draw, pose };
+  })();
+
+  // 启动动画驱动：弹窗打开时从头播放，播完停在锁定态
+  let bootRaf = 0, bootT = 0, bootLast = 0, bootOpen = false;
+  function bootRestart() {
+    const cv = document.getElementById('ddCanvas');
+    if (!cv) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const size = Math.round(200 * dpr);
+    if (cv.width !== size) { cv.width = size; cv.height = size; }
+    bootT = 0; bootLast = 0;
+    if (bootRaf) { cancelAnimationFrame(bootRaf); bootRaf = 0; }
+    const ctx = cv.getContext('2d');
+    const loop = now => {
+      if (!bootLast) bootLast = now;
+      const dt = Math.min(.05, (now - bootLast) / 1000); bootLast = now;
+      bootT = Math.min(QXBoot.DUR, bootT + dt);
+      QXBoot.draw(ctx, cv.width, cv.height, bootT);
+      bootRaf = bootT < QXBoot.DUR ? requestAnimationFrame(loop) : 0;
+    };
+    bootRaf = requestAnimationFrame(loop);
+  }
+  function bootStop() {
+    if (bootRaf) { cancelAnimationFrame(bootRaf); bootRaf = 0; }
+  }
+
   function showLoading(text = '加载中…') {
     if (!loadingModal) return;
-    loadingModal.querySelector('.loading-text').textContent = text;
+    const tEl = loadingModal.querySelector('.loading-text');
+    if (tEl) tEl.textContent = text;
     loadingModal.classList.add('show');
+    if (!bootOpen) { bootOpen = true; bootRestart(); }
   }
   function hideLoading() {
     if (!loadingModal) return;
     loadingModal.classList.remove('show');
+    bootOpen = false;
+    bootStop();
   }
 
   // 主站地址加密存储，运行时解密后再跳转（源码中不出现明文域名）
