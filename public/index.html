@@ -2137,7 +2137,7 @@
     // upstream 标志几何（单位与 artwork/droiddeck-mark.svg 一致）
     const G = { L: -31.98, B: 223.72, slotL: 56.055, slotR: 71.885, cy: 111.86, dcx: 63.97, dR: 111.86, hcx: 63.98, hR: 71.81, ocx: 63.98, oR: 55.98 };
     const ORB = '#1A9FFF', INK = '#FFFFFF';
-    const DUR = 6.30, T_L = 4.00, FLOOR = 150, GRAV = 6500, VIEW_H = 690;
+    const DUR = 6.30, T_L = 4.00, FLOOR = 150, GRAV = 6500, VIEW_H = 690, CYCLE = 2.6;
     const CEN = { arch: { x: 2.60002221487, y: 111.86 }, dome: { x: 126.67591638938, y: 111.86 } };
     const H0 = {
       O: { x: 25.75072697197, y: 5.93712034158 },
@@ -2356,17 +2356,26 @@
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, W, H);
       const p = pose(t);
-      if (p.ring) {
+      // 主时间线播完后：标志保持锁定态，光环按周期持续扩散（加载期间不会静止）
+      let ring = p.ring, glowT = p.sC;
+      if (t > DUR) {
+        const c = (t - DUR) % CYCLE;
+        glowT = -1;
+        ring = c < 1.9
+          ? { O: p.O, r: 118 + 210 * eOutC(c / 1.9), a: .30 * Math.pow(1 - c / 1.9, 2), w: 4 * (1 - .7 * c / 1.9) }
+          : null;
+      }
+      if (ring) {
         ctx.setTransform.apply(ctx, base);
-        ctx.strokeStyle = 'rgba(26,159,255,' + Math.min(1, p.ring.a * 1.5).toFixed(3) + ')';
-        ctx.lineWidth = p.ring.w;
-        ctx.shadowColor = 'rgba(26,159,255,' + Math.min(1, p.ring.a * 2).toFixed(3) + ')';
+        ctx.strokeStyle = 'rgba(26,159,255,' + Math.min(1, ring.a * 1.5).toFixed(3) + ')';
+        ctx.lineWidth = ring.w;
+        ctx.shadowColor = 'rgba(26,159,255,' + Math.min(1, ring.a * 2).toFixed(3) + ')';
         ctx.shadowBlur = 14 * px;
-        ctx.beginPath(); ctx.arc(p.ring.O.x, p.ring.O.y, p.ring.r, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(ring.O.x, ring.O.y, ring.r, 0, Math.PI * 2); ctx.stroke();
         ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
       }
-      if (p.sC > 0 && p.sC < 1.4) {
-        const ga = .34 * Math.min(1, p.sC / .03) * Math.exp(-p.sC / .32) * (1 - smooth(1.0, 1.4, p.sC));
+      if (glowT > 0 && glowT < 1.4) {
+        const ga = .34 * Math.min(1, glowT / .03) * Math.exp(-glowT / .32) * (1 - smooth(1.0, 1.4, glowT));
         ctx.setTransform.apply(ctx, base);
         const g = ctx.createRadialGradient(p.O.x, p.O.y, G.oR * .9, p.O.x, p.O.y, G.oR * 2.6);
         g.addColorStop(0, 'rgba(26,159,255,' + ga.toFixed(3) + ')');
@@ -2383,7 +2392,7 @@
       ctx.setTransform(1, 0, 0, 1, 0, 0);
     }
 
-    return { DUR, draw, pose };
+    return { DUR, CYCLE, draw, pose };
   })();
 
   // 启动动画驱动：弹窗打开时从头播放，播完停在锁定态
@@ -2397,12 +2406,13 @@
     bootT = 0; bootLast = 0;
     if (bootRaf) { cancelAnimationFrame(bootRaf); bootRaf = 0; }
     const ctx = cv.getContext('2d');
+    const SPEED = 0.55; // 放慢播放：6.3s 主时间线约 11.5 秒播完，之后光环持续循环
     const loop = now => {
       if (!bootLast) bootLast = now;
       const dt = Math.min(.05, (now - bootLast) / 1000); bootLast = now;
-      bootT = Math.min(QXBoot.DUR, bootT + dt);
+      bootT += dt * SPEED;
       QXBoot.draw(ctx, cv.width, cv.height, bootT);
-      bootRaf = bootT < QXBoot.DUR ? requestAnimationFrame(loop) : 0;
+      bootRaf = requestAnimationFrame(loop);
     };
     bootRaf = requestAnimationFrame(loop);
   }
