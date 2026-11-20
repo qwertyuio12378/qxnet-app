@@ -2397,7 +2397,7 @@
 
   // 启动动画驱动：弹窗打开时从头播放，播完停在锁定态
   let bootRaf = 0, bootT = 0, bootLast = 0, bootOpen = false;
-  function bootRestart() {
+  function bootRestart(speed) {
     const cv = document.getElementById('ddCanvas');
     if (!cv) return;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -2406,11 +2406,12 @@
     bootT = 0; bootLast = 0;
     if (bootRaf) { cancelAnimationFrame(bootRaf); bootRaf = 0; }
     const ctx = cv.getContext('2d');
-    const SPEED = 0.55; // 放慢播放：6.3s 主时间线约 11.5 秒播完，之后光环持续循环
+    // 启动屏按 1.0 速完整播一轮（真实 6.3s）；操作型 loading 用 0.55 速放慢
+    const sp = (typeof speed === 'number' && speed > 0) ? speed : 0.55;
     const loop = now => {
       if (!bootLast) bootLast = now;
       const dt = Math.min(.05, (now - bootLast) / 1000); bootLast = now;
-      bootT += dt * SPEED;
+      bootT += dt * sp;
       QXBoot.draw(ctx, cv.width, cv.height, bootT);
       bootRaf = requestAnimationFrame(loop);
     };
@@ -2420,15 +2421,33 @@
     if (bootRaf) { cancelAnimationFrame(bootRaf); bootRaf = 0; }
   }
 
-  function showLoading(text = '加载中…') {
+  let loadingOpenAt = 0, loadingHideTimer = 0, bootSplash = false;
+  const LOADING_MIN_MS = 1400; // loading 最短展示，避免一闪而过看不到动画
+
+  function showLoading(text = '加载中…', speed) {
     if (!loadingModal) return;
+    if (bootSplash && !speed) return; // 启动屏播放期间，忽略其他流程的 loading 请求
+    if (loadingHideTimer) { clearTimeout(loadingHideTimer); loadingHideTimer = 0; }
     const tEl = loadingModal.querySelector('.loading-text');
     if (tEl) tEl.textContent = text;
+    if (!bootOpen) loadingOpenAt = performance.now();
     loadingModal.classList.add('show');
-    if (!bootOpen) { bootOpen = true; bootRestart(); }
+    if (!bootOpen) { bootOpen = true; bootRestart(speed); }
   }
-  function hideLoading() {
+  function hideLoading(now) {
     if (!loadingModal) return;
+    if (bootSplash && !now) return; // 启动屏必须播满一轮才关
+    if (loadingHideTimer) { clearTimeout(loadingHideTimer); loadingHideTimer = 0; }
+    const remain = LOADING_MIN_MS - (performance.now() - loadingOpenAt);
+    if (!now && bootOpen && remain > 0) {
+      loadingHideTimer = setTimeout(() => {
+        loadingHideTimer = 0;
+        loadingModal.classList.remove('show');
+        bootOpen = false;
+        bootStop();
+      }, remain);
+      return;
+    }
     loadingModal.classList.remove('show');
     bootOpen = false;
     bootStop();
@@ -4101,6 +4120,15 @@
       }
       scanning = false;
     });
+  })();
+
+  // 启动屏：每次打开页面完整播放一轮真实启动动画（6.30s），播完自动进入登录页
+  (function launchBootScreen() {
+    try {
+      bootSplash = true;
+      showLoading('正在启动 QNET', 1.0);
+      setTimeout(function () { bootSplash = false; hideLoading(true); }, 6500);
+    } catch (e) { bootSplash = false; }
   })();
 
   // 提交
