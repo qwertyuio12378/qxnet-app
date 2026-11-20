@@ -1092,7 +1092,7 @@
     width: 200px;
     height: 200px;
     display: block;
-    margin: 0 auto 2px;
+    margin: 0 auto -38px;
   }
   .loading-text {
     font-size: 19px;
@@ -1106,33 +1106,8 @@
     font-size: 13px;
     color: rgba(255, 255, 255, 0.42);
     text-align: center;
-    margin-bottom: 26px;
+    margin-bottom: 0;
     letter-spacing: 0.04em;
-  }
-  /* DroidDeck 特征：分段式进度条，蓝色光块循环推进 */
-  .dd-seg {
-    display: flex;
-    gap: 6px;
-    width: 216px;
-  }
-  .dd-seg span {
-    flex: 1;
-    height: 5px;
-    border-radius: 3px;
-    background: rgba(255, 255, 255, 0.12);
-    animation: ddSeg 1.8s ease-in-out infinite;
-  }
-  .dd-seg span:nth-child(1) { animation-delay: 0s; }
-  .dd-seg span:nth-child(2) { animation-delay: 0.15s; }
-  .dd-seg span:nth-child(3) { animation-delay: 0.3s; }
-  .dd-seg span:nth-child(4) { animation-delay: 0.45s; }
-  .dd-seg span:nth-child(5) { animation-delay: 0.6s; }
-  .dd-seg span:nth-child(6) { animation-delay: 0.75s; }
-  .dd-seg span:nth-child(7) { animation-delay: 0.9s; }
-  .dd-seg span:nth-child(8) { animation-delay: 1.05s; }
-  @keyframes ddSeg {
-    0%, 100% { background: rgba(255, 255, 255, 0.12); box-shadow: none; }
-    35% { background: #1A9FFF; box-shadow: 0 0 10px rgba(26, 159, 255, 0.7); }
   }
   /* 邮箱后缀联想下拉：输入 @ 时自动弹出可选后缀（fixed 挂 body，不受卡片裁剪影响） */
   .email-suggest {
@@ -1659,7 +1634,6 @@
     <canvas class="dd-canvas" id="ddCanvas" width="400" height="400"></canvas>
     <div class="loading-text">加载中…</div>
     <div class="loading-sub">QNET · 安全认证环境</div>
-    <div class="dd-seg"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
   </div>
 </div>
 
@@ -2011,8 +1985,7 @@
         <canvas class="dd-canvas" id="ddCanvas" width="400" height="400"></canvas>
         <div class="loading-text">请验证指纹以绑定…</div>
         <div class="loading-sub">QNET · 安全认证环境</div>
-        <div class="dd-seg"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
-        <button id="cancelFpBtn" style="margin-top:26px;padding:10px 30px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.08);font-size:14px;color:rgba(255,255,255,0.82);cursor:pointer;">取消</button>
+            <button id="cancelFpBtn" style="margin-top:26px;padding:10px 30px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.08);font-size:14px;color:rgba(255,255,255,0.82);cursor:pointer;">取消</button>
       `;
       loadingModal.classList.add('show');
       bootOpen = true;
