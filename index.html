@@ -2543,7 +2543,7 @@
 
   // 加载动画主题：light = 原版浅色舞台（径向渐变 + 颗粒 + 接地投影），dark = 纯黑 + 蓝色辉光
   const BOOT_THEME_KEY = 'qxnet_boot_theme';
-  let bootTheme = 'light';
+  let bootTheme = 'dark';
   try {
     const v = localStorage.getItem(BOOT_THEME_KEY);
     if (v === 'dark' || v === 'light') bootTheme = v;
