@@ -2164,21 +2164,30 @@
       dome: { a0: -1.54858559350, r0: 105.14724938260, th0: 1.618786196996, aF: 0, rF: 62.69591638938 }
     };
 
-    // 三块几何：左块 / 右环 / 蓝球
-    const dxA = G.slotL - G.hcx, hyA = Math.sqrt(G.hR * G.hR - dxA * dxA);
+    // 三块几何：左半环 / 右半环+尾巴（Q 形）/ 蓝球（外径、环厚、蓝球与原标志完全一致）
+    const OV = 4 * Math.PI / 180; // 两半环在顶部/底部各重叠一点，拼接不留缝
     const arch = new Path2D();
-    arch.moveTo(G.L, 0); arch.lineTo(G.slotL, 0); arch.lineTo(G.slotL, G.cy - hyA);
-    arch.arc(G.hcx, G.cy, G.hR, Math.atan2(-hyA, dxA), Math.atan2(hyA, dxA), true);
-    arch.lineTo(G.slotL, G.B); arch.lineTo(G.L, G.B); arch.closePath();
+    arch.arc(G.dcx, G.cy, G.dR, Math.PI / 2 - OV, -Math.PI / 2, false);
+    arch.arc(G.hcx, G.cy, G.hR, -Math.PI / 2, Math.PI / 2 - OV, true);
+    arch.closePath();
 
-    const dxO = G.slotR - G.dcx, hyO = Math.sqrt(G.dR * G.dR - dxO * dxO);
-    const dxI = G.slotR - G.hcx, hyI = Math.sqrt(G.hR * G.hR - dxI * dxI);
     const dome = new Path2D();
-    dome.moveTo(G.slotR, G.cy - hyO);
-    dome.arc(G.dcx, G.cy, G.dR, Math.atan2(-hyO, dxO), Math.atan2(hyO, dxO), false);
-    dome.lineTo(G.slotR, G.cy + hyI);
-    dome.arc(G.hcx, G.cy, G.hR, Math.atan2(hyI, dxI), Math.atan2(-hyI, dxI), true);
+    dome.arc(G.dcx, G.cy, G.dR, Math.PI / 2 + OV, -Math.PI / 2, true);
+    dome.arc(G.hcx, G.cy, G.hR, -Math.PI / 2, Math.PI / 2 + OV, false);
     dome.closePath();
+    // Q 的尾巴：从环右下 45° 处斜向伸出（圆头），独立成形状，避免与外环拼接处出现缝隙
+    const tail = new Path2D();
+    {
+      const a = Math.PI / 4, tx = Math.cos(a), ty = Math.sin(a);
+      const nx = -ty, ny = tx, half = 11.5;
+      const sx = G.dcx + (G.dR - 22) * tx, sy = G.cy + (G.dR - 22) * ty;
+      const ex = sx + tx * 58, ey = sy + ty * 58;
+      tail.moveTo(sx - nx * half, sy - ny * half);
+      tail.lineTo(ex - nx * half, ey - ny * half);
+      tail.arc(ex, ey, half, Math.atan2(-ny, -nx), Math.atan2(ny, nx), false);
+      tail.lineTo(sx + nx * half, sy + ny * half);
+      tail.closePath();
+    }
 
     const orb = new Path2D();
     orb.arc(G.ocx, G.cy, G.oR, 0, Math.PI * 2);
@@ -2404,8 +2413,10 @@
         ctx.beginPath(); ctx.arc(p.O.x, p.O.y, G.oR * 2.6, 0, Math.PI * 2); ctx.fill();
       }
       ctx.fillStyle = INK;
-      ctx.setTransform.apply(ctx, mul(base, p.arch)); ctx.fill(arch);
-      ctx.setTransform.apply(ctx, mul(base, p.dome)); ctx.fill(dome);
+      ctx.setTransform.apply(ctx, mul(base, p.arch));
+      ctx.fill(arch); ctx.strokeStyle = INK; ctx.lineWidth = 1.8; ctx.stroke(arch);
+      ctx.setTransform.apply(ctx, mul(base, p.dome));
+      ctx.fill(dome); ctx.fill(tail); ctx.stroke(dome); ctx.stroke(tail);
       ctx.fillStyle = ORB;
       ctx.setTransform.apply(ctx, mul(base, p.ball)); ctx.fill(orb);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
