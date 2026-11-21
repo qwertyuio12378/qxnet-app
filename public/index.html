@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>QXNET 认证</title>
+<link rel="preconnect" href="https://gngcducutevgllbaejec.supabase.co" crossorigin>
+<link rel="dns-prefetch" href="https://gngcducutevgllbaejec.supabase.co">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232563EB'/><text x='50' y='68' font-size='52' font-weight='bold' text-anchor='middle' fill='white' font-family='sans-serif'>Q</text></svg>">
 <link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Zhi+Mang+Xing&family=Ma+Shan+Zheng&family=Dancing+Script:wght@500;700&family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
@@ -573,6 +575,12 @@
     flex-direction: column;
     gap: 10px;
     padding: 4px 0;
+  }
+  .chat-placeholder {
+    color: #94A3B8;
+    font-size: 13px;
+    text-align: center;
+    padding: 28px 0;
   }
   .chat-msg {
     max-width: 78%;
@@ -3995,7 +4003,11 @@
   });
 
   // 聊天发送（Supabase Realtime 多人聊天室）
-  const chatUserId = 'u_' + (localStorage.getItem('qx_device_id') || 'anon').slice(-8);
+  function getChatUserId() {
+    let d = null;
+    try { d = readLocalDeviceId(); } catch (e) {}
+    return 'u_' + (d || 'anon').slice(-8);
+  }
   let chatSubscribed = false;
 
   function appendChatMsg(text, isMine, userName) {
@@ -4006,18 +4018,64 @@
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 
-  async function loadChatHistory() {
-    if (!sb) return;
+  const CHAT_CACHE_KEY = 'qxnet_chat_cache_v1';
+  let chatLoaded = false, chatLoading = false;
+  function chatCacheRead() {
+    try { const v = JSON.parse(localStorage.getItem(CHAT_CACHE_KEY) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; }
+  }
+  function chatCacheSave(list) {
+    try { localStorage.setItem(CHAT_CACHE_KEY, JSON.stringify(list.slice(-50))); } catch (e) {}
+  }
+  // 一次性铺进 DOM（避免逐条 append 触发 50 次滚动计算）
+  function renderChatList(list) {
+    const frag = document.createDocumentFragment();
+    list.forEach(m => {
+      const div = document.createElement('div');
+      div.className = 'chat-msg ' + (m.user_id === getChatUserId() ? 'chat-mine' : 'chat-other');
+      div.textContent = m.content;
+      frag.appendChild(div);
+    });
+    chatMessages.innerHTML = '';
+    chatMessages.appendChild(frag);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+  let chatWatchdogTimer = 0;
+  function chatWatchdog() {
+    if (chatWatchdogTimer) return;
+    chatWatchdogTimer = setTimeout(function () {
+      chatWatchdogTimer = 0;
+      if (chatLoaded || !chatMessages.querySelector('.chat-placeholder')) return;
+      chatMessages.innerHTML = '<div class="chat-placeholder" id="chatRetry">聊天记录加载失败，点此重试</div>';
+      const el = document.getElementById('chatRetry');
+      if (el) el.onclick = function () {
+        chatMessages.innerHTML = '';
+        showChatPlaceholder();
+        loadChatHistory(true);
+        chatWatchdog();
+      };
+    }, 9000);
+  }
+  function showChatPlaceholder() {
+    if (chatMessages.childElementCount) return;
+    chatMessages.innerHTML = '<div class="chat-placeholder">正在加载聊天记录…</div>';
+  }
+  async function loadChatHistory(force) {
+    if (!sb || chatLoading) return;
+    if (chatLoaded && !force) return; // 已经拉过，后续增量交给 Realtime
+    chatLoading = true;
     try {
       const { data, error } = await sb
         .from('chat_messages')
-        .select('*')
-        .order('created_at', { ascending: true })
+        .select('id,content,user_id,created_at')
+        .order('created_at', { ascending: false })
         .limit(50);
-      if (error) return;
-      chatMessages.innerHTML = '';
-      data.forEach(m => appendChatMsg(m.content, m.user_id === chatUserId, m.user_id));
-    } catch (e) {}
+      if (!error && data) {
+        const list = data.slice().reverse(); // 取最近 50 条，再按时间正序展示
+        renderChatList(list);
+        chatCacheSave(list);
+        chatLoaded = true;
+      }
+    } catch (e) {} finally { chatLoading = false; }
   }
 
   let chatChannel = null;
@@ -4027,7 +4085,7 @@
     chatChannel = sb.channel('chat-room')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
         const m = payload.new;
-        if (m.user_id === chatUserId) return; // 自己发的已经显示了
+        if (m.user_id === getChatUserId()) return; // 自己发的已经显示了
         appendChatMsg(m.content, false);
       })
       .subscribe();
@@ -4040,7 +4098,7 @@
     appendChatMsg(text, true); // 自己的消息立即显示在右边
     if (!sb) return;
     try {
-      const { error } = await sb.from('chat_messages').insert({ content: text, user_id: chatUserId });
+      const { error } = await sb.from('chat_messages').insert({ content: text, user_id: getChatUserId() });
       if (error) appendChatMsg('发送失败', false);
     } catch (e) {
       appendChatMsg('网络异常', false);
@@ -4056,10 +4114,31 @@
   switchTab = function(tab) {
     _origSwitchTab(tab);
     if (tab === 'chat') {
+      if (!chatLoaded && !chatMessages.childElementCount) {
+        const cache = chatCacheRead();
+        if (cache.length) renderChatList(cache); // 本地缓存先顶上，不等网络
+        else showChatPlaceholder();             // 没缓存也别白屏，给个状态
+      }
       loadChatHistory();
       subscribeChat();
+      chatWatchdog();
     }
   };
+
+  // 提前建立 Realtime 连接，进聊天页时不再等 WebSocket 握手
+  // 等 Supabase 客户端就绪后立刻预热：建立 Realtime 连接 + 预取聊天历史（启动屏期间完成，进聊天页不再等网络）
+  (function prefetchChat() {
+    let n = 0;
+    const timer = setInterval(function () {
+      if (sb) {
+        clearInterval(timer);
+        try { subscribeChat(); } catch (e) {}
+        try { loadChatHistory(); chatWatchdog(); } catch (e) {}
+      } else if (++n > 60) {
+        clearInterval(timer);
+      }
+    }, 250);
+  })();
 
   // 拖动胶囊切换 tab：手指拖动时气泡跟手，松手吸附到最近页面
   let dragStartX = 0;
